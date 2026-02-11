@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ChainId, CHAINS } from '@/types/chain';
+import { ChainId } from '@/types/chain';
 import { RiskScore, getRiskLevel } from '@/types/risk';
 import * as goplus from '@/lib/api/goplus';
+import * as db from '@/lib/db/supabase';
 
 export const runtime = 'edge';
 
@@ -23,20 +24,37 @@ export async function POST(request: NextRequest) {
     // Limit to 10 tokens per request to avoid timeout
     const tokensToAnalyze = tokens.slice(0, 10);
 
-    // Fetch risk scores in parallel
+    // Fetch risk scores - check cache first, then analyze if needed
     const results: Record<string, RiskScore> = {};
+    let cacheHits = 0;
 
     await Promise.all(
       tokensToAnalyze.map(async (token) => {
         try {
           const key = `${token.chainId}-${token.address.toLowerCase()}`;
+
+          // Check cache first
+          const cached = await db.getRiskScore(token.chainId, token.address);
+          if (cached) {
+            results[key] = cached;
+            cacheHits++;
+            return;
+          }
+
+          // Cache miss - analyze token
           const riskScore = await analyzeTokenRisk(
             token.chainId,
             token.address,
             token.liquidity || 0
           );
+
           if (riskScore) {
             results[key] = riskScore;
+
+            // Save to cache (fire and forget)
+            db.upsertRiskScore(riskScore).catch((err) =>
+              console.error('Failed to cache risk score:', err)
+            );
           }
         } catch (error) {
           console.error(`Risk analysis failed for ${token.address}:`, error);
@@ -50,6 +68,7 @@ export async function POST(request: NextRequest) {
       meta: {
         requested: tokens.length,
         analyzed: Object.keys(results).length,
+        cacheHits,
       },
     });
   } catch (error) {

@@ -102,7 +102,6 @@ export default function Home() {
   const getStatusMessage = () => {
     if (error) return null; // Error shown separately
     if (riskStatus) return riskStatus;
-    if (isConnected) return 'live';
     return null;
   };
 
@@ -112,10 +111,13 @@ export default function Home() {
     <>
       <div className="w-full max-w-3xl relative">
       {/* Title Row */}
-      <div className="mb-4">
+      <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl sm:text-3xl text-neutral-100 ml-1">
           null//check
         </h1>
+        {isConnected && (
+          <span className="text-xs text-[#ffffff] mr-1 animate-pulse-slow">live</span>
+        )}
       </div>
 
       {/* Main Terminal Window */}
@@ -126,9 +128,7 @@ export default function Home() {
             {error ? (
               <span className="text-red-500">{error}</span>
             ) : (
-              <span className={isConnected ? 'text-green-500' : ''}>
-                {statusMessage}
-              </span>
+              statusMessage
             )}
           </div>
         )}
