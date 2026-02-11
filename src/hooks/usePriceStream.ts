@@ -1,31 +1,35 @@
 'use client';
 
 import { useEffect, useRef, useCallback, useState } from 'react';
-import { ChainId } from '@/types/chain';
 import { useTokensStore } from '@/stores/tokens';
 
 interface PriceUpdate {
-  tokenAddress: string;
-  chainId: ChainId;
   price: number;
+  priceChange1h: number;
   priceChange24h: number;
   volume24h: number;
+  liquidity: number;
+}
+
+interface SSEMessage {
+  type: 'connected' | 'prices' | 'error';
+  updates?: Record<string, PriceUpdate>;
+  message?: string;
   timestamp: number;
 }
 
 interface UsePriceStreamOptions {
-  chainId?: ChainId;
-  tokenAddresses?: string[];
   enabled?: boolean;
-  onUpdate?: (update: PriceUpdate) => void;
+  onUpdate?: (updates: Record<string, PriceUpdate>) => void;
 }
 
 export function usePriceStream(options: UsePriceStreamOptions = {}) {
-  const { chainId, tokenAddresses = [], enabled = true, onUpdate } = options;
-  const { updateToken } = useTokensStore();
+  const { enabled = true, onUpdate } = options;
+  const { updatePrices } = useTokensStore();
   const eventSourceRef = useRef<EventSource | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const connect = useCallback(() => {
     if (!enabled) return;
@@ -35,13 +39,11 @@ export function usePriceStream(options: UsePriceStreamOptions = {}) {
       eventSourceRef.current.close();
     }
 
-    const params = new URLSearchParams();
-    if (chainId) params.set('chain', chainId);
-    if (tokenAddresses.length > 0) {
-      params.set('tokens', tokenAddresses.join(','));
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
     }
 
-    const url = `/api/stream?${params}`;
+    const url = '/api/stream';
 
     try {
       const eventSource = new EventSource(url);
@@ -54,25 +56,19 @@ export function usePriceStream(options: UsePriceStreamOptions = {}) {
 
       eventSource.onmessage = (event) => {
         try {
-          const update: PriceUpdate = JSON.parse(event.data);
+          const message: SSEMessage = JSON.parse(event.data);
 
-          // Update the token in the store
-          updateToken(update.tokenAddress, update.chainId, {
-            metrics: {
-              tokenAddress: update.tokenAddress,
-              chainId: update.chainId,
-              price: update.price,
-              priceChange24h: update.priceChange24h,
-              volume24h: update.volume24h,
-              priceChange1h: 0, // Would need additional data
-              priceChange7d: 0,
-              liquidity: 0,
-              updatedAt: new Date(update.timestamp).toISOString(),
-            },
-          });
-
-          // Call optional callback
-          onUpdate?.(update);
+          if (message.type === 'connected') {
+            setIsConnected(true);
+            setError(null);
+          } else if (message.type === 'prices' && message.updates) {
+            // Update all prices in the store
+            updatePrices(message.updates);
+            // Call optional callback
+            onUpdate?.(message.updates);
+          } else if (message.type === 'error') {
+            setError(message.message || 'Stream error');
+          }
         } catch (e) {
           console.error('Failed to parse SSE message:', e);
         }
@@ -81,9 +77,10 @@ export function usePriceStream(options: UsePriceStreamOptions = {}) {
       eventSource.onerror = () => {
         setIsConnected(false);
         setError('Connection lost');
+        eventSource.close();
 
         // Attempt to reconnect after 5 seconds
-        setTimeout(() => {
+        reconnectTimeoutRef.current = setTimeout(() => {
           if (enabled) {
             connect();
           }
@@ -93,12 +90,16 @@ export function usePriceStream(options: UsePriceStreamOptions = {}) {
       setError('Failed to connect');
       setIsConnected(false);
     }
-  }, [enabled, chainId, tokenAddresses, updateToken, onUpdate]);
+  }, [enabled, updatePrices, onUpdate]);
 
   const disconnect = useCallback(() => {
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
       eventSourceRef.current = null;
+    }
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
     }
     setIsConnected(false);
   }, []);

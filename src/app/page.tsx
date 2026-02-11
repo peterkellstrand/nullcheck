@@ -4,13 +4,17 @@ import { useState, useEffect, useCallback } from 'react';
 import { TokenTable } from '@/components/tokens/TokenTable';
 import { TokenWithMetrics } from '@/types/token';
 import { RiskScore } from '@/types/risk';
-import { Icosahedron } from '@/components/Icosahedron';
+import { useTokensStore } from '@/stores/tokens';
+import { usePriceStream } from '@/hooks/usePriceStream';
 
 export default function Home() {
-  const [tokens, setTokens] = useState<TokenWithMetrics[]>([]);
+  const { tokens, setTokens } = useTokensStore();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [riskStatus, setRiskStatus] = useState<string>('');
+
+  // Connect to SSE price stream
+  const { isConnected } = usePriceStream({ enabled: tokens.length > 0 });
 
   // Fetch real risk scores for tokens
   const fetchRiskScores = useCallback(async (tokenList: TokenWithMetrics[]) => {
@@ -41,8 +45,8 @@ export default function Home() {
 
       if (data.success && data.results) {
         // Update tokens with real risk scores
-        setTokens(prev =>
-          prev.map(token => {
+        setTokens(
+          tokenList.map(token => {
             const key = `${token.chainId}-${token.address.toLowerCase()}`;
             const riskScore = data.results[key] as RiskScore | undefined;
             if (riskScore) {
@@ -57,7 +61,7 @@ export default function Home() {
       console.error('Risk fetch error:', err);
       setRiskStatus('');
     }
-  }, []);
+  }, [setTokens]);
 
   useEffect(() => {
     async function fetchTokens() {
@@ -86,34 +90,46 @@ export default function Home() {
     }
 
     fetchTokens();
-
-    // Refresh tokens every 60 seconds (less frequent to reduce API calls)
-    const interval = setInterval(fetchTokens, 60000);
-    return () => clearInterval(interval);
-  }, [fetchRiskScores]);
+    // Initial fetch only - SSE handles updates
+  }, [fetchRiskScores, setTokens]);
 
   const handleTokenClick = (token: TokenWithMetrics) => {
     console.log('Token clicked:', token);
     // In Phase 2, this would navigate to token detail page
   };
 
+  // Build status message
+  const getStatusMessage = () => {
+    if (error) return null; // Error shown separately
+    if (riskStatus) return riskStatus;
+    if (isConnected) return 'live';
+    return null;
+  };
+
+  const statusMessage = getStatusMessage();
+
   return (
     <>
       <div className="w-full max-w-3xl relative">
       {/* Title Row */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="mb-4">
         <h1 className="text-2xl sm:text-3xl text-neutral-100 ml-1">
           null//check
         </h1>
-        <Icosahedron />
       </div>
 
       {/* Main Terminal Window */}
       <div className="border-2 border-[#ffffff] bg-black">
         {/* Status bar */}
-        {(riskStatus || error) && (
+        {(statusMessage || error) && (
           <div className="px-4 py-2 border-b border-[#ffffff] text-xs text-neutral-500">
-            {error ? <span className="text-red-500">{error}</span> : riskStatus}
+            {error ? (
+              <span className="text-red-500">{error}</span>
+            ) : (
+              <span className={isConnected ? 'text-green-500' : ''}>
+                {statusMessage}
+              </span>
+            )}
           </div>
         )}
 

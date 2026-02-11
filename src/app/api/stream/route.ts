@@ -1,43 +1,87 @@
 import { NextRequest } from 'next/server';
-import { ChainId, CHAINS } from '@/types/chain';
+import { ChainId } from '@/types/chain';
+import * as dexscreener from '@/lib/api/dexscreener';
 
 export const runtime = 'edge';
 
-// This is a simplified SSE implementation
-// In production, you'd connect to the actual DexPaprika SSE stream
-export async function GET(request: NextRequest) {
-  const searchParams = request.nextUrl.searchParams;
-  const chainId = searchParams.get('chain') as ChainId | null;
-  const tokenAddresses = searchParams.get('tokens')?.split(',') || [];
+// Price update interval (5 seconds)
+const UPDATE_INTERVAL = 5000;
 
+export async function GET(request: NextRequest) {
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
-    start(controller) {
+    async start(controller) {
       // Send initial connection message
-      const connectMessage = `data: ${JSON.stringify({ type: 'connected', timestamp: Date.now() })}\n\n`;
-      controller.enqueue(encoder.encode(connectMessage));
+      controller.enqueue(
+        encoder.encode(`data: ${JSON.stringify({ type: 'connected', timestamp: Date.now() })}\n\n`)
+      );
 
-      // Simulate price updates every 5 seconds
-      // In production, this would forward events from DexPaprika SSE
-      const interval = setInterval(() => {
-        const update = {
-          type: 'price_update',
-          tokenAddress: tokenAddresses[0] || '0x0000000000000000000000000000000000000000',
-          chainId: chainId || 'ethereum',
-          price: Math.random() * 100,
-          priceChange24h: (Math.random() - 0.5) * 20,
-          volume24h: Math.random() * 1000000,
-          timestamp: Date.now(),
-        };
+      const sendPriceUpdates = async () => {
+        try {
+          const chains: ChainId[] = ['ethereum', 'base', 'solana'];
+          const updates: Record<string, {
+            price: number;
+            priceChange1h: number;
+            priceChange24h: number;
+            volume24h: number;
+            liquidity: number;
+          }> = {};
 
-        const message = `data: ${JSON.stringify(update)}\n\n`;
-        controller.enqueue(encoder.encode(message));
-      }, 5000);
+          // Fetch latest data from all chains in parallel
+          const results = await Promise.all(
+            chains.map(async (chainId) => {
+              try {
+                const pairs = await dexscreener.getTrendingPairs(chainId);
+                return pairs.slice(0, 20).map(pair => ({
+                  key: `${chainId}-${pair.baseToken.address.toLowerCase()}`,
+                  data: {
+                    price: parseFloat(pair.priceUsd) || 0,
+                    priceChange1h: pair.priceChange?.h1 || 0,
+                    priceChange24h: pair.priceChange?.h24 || 0,
+                    volume24h: pair.volume?.h24 || 0,
+                    liquidity: pair.liquidity?.usd || 0,
+                  }
+                }));
+              } catch {
+                return [];
+              }
+            })
+          );
+
+          // Flatten and build updates object
+          results.flat().forEach(({ key, data }) => {
+            updates[key] = data;
+          });
+
+          // Send price update event
+          if (Object.keys(updates).length > 0) {
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify({
+                type: 'prices',
+                updates,
+                timestamp: Date.now()
+              })}\n\n`)
+            );
+          }
+        } catch (error) {
+          console.error('SSE price update error:', error);
+          // Send error event but keep connection alive
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify({ type: 'error', message: 'Failed to fetch prices' })}\n\n`)
+          );
+        }
+      };
+
+      // Send initial prices immediately
+      await sendPriceUpdates();
+
+      // Set up interval for continuous updates
+      const intervalId = setInterval(sendPriceUpdates, UPDATE_INTERVAL);
 
       // Handle client disconnect
       request.signal.addEventListener('abort', () => {
-        clearInterval(interval);
+        clearInterval(intervalId);
         controller.close();
       });
     },
@@ -46,8 +90,9 @@ export async function GET(request: NextRequest) {
   return new Response(stream, {
     headers: {
       'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      Connection: 'keep-alive',
+      'Cache-Control': 'no-cache, no-transform',
+      'Connection': 'keep-alive',
+      'X-Accel-Buffering': 'no',
     },
   });
 }
