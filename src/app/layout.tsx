@@ -1,11 +1,38 @@
 import type { Metadata } from 'next';
-import { JetBrains_Mono } from 'next/font/google';
+import localFont from 'next/font/local';
 import { Providers } from '@/components/Providers';
 import './globals.css';
 
-const mono = JetBrains_Mono({
-  subsets: ['latin'],
+const sfMono = localFont({
+  src: [
+    {
+      path: '../fonts/SF-Mono-Light.otf',
+      weight: '300',
+      style: 'normal',
+    },
+    {
+      path: '../fonts/SF-Mono-Regular.otf',
+      weight: '400',
+      style: 'normal',
+    },
+    {
+      path: '../fonts/SF-Mono-Medium.otf',
+      weight: '500',
+      style: 'normal',
+    },
+    {
+      path: '../fonts/SF-Mono-Semibold.otf',
+      weight: '600',
+      style: 'normal',
+    },
+    {
+      path: '../fonts/SF-Mono-Bold.otf',
+      weight: '700',
+      style: 'normal',
+    },
+  ],
   variable: '--font-mono',
+  fallback: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'monospace'],
 });
 
 export const metadata: Metadata = {
@@ -23,10 +50,10 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${mono.variable} font-mono antialiased bg-black text-neutral-200`}
+        className={`${sfMono.variable} font-mono antialiased bg-black text-neutral-200 overflow-x-hidden`}
       >
         <Providers>
-          <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-8">
+          <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 overflow-visible">
             {children}
           </div>
         </Providers>

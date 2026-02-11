@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { TokenTable } from '@/components/tokens/TokenTable';
 import { TokenWithMetrics } from '@/types/token';
 import { RiskScore } from '@/types/risk';
+import { Icosahedron } from '@/components/Icosahedron';
 
 export default function Home() {
   const [tokens, setTokens] = useState<TokenWithMetrics[]>([]);
@@ -97,11 +98,15 @@ export default function Home() {
   };
 
   return (
-    <div className="w-full max-w-3xl">
-      {/* Title */}
-      <h1 className="text-2xl sm:text-3xl text-neutral-100 mb-4 ml-1">
-        null//check
-      </h1>
+    <>
+      <div className="w-full max-w-3xl relative">
+      {/* Title Row */}
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-2xl sm:text-3xl text-neutral-100 ml-1">
+          null//check
+        </h1>
+        <Icosahedron />
+      </div>
 
       {/* Main Terminal Window */}
       <div className="border-2 border-[#ffffff] bg-black">
@@ -121,6 +126,7 @@ export default function Home() {
           />
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

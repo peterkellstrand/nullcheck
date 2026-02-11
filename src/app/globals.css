@@ -16,6 +16,18 @@
   --red: #c55;
   --yellow: #ca5;
   --orange: #c85;
+
+  /* Typography scale */
+  --font-size-xs: 0.6875rem;    /* 11px */
+  --font-size-sm: 0.8125rem;    /* 13px */
+  --font-size-base: 0.875rem;   /* 14px */
+  --font-size-lg: 1rem;         /* 16px */
+  --font-size-xl: 1.25rem;      /* 20px */
+  --font-size-2xl: 1.5rem;      /* 24px */
+
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
 }
 
 @theme inline {
@@ -27,16 +39,54 @@
 /* Base styles */
 html {
   background: var(--bg-primary);
+  overflow-x: hidden;
 }
 
 body {
   background: var(--bg-primary);
   color: var(--text-primary);
-  font-family: var(--font-mono), "JetBrains Mono", "SF Mono", "Fira Code", monospace;
-  font-size: 13px;
-  line-height: 1.6;
+  font-family: var(--font-mono), "SF Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+  font-size: var(--font-size-sm);
+  font-weight: 400;
+  line-height: var(--line-height-normal);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Typography hierarchy */
+h1 {
+  font-size: var(--font-size-2xl);
+  font-weight: 500;
+  line-height: var(--line-height-tight);
+  letter-spacing: -0.02em;
+}
+
+h2 {
+  font-size: var(--font-size-xl);
+  font-weight: 500;
+  line-height: var(--line-height-tight);
+  letter-spacing: -0.01em;
+}
+
+h3 {
+  font-size: var(--font-size-lg);
+  font-weight: 500;
+  line-height: var(--line-height-tight);
+}
+
+/* Labels and captions */
+.text-label {
+  font-size: var(--font-size-xs);
+  font-weight: 400;
+  text-transform: lowercase;
+  letter-spacing: 0.02em;
+}
+
+/* Data/numbers */
+.text-data {
+  font-size: var(--font-size-sm);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Thin scrollbar */
@@ -109,4 +159,52 @@ table {
 
 table tbody tr {
   transition: background-color 0.1s ease;
+}
+
+/* White cursor for search input */
+.block-cursor {
+  caret-color: #ffffff;
+}
+
+/* Animated icosahedron */
+@keyframes rotate-3d {
+  0% {
+    transform: rotateX(-20deg) rotateY(0deg);
+  }
+  100% {
+    transform: rotateX(-20deg) rotateY(360deg);
+  }
+}
+
+.icosahedron-container {
+  width: 400px;
+  height: 400px;
+  perspective: 800px;
+}
+
+.icosahedron-wireframe {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  animation: rotate-3d 20s linear infinite;
+}
+
+.icosahedron-wireframe::before,
+.icosahedron-wireframe::after {
+  content: '';
+  position: absolute;
+  inset: 50px;
+  border: 1px solid #333;
+  transform-style: preserve-3d;
+}
+
+.icosahedron-wireframe::before {
+  transform: rotateX(60deg);
+  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+}
+
+.icosahedron-wireframe::after {
+  transform: rotateX(-60deg);
+  clip-path: polygon(50% 100%, 0% 0%, 100% 0%);
 }

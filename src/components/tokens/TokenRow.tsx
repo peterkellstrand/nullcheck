@@ -35,12 +35,12 @@ export function TokenRow({ token, rank, onTokenClick }: TokenRowProps) {
         onClick={() => onTokenClick?.(token)}
       >
         {/* Rank */}
-        <td className="px-4 py-3 text-neutral-600 text-xs w-8">
+        <td className="px-6 py-4 text-neutral-600 text-xs w-8">
           {rank}
         </td>
 
         {/* Token Info */}
-        <td className="px-2 py-3">
+        <td className="px-3 py-4">
           <div className="flex items-center gap-2">
             {/* Logo */}
             <div className="w-6 h-6 bg-neutral-900 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
@@ -74,28 +74,28 @@ export function TokenRow({ token, rank, onTokenClick }: TokenRowProps) {
         </td>
 
         {/* Price */}
-        <td className="px-2 py-3 text-right">
+        <td className="px-3 py-4 text-right">
           <span className="text-neutral-300 tabular-nums text-sm">
             {formatPrice(token.metrics.price)}
           </span>
         </td>
 
         {/* 1h Change */}
-        <td className="px-2 py-3 text-right hidden sm:table-cell">
+        <td className="px-3 py-4 text-right hidden sm:table-cell">
           <span className={cn('tabular-nums text-sm', priceChangeColor(token.metrics.priceChange1h))}>
             {formatPercent(token.metrics.priceChange1h)}
           </span>
         </td>
 
         {/* 24h Change */}
-        <td className="px-2 py-3 text-right">
+        <td className="px-3 py-4 text-right">
           <span className={cn('tabular-nums text-sm', priceChangeColor(token.metrics.priceChange24h))}>
             {formatPercent(token.metrics.priceChange24h)}
           </span>
         </td>
 
         {/* 7d Change */}
-        <td className="px-2 py-3 text-right hidden sm:table-cell">
+        <td className="px-3 py-4 text-right hidden sm:table-cell">
           {token.metrics.priceChange7d !== 0 ? (
             <span className={cn('tabular-nums text-sm', priceChangeColor(token.metrics.priceChange7d))}>
               {formatPercent(token.metrics.priceChange7d)}
@@ -106,21 +106,21 @@ export function TokenRow({ token, rank, onTokenClick }: TokenRowProps) {
         </td>
 
         {/* Volume */}
-        <td className="px-2 py-3 text-right hidden sm:table-cell">
+        <td className="px-3 py-4 text-right hidden sm:table-cell">
           <span className="text-neutral-400 tabular-nums text-sm">
             {formatVolume(token.metrics.volume24h)}
           </span>
         </td>
 
         {/* Liquidity */}
-        <td className="px-2 py-3 text-right">
+        <td className="px-3 py-4 text-right">
           <span className="text-neutral-400 tabular-nums text-sm">
             {formatLiquidity(token.metrics.liquidity)}
           </span>
         </td>
 
         {/* Risk */}
-        <td className="px-2 py-3 text-right">
+        <td className="px-3 py-4 text-right">
           <RiskBadge
             risk={token.risk}
             onClick={(e) => {

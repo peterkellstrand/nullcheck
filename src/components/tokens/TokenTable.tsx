@@ -119,84 +119,86 @@ export function TokenTable({
   const totalColumns = COLUMNS.length + 2; // +2 for rank and token columns
 
   return (
-    <div className="w-full">
-      {/* Header Controls */}
-      <div className="px-4 py-3 border-b border-[#ffffff]">
-        <div className="flex items-center justify-between gap-4">
-          {/* Chain Filter */}
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-neutral-500">chain:</span>
-            <button
-              onClick={() => setSelectedChain(undefined)}
-              className={cn(
-                'hover:text-neutral-100 transition-colors',
-                !selectedChain ? 'text-neutral-100' : 'text-neutral-500'
-              )}
-            >
-              all
-            </button>
-            {Object.values(CHAINS).map((chain) => (
+    <div className="w-full h-full flex flex-col">
+      {/* Sticky Header - Controls + Table Header */}
+      <div className="sticky top-0 z-20 bg-black">
+        {/* Header Controls */}
+        <div className="px-6 py-2">
+          <div className="flex items-center justify-between gap-4">
+            {/* Chain Filter */}
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-neutral-500">chain:</span>
               <button
-                key={chain.id}
-                onClick={() => setSelectedChain(chain.id)}
+                onClick={() => setSelectedChain(undefined)}
                 className={cn(
                   'hover:text-neutral-100 transition-colors',
-                  selectedChain === chain.id ? 'text-neutral-100' : 'text-neutral-500'
+                  !selectedChain ? 'text-neutral-100' : 'text-neutral-500'
                 )}
               >
-                {chain.symbol.toLowerCase()}
+                all
               </button>
-            ))}
-          </div>
+              {Object.values(CHAINS).map((chain) => (
+                <button
+                  key={chain.id}
+                  onClick={() => setSelectedChain(chain.id)}
+                  className={cn(
+                    'hover:text-neutral-100 transition-colors',
+                    selectedChain === chain.id ? 'text-neutral-100' : 'text-neutral-500'
+                  )}
+                >
+                  {chain.id}
+                </button>
+              ))}
+            </div>
 
-          {/* Search */}
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-neutral-500">search:</span>
+            {/* Search */}
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder=""
-              className="bg-transparent border-none outline-none text-neutral-200 text-sm w-24 sm:w-32"
+              placeholder="search"
+              className="bg-transparent border-none outline-none text-neutral-200 text-sm w-24 sm:w-32 placeholder:text-neutral-500 focus:placeholder:text-transparent caret-transparent p-0"
             />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="text-neutral-600 hover:text-neutral-400 text-xs"
-              >
-                x
-              </button>
-            )}
           </div>
         </div>
+
+        {/* Table Header */}
+        <div className="flex px-6 py-3 text-neutral-600 text-xs">
+          <div className="w-8 text-left">#</div>
+          <div className="flex-1 text-left">Token</div>
+          {COLUMNS.map((col) => (
+            <div
+              key={col.field}
+              className={cn(
+                'w-20 cursor-pointer hover:text-neutral-400 transition-colors whitespace-nowrap',
+                col.align === 'right' ? 'text-right' : 'text-left',
+                col.hideOnMobile && 'hidden sm:block'
+              )}
+              onClick={() => handleSort(col.field)}
+            >
+              <span className="inline-flex items-center gap-1">
+                {col.label}
+                {sortConfig.field === col.field && (
+                  <span className="text-neutral-500">
+                    {sortConfig.direction === 'desc' ? '↓' : '↑'}
+                  </span>
+                )}
+              </span>
+            </div>
+          ))}
+        </div>
+        <div className="border-b border-[#ffffff]" />
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto">
+      <div className="flex-1 overflow-x-auto">
         <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-[#ffffff] text-neutral-600 text-xs">
-              <th className="px-4 py-2 text-left w-8">#</th>
-              <th className="px-2 py-2 text-left">Token</th>
+          <thead className="sr-only">
+            <tr>
+              <th>#</th>
+              <th>Token</th>
               {COLUMNS.map((col) => (
-                <th
-                  key={col.field}
-                  className={cn(
-                    'px-2 py-2 cursor-pointer hover:text-neutral-400 transition-colors whitespace-nowrap',
-                    col.align === 'right' ? 'text-right' : 'text-left',
-                    col.hideOnMobile && 'hidden sm:table-cell'
-                  )}
-                  onClick={() => handleSort(col.field)}
-                >
-                  <span className="inline-flex items-center gap-1">
-                    {col.label}
-                    {sortConfig.field === col.field && (
-                      <span className="text-neutral-500">
-                        {sortConfig.direction === 'desc' ? '↓' : '↑'}
-                      </span>
-                    )}
-                  </span>
-                </th>
+                <th key={col.field}>{col.label}</th>
               ))}
             </tr>
           </thead>
@@ -211,7 +213,7 @@ export function TokenTable({
               <tr>
                 <td
                   colSpan={totalColumns}
-                  className="px-4 py-12 text-center text-neutral-600"
+                  className="px-6 py-12 text-center text-neutral-600"
                 >
                   no tokens found
                 </td>
