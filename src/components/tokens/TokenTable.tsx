@@ -1,10 +1,9 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
-import { TokenWithMetrics, SortField, SortDirection, TokenSearchResult } from '@/types/token';
+import { TokenWithMetrics, SortField, SortDirection } from '@/types/token';
 import { ChainId, CHAINS } from '@/types/chain';
 import { TokenRow } from './TokenRow';
-import { TokenSearch } from './TokenSearch';
 import { TableSkeleton } from '@/components/ui/Skeleton';
 import { cn } from '@/lib/utils/format';
 
@@ -40,7 +39,6 @@ export function TokenTable({
   isLoading = false,
   onTokenClick,
 }: TokenTableProps) {
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedChain, setSelectedChain] = useState<ChainId | undefined>();
   const [sortConfig, setSortConfig] = useState<SortConfig>({
     field: 'volume24h',
@@ -54,23 +52,8 @@ export function TokenTable({
     }));
   }, []);
 
-  const handleSearchSelect = useCallback((token: TokenSearchResult) => {
-    setSearchQuery(token.symbol);
-  }, []);
-
   const filteredAndSortedTokens = useMemo(() => {
     let result = [...tokens];
-
-    // Filter by search
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(
-        (t) =>
-          t.symbol.toLowerCase().includes(query) ||
-          t.name.toLowerCase().includes(query) ||
-          t.address.toLowerCase().includes(query)
-      );
-    }
 
     // Filter by chain
     if (selectedChain) {
@@ -120,16 +103,16 @@ export function TokenTable({
     });
 
     return result;
-  }, [tokens, searchQuery, selectedChain, sortConfig]);
+  }, [tokens, selectedChain, sortConfig]);
 
   const totalColumns = COLUMNS.length + 2; // +2 for rank and token columns
 
   return (
     <div className="w-full">
       {/* Header Controls */}
-      <div className="px-4 py-3 border-b border-neutral-800">
+      <div className="px-4 py-3 border-b border-[#ffffff]">
         {/* Chain Filter */}
-        <div className="flex items-center gap-2 text-sm mb-3">
+        <div className="flex items-center gap-2 text-sm">
           <span className="text-neutral-500">chain:</span>
           <button
             onClick={() => setSelectedChain(undefined)}
@@ -153,20 +136,13 @@ export function TokenTable({
             </button>
           ))}
         </div>
-
-        {/* Token Search */}
-        <TokenSearch
-          onSearch={setSearchQuery}
-          onSelectToken={handleSearchSelect}
-          className="w-full"
-        />
       </div>
 
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-neutral-800 text-neutral-600 text-xs">
+            <tr className="border-b border-[#ffffff] text-neutral-600 text-xs">
               <th className="px-4 py-2 text-left w-8">#</th>
               <th className="px-2 py-2 text-left">Token</th>
               {COLUMNS.map((col) => (

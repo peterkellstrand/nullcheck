@@ -104,10 +104,10 @@ export default function Home() {
       </h1>
 
       {/* Main Terminal Window */}
-      <div className="border border-neutral-700 bg-black">
+      <div className="border-2 border-[#ffffff] bg-black">
         {/* Status bar */}
         {(riskStatus || error) && (
-          <div className="px-4 py-2 border-b border-neutral-800 text-xs text-neutral-500">
+          <div className="px-4 py-2 border-b border-[#ffffff] text-xs text-neutral-500">
             {error ? <span className="text-red-500">{error}</span> : riskStatus}
           </div>
         )}

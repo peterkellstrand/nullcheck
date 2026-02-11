@@ -31,7 +31,7 @@ export function TokenRow({ token, rank, onTokenClick }: TokenRowProps) {
   return (
     <>
       <tr
-        className="border-b border-neutral-800 hover:bg-neutral-900/30 transition-colors cursor-pointer"
+        className="border-b border-neutral-900 hover:bg-neutral-900/50 transition-colors cursor-pointer"
         onClick={() => onTokenClick?.(token)}
       >
         {/* Rank */}
