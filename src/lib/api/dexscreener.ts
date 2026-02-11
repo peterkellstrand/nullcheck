@@ -191,11 +191,12 @@ export async function getTrendingPairs(chainId: ChainId): Promise<DexScreenerPai
 
   // Search for popular/high volume pairs on the chain
   // Using broad search terms that typically return trending tokens
+  // For Solana, include pump.fun meme tokens
   const searches = chainId === 'solana'
-    ? ['SOL', 'BONK', 'WIF', 'JUP', 'PYTH', 'RAY', 'ORCA', 'MOBILE', 'JTO', 'RENDER']
+    ? ['SOL', 'BONK', 'WIF', 'JUP', 'PYTH', 'POPCAT', 'MEW', 'BOME', 'SLERF', 'PONKE', 'MYRO', 'WEN', 'SILLY', 'MOTHER', 'DADDY', 'GME', 'TRUMP', 'FWOG', 'GIGA', 'MICHI']
     : chainId === 'base'
-    ? ['ETH', 'BRETT', 'DEGEN', 'TOSHI', 'AERO', 'WELL', 'USDbC', 'cbETH', 'MOCHI', 'BALD']
-    : ['ETH', 'PEPE', 'SHIB', 'FLOKI', 'WOJAK', 'TURBO', 'BOB', 'MEME', 'BONE', 'LEASH', 'APU', 'NEIRO', 'MOG', 'ANDY', 'BITCOIN', 'DOGE'];
+    ? ['ETH', 'BRETT', 'DEGEN', 'TOSHI', 'AERO', 'WELL', 'USDbC', 'cbETH', 'MOCHI', 'BALD', 'NORMIE', 'DOGINME']
+    : ['ETH', 'PEPE', 'SHIB', 'FLOKI', 'WOJAK', 'TURBO', 'BOB', 'MEME', 'BONE', 'LEASH', 'APU', 'NEIRO', 'MOG', 'ANDY', 'BITCOIN', 'DOGE', 'SPX', 'LADYS'];
 
   const allPairs: DexScreenerPair[] = [];
 
@@ -224,6 +225,45 @@ export async function getTrendingPairs(chainId: ChainId): Promise<DexScreenerPai
   });
 
   return uniquePairs.sort((a, b) => (b.volume?.h24 || 0) - (a.volume?.h24 || 0));
+}
+
+// Get latest token boosts (often includes pump.fun graduated tokens)
+export async function getLatestBoostedTokens(): Promise<DexScreenerPair[]> {
+  try {
+    const response = await fetch('https://api.dexscreener.com/token-boosts/latest/v1', {
+      headers: { Accept: 'application/json' },
+      next: { revalidate: 60 },
+    });
+    if (!response.ok) return [];
+
+    const boosts = await response.json();
+    if (!Array.isArray(boosts)) return [];
+
+    // Fetch pair data for boosted tokens
+    const pairs: DexScreenerPair[] = [];
+    const solanaBoosts = boosts
+      .filter((b: { chainId: string }) => b.chainId === 'solana')
+      .slice(0, 10);
+
+    for (const boost of solanaBoosts) {
+      try {
+        const data = await fetchApi<DexScreenerResponse>(`/dex/tokens/${boost.tokenAddress}`);
+        if (data.pairs && data.pairs.length > 0) {
+          // Get the highest liquidity pair
+          const bestPair = data.pairs
+            .filter(p => p.chainId === 'solana')
+            .sort((a, b) => (b.liquidity?.usd || 0) - (a.liquidity?.usd || 0))[0];
+          if (bestPair) pairs.push(bestPair);
+        }
+      } catch {
+        // Continue with other tokens
+      }
+    }
+
+    return pairs;
+  } catch {
+    return [];
+  }
 }
 
 // Export the pair type for use in routes

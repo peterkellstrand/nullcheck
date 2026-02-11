@@ -20,9 +20,17 @@ export async function GET(request: NextRequest) {
 
     const pairPromises = chains.map(async (chain) => {
       try {
+        // Get trending pairs
         const pairs = await dexscreener.getTrendingPairs(chain);
 
-        return pairs.slice(0, Math.ceil(limit / chains.length)).map((pair) => {
+        // For Solana, also get boosted tokens (includes pump.fun graduates)
+        let allPairs = pairs;
+        if (chain === 'solana') {
+          const boostedPairs = await dexscreener.getLatestBoostedTokens();
+          allPairs = [...pairs, ...boostedPairs];
+        }
+
+        return allPairs.slice(0, Math.ceil(limit / chains.length)).map((pair) => {
           const riskScore = generatePlaceholderRiskScore(pair);
 
           return {

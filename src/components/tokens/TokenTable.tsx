@@ -40,6 +40,7 @@ export function TokenTable({
   onTokenClick,
 }: TokenTableProps) {
   const [selectedChain, setSelectedChain] = useState<ChainId | undefined>();
+  const [searchQuery, setSearchQuery] = useState('');
   const [sortConfig, setSortConfig] = useState<SortConfig>({
     field: 'volume24h',
     direction: 'desc',
@@ -54,6 +55,16 @@ export function TokenTable({
 
   const filteredAndSortedTokens = useMemo(() => {
     let result = [...tokens];
+
+    // Filter by search
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(
+        (t) =>
+          t.symbol.toLowerCase().includes(query) ||
+          t.name.toLowerCase().includes(query)
+      );
+    }
 
     // Filter by chain
     if (selectedChain) {
@@ -103,7 +114,7 @@ export function TokenTable({
     });
 
     return result;
-  }, [tokens, selectedChain, sortConfig]);
+  }, [tokens, searchQuery, selectedChain, sortConfig]);
 
   const totalColumns = COLUMNS.length + 2; // +2 for rank and token columns
 
@@ -111,30 +122,52 @@ export function TokenTable({
     <div className="w-full">
       {/* Header Controls */}
       <div className="px-4 py-3 border-b border-[#ffffff]">
-        {/* Chain Filter */}
-        <div className="flex items-center gap-2 text-sm">
-          <span className="text-neutral-500">chain:</span>
-          <button
-            onClick={() => setSelectedChain(undefined)}
-            className={cn(
-              'hover:text-neutral-100 transition-colors',
-              !selectedChain ? 'text-neutral-100' : 'text-neutral-500'
-            )}
-          >
-            all
-          </button>
-          {Object.values(CHAINS).map((chain) => (
+        <div className="flex items-center justify-between gap-4">
+          {/* Chain Filter */}
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-neutral-500">chain:</span>
             <button
-              key={chain.id}
-              onClick={() => setSelectedChain(chain.id)}
+              onClick={() => setSelectedChain(undefined)}
               className={cn(
                 'hover:text-neutral-100 transition-colors',
-                selectedChain === chain.id ? 'text-neutral-100' : 'text-neutral-500'
+                !selectedChain ? 'text-neutral-100' : 'text-neutral-500'
               )}
             >
-              {chain.symbol.toLowerCase()}
+              all
             </button>
-          ))}
+            {Object.values(CHAINS).map((chain) => (
+              <button
+                key={chain.id}
+                onClick={() => setSelectedChain(chain.id)}
+                className={cn(
+                  'hover:text-neutral-100 transition-colors',
+                  selectedChain === chain.id ? 'text-neutral-100' : 'text-neutral-500'
+                )}
+              >
+                {chain.symbol.toLowerCase()}
+              </button>
+            ))}
+          </div>
+
+          {/* Search */}
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-neutral-500">search:</span>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder=""
+              className="bg-transparent border-none outline-none text-neutral-200 text-sm w-24 sm:w-32"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="text-neutral-600 hover:text-neutral-400 text-xs"
+              >
+                x
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
