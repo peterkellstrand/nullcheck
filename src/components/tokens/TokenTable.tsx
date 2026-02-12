@@ -19,20 +19,21 @@ type SortConfig = {
   direction: SortDirection;
 };
 
-// Column definitions with responsive visibility
+// Column definitions with widths
 const COLUMNS: {
   field: SortField;
   label: string;
-  align: 'left' | 'right';
+  width: string;
   hideOnMobile?: boolean;
 }[] = [
-  { field: 'price', label: 'Price', align: 'right' },
-  { field: 'priceChange1h', label: '1h', align: 'right', hideOnMobile: true },
-  { field: 'priceChange24h', label: '24h', align: 'right' },
-  { field: 'priceChange7d', label: '7d', align: 'right', hideOnMobile: true },
-  { field: 'volume24h', label: 'Vol', align: 'right', hideOnMobile: true },
-  { field: 'liquidity', label: 'Liq', align: 'right' },
-  { field: 'risk', label: 'Risk', align: 'right' },
+  { field: 'trending', label: 'Hot', width: 'w-12' },
+  { field: 'price', label: 'Price', width: 'w-20' },
+  { field: 'priceChange1h', label: '1h', width: 'w-14', hideOnMobile: true },
+  { field: 'priceChange24h', label: '24h', width: 'w-14' },
+  { field: 'priceChange7d', label: '7d', width: 'w-14', hideOnMobile: true },
+  { field: 'volume24h', label: 'Vol', width: 'w-16', hideOnMobile: true },
+  { field: 'liquidity', label: 'Liq', width: 'w-16' },
+  { field: 'risk', label: 'Risk', width: 'w-14' },
 ];
 
 export function TokenTable({
@@ -79,6 +80,10 @@ export function TokenTable({
       let bValue: number;
 
       switch (sortConfig.field) {
+        case 'trending':
+          aValue = a.metrics.trendingScore ?? 0;
+          bValue = b.metrics.trendingScore ?? 0;
+          break;
         case 'price':
           aValue = a.metrics.price;
           bValue = b.metrics.price;
@@ -165,21 +170,20 @@ export function TokenTable({
         </div>
 
         {/* Table Header */}
-        <div className="flex px-7 py-3.5 text-neutral-600 text-sm">
-          {showStars && <div className="w-8"></div>}
-          <div className="w-10 text-left">#</div>
-          <div className="flex-1 text-left">Token</div>
+        <div className="flex items-center px-4 py-2.5 text-neutral-600 text-xs">
+          {showStars && <div className="w-6 flex-shrink-0"></div>}
+          <div className="w-6 flex-shrink-0 text-left">#</div>
+          <div className="flex-[2] min-w-0 text-left">Token</div>
           {COLUMNS.map((col) => (
             <div
               key={col.field}
               className={cn(
-                'w-24 cursor-pointer hover:text-neutral-400 transition-colors whitespace-nowrap',
-                col.align === 'right' ? 'text-right' : 'text-left',
-                col.hideOnMobile && 'hidden sm:block'
+                'flex-1 cursor-pointer hover:text-neutral-400 transition-colors text-right',
+                col.hideOnMobile && 'hidden sm:flex'
               )}
               onClick={() => handleSort(col.field)}
             >
-              <span className="inline-flex items-center gap-1">
+              <span className="inline-flex items-center justify-end gap-0.5 w-full">
                 {col.label}
                 {sortConfig.field === col.field && (
                   <span className="text-neutral-500">
@@ -194,8 +198,8 @@ export function TokenTable({
       </div>
 
       {/* Table */}
-      <div className="flex-1 overflow-x-auto">
-        <table className="w-full text-sm">
+      <div className="flex-1 overflow-y-auto">
+        <table className="w-full text-xs">
           <thead className="sr-only">
             <tr>
               {showStars && <th>Watch</th>}

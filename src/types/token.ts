@@ -27,6 +27,7 @@ export interface TokenMetrics {
   txns24h?: number;
   buys24h?: number;
   sells24h?: number;
+  trendingScore?: number;
   updatedAt: string;
 }
 
@@ -69,6 +70,7 @@ export interface TokenSearchResult {
 }
 
 export type SortField =
+  | 'trending'
   | 'price'
   | 'priceChange1h'
   | 'priceChange24h'

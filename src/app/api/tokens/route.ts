@@ -4,6 +4,7 @@ import { TokenWithMetrics } from '@/types/token';
 import { getRiskLevel } from '@/types/risk';
 import * as dexscreener from '@/lib/api/dexscreener';
 import * as db from '@/lib/db/supabase';
+import { calculateTrendingScores } from '@/lib/trending';
 
 export const runtime = 'edge';
 export const revalidate = 30;
@@ -113,6 +114,9 @@ export async function GET(request: NextRequest) {
         console.error('Failed to cache tokens:', err)
       );
     }
+
+    // Calculate trending scores for all tokens
+    tokens = calculateTrendingScores(tokens);
 
     return NextResponse.json({
       success: true,

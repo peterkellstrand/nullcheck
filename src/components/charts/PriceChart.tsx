@@ -9,6 +9,9 @@ interface PriceChartProps {
   chainId: ChainId;
   tokenAddress: string;
   height?: number;
+  showTimeframeSelector?: boolean;
+  externalTimeframe?: TimeframeKey;
+  compact?: boolean;
 }
 
 type TimeframeKey = '1h' | '4h' | '1d' | '1w';
@@ -20,12 +23,21 @@ const TIMEFRAMES: { key: TimeframeKey; label: string; interval: string }[] = [
   { key: '1w', label: '1W', interval: '4h' },
 ];
 
-export function PriceChart({ chainId, tokenAddress, height = 300 }: PriceChartProps) {
+export function PriceChart({
+  chainId,
+  tokenAddress,
+  height = 300,
+  showTimeframeSelector = true,
+  externalTimeframe,
+  compact = false,
+}: PriceChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
 
-  const [timeframe, setTimeframe] = useState<TimeframeKey>('1d');
+  const [internalTimeframe, setInternalTimeframe] = useState<TimeframeKey>('1d');
+  const timeframe = externalTimeframe ?? internalTimeframe;
+  const setTimeframe = setInternalTimeframe;
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -145,24 +157,26 @@ export function PriceChart({ chainId, tokenAddress, height = 300 }: PriceChartPr
   return (
     <div>
       {/* Timeframe Selector */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="text-xs text-neutral-500">price chart</div>
-        <div className="flex gap-1">
-          {TIMEFRAMES.map((tf) => (
-            <button
-              key={tf.key}
-              onClick={() => setTimeframe(tf.key)}
-              className={`px-2 py-1 text-xs transition-colors ${
-                timeframe === tf.key
-                  ? 'text-[#ffffff] bg-neutral-800'
-                  : 'text-neutral-500 hover:text-neutral-300'
-              }`}
-            >
-              {tf.label}
-            </button>
-          ))}
+      {showTimeframeSelector && (
+        <div className={`flex items-center justify-between ${compact ? 'mb-2' : 'mb-4'}`}>
+          <div className={`${compact ? 'text-[10px]' : 'text-xs'} text-neutral-500`}>price chart</div>
+          <div className="flex gap-1">
+            {TIMEFRAMES.map((tf) => (
+              <button
+                key={tf.key}
+                onClick={() => setTimeframe(tf.key)}
+                className={`px-2 py-1 ${compact ? 'text-[10px]' : 'text-xs'} transition-colors ${
+                  timeframe === tf.key
+                    ? 'text-[#ffffff] bg-neutral-800'
+                    : 'text-neutral-500 hover:text-neutral-300'
+                }`}
+              >
+                {tf.label}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Chart Container */}
       <div className="relative" style={{ height }}>

@@ -120,6 +120,12 @@ export default function Home() {
         </h1>
         <div className="flex items-center gap-4 mr-1">
           <Link
+            href="/charts"
+            className="text-neutral-500 hover:text-[#ffffff] text-sm transition-colors"
+          >
+            charts
+          </Link>
+          <Link
             href="/watchlist"
             className="text-neutral-500 hover:text-[#ffffff] text-sm transition-colors"
           >
