@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useChartGridStore } from '@/stores/chartGrid';
 import { TokenSearchResult } from '@/types/token';
 import { cn } from '@/lib/utils/format';
@@ -9,12 +9,15 @@ interface ChartTokenSelectorProps {
   compact?: boolean;
 }
 
+const DEBOUNCE_MS = 300;
+
 export function ChartTokenSelector({ compact = false }: ChartTokenSelectorProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<TokenSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
   const { addToken, tokens } = useChartGridStore();
 
@@ -29,27 +32,52 @@ export function ChartTokenSelector({ compact = false }: ChartTokenSelectorProps)
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleSearch = async (q: string) => {
-    setQuery(q);
-    if (q.length < 2) {
-      setResults([]);
-      setShowResults(false);
-      return;
-    }
+  // Cleanup debounce on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, []);
 
+  const performSearch = useCallback(async (q: string) => {
     setIsSearching(true);
-    setShowResults(true);
     try {
       const response = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+      if (!response.ok) throw new Error('Search failed');
       const data = await response.json();
       if (data.success) {
         setResults(data.results?.slice(0, 6) ?? []);
       }
     } catch (err) {
       console.error('Search error:', err);
+      setResults([]);
     } finally {
       setIsSearching(false);
     }
+  }, []);
+
+  const handleSearch = (q: string) => {
+    setQuery(q);
+
+    // Clear pending debounce
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+
+    if (q.length < 2) {
+      setResults([]);
+      setShowResults(false);
+      return;
+    }
+
+    setShowResults(true);
+
+    // Debounce the actual API call
+    debounceRef.current = setTimeout(() => {
+      performSearch(q);
+    }, DEBOUNCE_MS);
   };
 
   const handleAddToken = (result: TokenSearchResult) => {
@@ -84,7 +112,7 @@ export function ChartTokenSelector({ compact = false }: ChartTokenSelectorProps)
             />
             {/* Search results dropdown */}
             {showResults && results.length > 0 && (
-              <div className="absolute top-full left-0 mt-1 bg-black border border-neutral-700 w-64 z-50 max-h-64 overflow-y-auto">
+              <div className="absolute top-full left-0 mt-1 bg-black border border-neutral-700 w-48 sm:w-64 z-50 max-h-64 overflow-y-auto">
                 {results.map((result) => (
                   <button
                     key={`${result.chainId}-${result.address}`}
@@ -98,8 +126,8 @@ export function ChartTokenSelector({ compact = false }: ChartTokenSelectorProps)
                 ))}
               </div>
             )}
-            {showResults && isSearching && (
-              <div className="absolute top-full left-0 mt-1 bg-black border border-neutral-700 w-64 z-50 px-3 py-2 text-neutral-500 text-sm">
+            {showResults && isSearching && results.length === 0 && (
+              <div className="absolute top-full left-0 mt-1 bg-black border border-neutral-700 w-48 sm:w-64 z-50 px-3 py-2 text-neutral-500 text-sm">
                 searching...
               </div>
             )}

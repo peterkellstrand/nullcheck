@@ -29,6 +29,11 @@ export default function WatchlistPage() {
     try {
       setIsLoading(true);
       const response = await fetch('/api/watchlist/tokens');
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch watchlist: ${response.status}`);
+      }
+
       const data = await response.json();
 
       if (data.success && data.tokens) {

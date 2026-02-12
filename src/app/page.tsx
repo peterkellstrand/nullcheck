@@ -45,6 +45,10 @@ export default function Home() {
         body: JSON.stringify({ tokens: tokensToAnalyze }),
       });
 
+      if (!response.ok) {
+        throw new Error(`Risk API error: ${response.status}`);
+      }
+
       const data = await response.json();
 
       if (data.success && data.results) {
@@ -72,6 +76,11 @@ export default function Home() {
       try {
         setIsLoading(true);
         const response = await fetch('/api/tokens?limit=50');
+
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+
         const data = await response.json();
 
         if (data.success && data.tokens) {

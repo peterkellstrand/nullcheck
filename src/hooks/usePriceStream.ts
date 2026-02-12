@@ -30,9 +30,10 @@ export function usePriceStream(options: UsePriceStreamOptions = {}) {
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const mountedRef = useRef(true);
 
   const connect = useCallback(() => {
-    if (!enabled) return;
+    if (!enabled || !mountedRef.current) return;
 
     // Clean up existing connection
     if (eventSourceRef.current) {
@@ -79,9 +80,9 @@ export function usePriceStream(options: UsePriceStreamOptions = {}) {
         setError('Connection lost');
         eventSource.close();
 
-        // Attempt to reconnect after 5 seconds
+        // Attempt to reconnect after 5 seconds (only if still mounted)
         reconnectTimeoutRef.current = setTimeout(() => {
-          if (enabled) {
+          if (enabled && mountedRef.current) {
             connect();
           }
         }, 5000);
@@ -105,11 +106,14 @@ export function usePriceStream(options: UsePriceStreamOptions = {}) {
   }, []);
 
   useEffect(() => {
+    mountedRef.current = true;
+
     if (enabled) {
       connect();
     }
 
     return () => {
+      mountedRef.current = false;
       disconnect();
     };
   }, [enabled, connect, disconnect]);
