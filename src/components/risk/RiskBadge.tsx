@@ -45,7 +45,7 @@ export function RiskBadge({
   // Show "..." if no risk data yet
   if (score === undefined) {
     return (
-      <span className={cn('text-xs text-neutral-700', className)}>
+      <span className={cn('text-sm text-neutral-700', className)}>
         ...
       </span>
     );
@@ -56,7 +56,7 @@ export function RiskBadge({
       onClick={onClick}
       disabled={!onClick}
       className={cn(
-        'text-xs tabular-nums',
+        'text-sm tabular-nums',
         onClick && 'hover:underline cursor-pointer',
         !onClick && 'cursor-default',
         color,
@@ -70,6 +70,6 @@ export function RiskBadge({
 
 export function RiskBadgeSkeleton() {
   return (
-    <span className="text-xs text-neutral-800">...</span>
+    <span className="text-sm text-neutral-800">...</span>
   );
 }

@@ -35,15 +35,15 @@ export function TokenRow({ token, rank, onTokenClick }: TokenRowProps) {
         onClick={() => onTokenClick?.(token)}
       >
         {/* Rank */}
-        <td className="px-6 py-4 text-neutral-600 text-xs w-8">
+        <td className="px-7 py-5 text-neutral-600 text-sm w-10">
           {rank}
         </td>
 
         {/* Token Info */}
-        <td className="px-3 py-4">
-          <div className="flex items-center gap-2">
+        <td className="px-4 py-5">
+          <div className="flex items-center gap-2.5">
             {/* Logo */}
-            <div className="w-6 h-6 bg-neutral-900 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
+            <div className="w-7 h-7 bg-neutral-900 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
               {token.logoUrl && !imgError ? (
                 <img
                   src={token.logoUrl}
@@ -53,7 +53,7 @@ export function TokenRow({ token, rank, onTokenClick }: TokenRowProps) {
                   loading="lazy"
                 />
               ) : (
-                <span className="text-[9px] text-neutral-600">
+                <span className="text-[10px] text-neutral-600">
                   {token.symbol.slice(0, 2).toUpperCase()}
                 </span>
               )}
@@ -61,11 +61,11 @@ export function TokenRow({ token, rank, onTokenClick }: TokenRowProps) {
 
             {/* Symbol & Chain */}
             <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="text-neutral-200 text-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-neutral-200 text-base">
                   {token.symbol}
                 </span>
-                <span className="text-[9px] text-neutral-700">
+                <span className="text-[10px] text-neutral-700">
                   {chain.symbol.toLowerCase()}
                 </span>
               </div>
@@ -74,53 +74,53 @@ export function TokenRow({ token, rank, onTokenClick }: TokenRowProps) {
         </td>
 
         {/* Price */}
-        <td className="px-3 py-4 text-right">
-          <span className="text-neutral-300 tabular-nums text-sm">
+        <td className="px-4 py-5 text-right">
+          <span className="text-neutral-300 tabular-nums text-base">
             {formatPrice(token.metrics.price)}
           </span>
         </td>
 
         {/* 1h Change */}
-        <td className="px-3 py-4 text-right hidden sm:table-cell">
-          <span className={cn('tabular-nums text-sm', priceChangeColor(token.metrics.priceChange1h))}>
+        <td className="px-4 py-5 text-right hidden sm:table-cell">
+          <span className={cn('tabular-nums text-base', priceChangeColor(token.metrics.priceChange1h))}>
             {formatPercent(token.metrics.priceChange1h)}
           </span>
         </td>
 
         {/* 24h Change */}
-        <td className="px-3 py-4 text-right">
-          <span className={cn('tabular-nums text-sm', priceChangeColor(token.metrics.priceChange24h))}>
+        <td className="px-4 py-5 text-right">
+          <span className={cn('tabular-nums text-base', priceChangeColor(token.metrics.priceChange24h))}>
             {formatPercent(token.metrics.priceChange24h)}
           </span>
         </td>
 
         {/* 7d Change */}
-        <td className="px-3 py-4 text-right hidden sm:table-cell">
+        <td className="px-4 py-5 text-right hidden sm:table-cell">
           {token.metrics.priceChange7d !== 0 ? (
-            <span className={cn('tabular-nums text-sm', priceChangeColor(token.metrics.priceChange7d))}>
+            <span className={cn('tabular-nums text-base', priceChangeColor(token.metrics.priceChange7d))}>
               {formatPercent(token.metrics.priceChange7d)}
             </span>
           ) : (
-            <span className="text-neutral-700 text-sm">-</span>
+            <span className="text-neutral-700 text-base">-</span>
           )}
         </td>
 
         {/* Volume */}
-        <td className="px-3 py-4 text-right hidden sm:table-cell">
-          <span className="text-neutral-400 tabular-nums text-sm">
+        <td className="px-4 py-5 text-right hidden sm:table-cell">
+          <span className="text-neutral-400 tabular-nums text-base">
             {formatVolume(token.metrics.volume24h)}
           </span>
         </td>
 
         {/* Liquidity */}
-        <td className="px-3 py-4 text-right">
-          <span className="text-neutral-400 tabular-nums text-sm">
+        <td className="px-4 py-5 text-right">
+          <span className="text-neutral-400 tabular-nums text-base">
             {formatLiquidity(token.metrics.liquidity)}
           </span>
         </td>
 
         {/* Risk */}
-        <td className="px-3 py-4 text-right">
+        <td className="px-4 py-5 text-right">
           <RiskBadge
             risk={token.risk}
             onClick={(e) => {

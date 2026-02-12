@@ -110,14 +110,14 @@ export default function Home() {
 
   return (
     <>
-      <div className="w-full max-w-3xl relative">
+      <div className="w-full max-w-4xl relative">
       {/* Title Row */}
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl sm:text-3xl text-neutral-100 ml-1">
+      <div className="flex items-center justify-between mb-5">
+        <h1 className="text-3xl sm:text-4xl text-neutral-100 ml-1">
           null//check
         </h1>
         {isConnected && (
-          <span className="text-xs text-[#ffffff] mr-1 animate-pulse-slow">live</span>
+          <span className="text-sm text-[#ffffff] mr-1 animate-pulse-slow">live</span>
         )}
       </div>
 
@@ -125,7 +125,7 @@ export default function Home() {
       <div className="border-2 border-[#ffffff] bg-black">
         {/* Status bar */}
         {(statusMessage || error) && (
-          <div className="px-4 py-2 border-b border-[#ffffff] text-xs text-neutral-500">
+          <div className="px-5 py-2.5 border-b border-[#ffffff] text-sm text-neutral-500">
             {error ? (
               <span className="text-red-500">{error}</span>
             ) : (
@@ -135,7 +135,7 @@ export default function Home() {
         )}
 
         {/* Token Table */}
-        <div className="h-[70vh] overflow-auto">
+        <div className="h-[80vh] overflow-auto">
           <TokenTable
             tokens={tokens}
             isLoading={isLoading}

@@ -12,12 +12,26 @@ export async function GET(request: NextRequest) {
 
   const stream = new ReadableStream({
     async start(controller) {
+      let isActive = true;
+
+      // Helper to safely enqueue data
+      const safeEnqueue = (data: string) => {
+        if (!isActive) return false;
+        try {
+          controller.enqueue(encoder.encode(data));
+          return true;
+        } catch {
+          isActive = false;
+          return false;
+        }
+      };
+
       // Send initial connection message
-      controller.enqueue(
-        encoder.encode(`data: ${JSON.stringify({ type: 'connected', timestamp: Date.now() })}\n\n`)
-      );
+      safeEnqueue(`data: ${JSON.stringify({ type: 'connected', timestamp: Date.now() })}\n\n`);
 
       const sendPriceUpdates = async () => {
+        if (!isActive) return;
+
         try {
           const chains: ChainId[] = ['ethereum', 'base', 'solana'];
           const updates: Record<string, {
@@ -55,21 +69,18 @@ export async function GET(request: NextRequest) {
           });
 
           // Send price update event
-          if (Object.keys(updates).length > 0) {
-            controller.enqueue(
-              encoder.encode(`data: ${JSON.stringify({
-                type: 'prices',
-                updates,
-                timestamp: Date.now()
-              })}\n\n`)
-            );
+          if (Object.keys(updates).length > 0 && isActive) {
+            safeEnqueue(`data: ${JSON.stringify({
+              type: 'prices',
+              updates,
+              timestamp: Date.now()
+            })}\n\n`);
           }
         } catch (error) {
-          console.error('SSE price update error:', error);
-          // Send error event but keep connection alive
-          controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify({ type: 'error', message: 'Failed to fetch prices' })}\n\n`)
-          );
+          if (isActive) {
+            console.error('SSE price update error:', error);
+            safeEnqueue(`data: ${JSON.stringify({ type: 'error', message: 'Failed to fetch prices' })}\n\n`);
+          }
         }
       };
 
@@ -81,8 +92,13 @@ export async function GET(request: NextRequest) {
 
       // Handle client disconnect
       request.signal.addEventListener('abort', () => {
+        isActive = false;
         clearInterval(intervalId);
-        controller.close();
+        try {
+          controller.close();
+        } catch {
+          // Already closed
+        }
       });
     },
   });

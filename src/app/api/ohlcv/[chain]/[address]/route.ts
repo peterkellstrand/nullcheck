@@ -44,14 +44,25 @@ export async function GET(
     // First, get the pool address for this token from DexScreener
     const dexResponse = await fetch(
       `https://api.dexscreener.com/latest/dex/tokens/${address}`,
-      { headers: { Accept: 'application/json' } }
+      {
+        headers: {
+          Accept: 'application/json',
+          'User-Agent': 'nullcheck/1.0',
+        },
+        next: { revalidate: 60 }, // Cache for 60 seconds to reduce rate limiting
+      }
     );
 
     if (!dexResponse.ok) {
-      return NextResponse.json(
-        { success: false, error: 'Failed to find token pools' },
-        { status: 404 }
-      );
+      // If DexScreener fails, generate placeholder chart data
+      console.log(`DexScreener returned ${dexResponse.status} for ${address}`);
+      const placeholderOhlcv = generatePlaceholderOHLCV(0.001, limit, interval);
+      return NextResponse.json({
+        success: true,
+        ohlcv: placeholderOhlcv,
+        fallback: true,
+        reason: 'dexscreener_unavailable',
+      });
     }
 
     const dexData = await dexResponse.json();
@@ -62,15 +73,24 @@ export async function GET(
     };
 
     // Find the highest liquidity pool on this chain
-    const pools = dexData.pairs?.filter(
+    let pools = dexData.pairs?.filter(
       (p: { chainId: string }) => p.chainId === chainMap[chainId]
     ) || [];
 
+    // If no pools on this chain, try any available pools
+    if (pools.length === 0 && dexData.pairs?.length > 0) {
+      pools = dexData.pairs;
+    }
+
     if (pools.length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'No pools found for this token' },
-        { status: 404 }
-      );
+      // Generate placeholder chart data
+      const placeholderOhlcv = generatePlaceholderOHLCV(0.001, limit, interval);
+      return NextResponse.json({
+        success: true,
+        ohlcv: placeholderOhlcv,
+        fallback: true,
+        reason: 'no_pools',
+      });
     }
 
     const mainPool = pools.reduce((a: { liquidity?: { usd: number } }, b: { liquidity?: { usd: number } }) =>
@@ -85,7 +105,11 @@ export async function GET(
     const geckoUrl = `https://api.geckoterminal.com/api/v2/networks/${network}/pools/${mainPool.pairAddress}/ohlcv/${timeframe}?aggregate=${aggregate}&limit=${limit}`;
 
     const geckoResponse = await fetch(geckoUrl, {
-      headers: { Accept: 'application/json' },
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': 'nullcheck/1.0',
+      },
+      next: { revalidate: 30 }, // Cache for 30 seconds
     });
 
     if (!geckoResponse.ok) {
