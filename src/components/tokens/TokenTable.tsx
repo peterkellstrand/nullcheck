@@ -11,6 +11,7 @@ interface TokenTableProps {
   tokens: TokenWithMetrics[];
   isLoading?: boolean;
   onTokenClick?: (token: TokenWithMetrics) => void;
+  showStars?: boolean;
 }
 
 type SortConfig = {
@@ -38,6 +39,7 @@ export function TokenTable({
   tokens,
   isLoading = false,
   onTokenClick,
+  showStars = true,
 }: TokenTableProps) {
   const [selectedChain, setSelectedChain] = useState<ChainId | undefined>();
   const [searchQuery, setSearchQuery] = useState('');
@@ -116,7 +118,7 @@ export function TokenTable({
     return result;
   }, [tokens, searchQuery, selectedChain, sortConfig]);
 
-  const totalColumns = COLUMNS.length + 2; // +2 for rank and token columns
+  const totalColumns = COLUMNS.length + 2 + (showStars ? 1 : 0); // +2 for rank and token, +1 for star
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -164,6 +166,7 @@ export function TokenTable({
 
         {/* Table Header */}
         <div className="flex px-7 py-3.5 text-neutral-600 text-sm">
+          {showStars && <div className="w-8"></div>}
           <div className="w-10 text-left">#</div>
           <div className="flex-1 text-left">Token</div>
           {COLUMNS.map((col) => (
@@ -195,6 +198,7 @@ export function TokenTable({
         <table className="w-full text-sm">
           <thead className="sr-only">
             <tr>
+              {showStars && <th>Watch</th>}
               <th>#</th>
               <th>Token</th>
               {COLUMNS.map((col) => (
@@ -225,6 +229,7 @@ export function TokenTable({
                   token={token}
                   rank={index + 1}
                   onTokenClick={onTokenClick}
+                  showStar={showStars}
                 />
               ))
             )}

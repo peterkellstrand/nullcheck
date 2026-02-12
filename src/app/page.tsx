@@ -2,11 +2,13 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { TokenTable } from '@/components/tokens/TokenTable';
 import { TokenWithMetrics } from '@/types/token';
 import { RiskScore } from '@/types/risk';
 import { useTokensStore } from '@/stores/tokens';
 import { usePriceStream } from '@/hooks/usePriceStream';
+import { AuthButton } from '@/components/auth/AuthButton';
 
 export default function Home() {
   const router = useRouter();
@@ -116,9 +118,18 @@ export default function Home() {
         <h1 className="text-3xl sm:text-4xl text-neutral-100 ml-1">
           null//check
         </h1>
-        {isConnected && (
-          <span className="text-sm text-[#ffffff] mr-1 animate-pulse-slow">live</span>
-        )}
+        <div className="flex items-center gap-4 mr-1">
+          <Link
+            href="/watchlist"
+            className="text-neutral-500 hover:text-[#ffffff] text-sm transition-colors"
+          >
+            watchlist
+          </Link>
+          <AuthButton />
+          {isConnected && (
+            <span className="text-sm text-[#ffffff] animate-pulse-slow">live</span>
+          )}
+        </div>
       </div>
 
       {/* Main Terminal Window */}

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { TokenWithMetrics } from '@/types/token';
 import { RiskBadge } from '@/components/risk/RiskBadge';
 import { RiskPanel } from '@/components/risk/RiskPanel';
+import { StarButton } from '@/components/watchlist/StarButton';
 import {
   formatPrice,
   formatPercent,
@@ -17,9 +18,10 @@ interface TokenRowProps {
   token: TokenWithMetrics;
   rank: number;
   onTokenClick?: (token: TokenWithMetrics) => void;
+  showStar?: boolean;
 }
 
-export function TokenRow({ token, rank, onTokenClick }: TokenRowProps) {
+export function TokenRow({ token, rank, onTokenClick, showStar = true }: TokenRowProps) {
   const [showRiskPanel, setShowRiskPanel] = useState(false);
   const [imgError, setImgError] = useState(false);
 
@@ -34,8 +36,15 @@ export function TokenRow({ token, rank, onTokenClick }: TokenRowProps) {
         className="border-b border-neutral-900 hover:bg-neutral-900/50 transition-colors cursor-pointer"
         onClick={() => onTokenClick?.(token)}
       >
+        {/* Star */}
+        {showStar && (
+          <td className="pl-4 pr-1 py-5 w-8">
+            <StarButton chainId={token.chainId} address={token.address} />
+          </td>
+        )}
+
         {/* Rank */}
-        <td className="px-7 py-5 text-neutral-600 text-sm w-10">
+        <td className="px-4 py-5 text-neutral-600 text-sm w-10">
           {rank}
         </td>
 
@@ -134,7 +143,7 @@ export function TokenRow({ token, rank, onTokenClick }: TokenRowProps) {
       {/* Expandable Risk Panel */}
       {showRiskPanel && token.risk && (
         <tr>
-          <td colSpan={9} className="p-0">
+          <td colSpan={showStar ? 10 : 9} className="p-0">
             <RiskPanel
               risk={token.risk}
               onClose={() => setShowRiskPanel(false)}
