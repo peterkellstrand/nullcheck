@@ -5,6 +5,7 @@ import { Token } from '@/types/token';
 const NETWORK_MAP: Record<Exclude<ChainId, 'solana'>, string> = {
   ethereum: 'eth-mainnet',
   base: 'base-mainnet',
+  arbitrum: 'arb-mainnet',
 };
 
 function getBaseUrl(chainId: Exclude<ChainId, 'solana'>): string {

@@ -1,4 +1,4 @@
-export type ChainId = 'ethereum' | 'base' | 'solana';
+export type ChainId = 'ethereum' | 'base' | 'solana' | 'arbitrum';
 
 export interface Chain {
   id: ChainId;
@@ -54,5 +54,18 @@ export const CHAINS: Record<ChainId, Chain> = {
       decimals: 9,
     },
     isEvm: false,
+  },
+  arbitrum: {
+    id: 'arbitrum',
+    name: 'Arbitrum',
+    symbol: 'ETH',
+    rpcUrl: 'https://arb1.arbitrum.io/rpc',
+    explorerUrl: 'https://arbiscan.io',
+    nativeCurrency: {
+      name: 'Ether',
+      symbol: 'ETH',
+      decimals: 18,
+    },
+    isEvm: true,
   },
 };

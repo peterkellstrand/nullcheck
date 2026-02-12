@@ -13,6 +13,7 @@ const CHAIN_MAP: Record<ChainId, string> = {
   ethereum: 'ethereum',
   base: 'base',
   solana: 'solana',
+  arbitrum: 'arbitrum',
 };
 
 async function fetchApi<T>(endpoint: string): Promise<T> {

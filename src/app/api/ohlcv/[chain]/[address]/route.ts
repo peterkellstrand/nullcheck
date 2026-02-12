@@ -9,6 +9,7 @@ const GECKO_NETWORK_MAP: Record<ChainId, string> = {
   ethereum: 'eth',
   base: 'base',
   solana: 'solana',
+  arbitrum: 'arbitrum',
 };
 
 // Map interval strings to GeckoTerminal timeframes
@@ -70,6 +71,7 @@ export async function GET(
       ethereum: 'ethereum',
       base: 'base',
       solana: 'solana',
+      arbitrum: 'arbitrum',
     };
 
     // Find the highest liquidity pool on this chain

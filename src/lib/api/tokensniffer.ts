@@ -8,6 +8,7 @@ const CHAIN_ID_MAP: Record<ChainId, number> = {
   ethereum: 1,
   base: 8453,
   solana: -1, // Not supported
+  arbitrum: 42161,
 };
 
 async function fetchApi<T>(endpoint: string, apiKey: string): Promise<T> {

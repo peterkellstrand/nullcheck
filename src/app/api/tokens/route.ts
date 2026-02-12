@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
 
     // Cache miss or stale - fetch fresh data
     if (!fromCache) {
-      const chains = chainId ? [chainId] : (['ethereum', 'base', 'solana'] as ChainId[]);
+      const chains = chainId ? [chainId] : (['ethereum', 'base', 'solana', 'arbitrum'] as ChainId[]);
 
       const pairPromises = chains.map(async (chain) => {
         try {
