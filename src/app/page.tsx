@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { TokenTable } from '@/components/tokens/TokenTable';
 import { TokenWithMetrics } from '@/types/token';
 import { RiskScore } from '@/types/risk';
@@ -8,6 +9,7 @@ import { useTokensStore } from '@/stores/tokens';
 import { usePriceStream } from '@/hooks/usePriceStream';
 
 export default function Home() {
+  const router = useRouter();
   const { tokens, setTokens } = useTokensStore();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -94,8 +96,7 @@ export default function Home() {
   }, [fetchRiskScores, setTokens]);
 
   const handleTokenClick = (token: TokenWithMetrics) => {
-    console.log('Token clicked:', token);
-    // In Phase 2, this would navigate to token detail page
+    router.push(`/token/${token.chainId}/${token.address}`);
   };
 
   // Build status message
