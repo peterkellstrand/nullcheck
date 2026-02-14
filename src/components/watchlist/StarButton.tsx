@@ -3,8 +3,10 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useWatchlist } from '@/hooks/useWatchlist';
+import { useSubscription } from '@/hooks/useSubscription';
 import { ChainId } from '@/types/chain';
 import { AuthModal } from '@/components/auth/AuthModal';
+import { UpgradePrompt } from '@/components/subscription/UpgradePrompt';
 
 interface StarButtonProps {
   chainId: ChainId;
@@ -13,11 +15,14 @@ interface StarButtonProps {
 
 export function StarButton({ chainId, address }: StarButtonProps) {
   const { isAuthenticated } = useAuth();
-  const { isWatched, toggleWatch } = useWatchlist();
+  const { isWatched, toggleWatch, watchedTokens } = useWatchlist();
+  const { limits, canAddToWatchlist } = useSubscription();
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
 
   const watched = isWatched(chainId, address);
+  const currentCount = watchedTokens.length;
 
   const handleClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -29,8 +34,20 @@ export function StarButton({ chainId, address }: StarButtonProps) {
 
     if (isUpdating) return;
 
+    // Check limit before adding (not removing)
+    if (!watched && !canAddToWatchlist(currentCount)) {
+      setShowUpgradePrompt(true);
+      return;
+    }
+
     setIsUpdating(true);
-    await toggleWatch(chainId, address);
+    const result = await toggleWatch(chainId, address);
+
+    // Handle limit error from API
+    if (!result.success && result.error === 'LIMIT_REACHED') {
+      setShowUpgradePrompt(true);
+    }
+
     setIsUpdating(false);
   };
 
@@ -49,6 +66,13 @@ export function StarButton({ chainId, address }: StarButtonProps) {
         {watched ? '★' : '☆'}
       </button>
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+      <UpgradePrompt
+        isOpen={showUpgradePrompt}
+        onClose={() => setShowUpgradePrompt(false)}
+        feature="watchlist"
+        currentCount={currentCount}
+        limit={limits.watchlistTokens}
+      />
     </>
   );
 }

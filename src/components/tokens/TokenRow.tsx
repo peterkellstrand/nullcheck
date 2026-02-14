@@ -5,6 +5,7 @@ import { TokenWithMetrics } from '@/types/token';
 import { RiskBadge } from '@/components/risk/RiskBadge';
 import { RiskPanel } from '@/components/risk/RiskPanel';
 import { StarButton } from '@/components/watchlist/StarButton';
+import { WhaleActivityBadge } from '@/components/whale';
 import {
   formatPrice,
   formatPercent,
@@ -71,10 +72,10 @@ export function TokenRow({ token, rank, onTokenClick, showStar = true }: TokenRo
 
               {/* Symbol & Chain */}
               <div className="min-w-0 flex items-center gap-1.5">
-                <span className="text-neutral-200 text-sm truncate">
+                <span className="text-[var(--text-primary)] text-sm truncate">
                   {token.symbol}
                 </span>
-                <span className="text-[9px] text-neutral-700 flex-shrink-0">
+                <span className="text-[9px] text-[var(--text-muted)] flex-shrink-0">
                   {chain.symbol.toLowerCase()}
                 </span>
               </div>
@@ -98,7 +99,7 @@ export function TokenRow({ token, rank, onTokenClick, showStar = true }: TokenRo
 
             {/* Price */}
             <div className="flex-1 text-right">
-              <span className="text-neutral-300 tabular-nums text-xs">
+              <span className="text-[var(--text-primary)] tabular-nums text-xs">
                 {formatPrice(token.metrics.price)}
               </span>
             </div>
@@ -130,16 +131,24 @@ export function TokenRow({ token, rank, onTokenClick, showStar = true }: TokenRo
 
             {/* Volume */}
             <div className="flex-1 text-right hidden sm:block">
-              <span className="text-neutral-400 tabular-nums text-xs">
+              <span className="text-[var(--text-secondary)] tabular-nums text-xs">
                 {formatVolume(token.metrics.volume24h)}
               </span>
             </div>
 
             {/* Liquidity */}
             <div className="flex-1 text-right">
-              <span className="text-neutral-400 tabular-nums text-xs">
+              <span className="text-[var(--text-secondary)] tabular-nums text-xs">
                 {formatLiquidity(token.metrics.liquidity)}
               </span>
+            </div>
+
+            {/* Whale Activity */}
+            <div className="flex-1 text-right hidden sm:block">
+              <WhaleActivityBadge
+                buyCount={Math.floor((token.metrics.buys24h || 0) * 0.1)}
+                sellCount={Math.floor((token.metrics.sells24h || 0) * 0.1)}
+              />
             </div>
 
             {/* Risk */}

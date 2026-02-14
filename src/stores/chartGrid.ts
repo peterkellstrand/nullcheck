@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { ChainId } from '@/types/chain';
+import { TIER_LIMITS } from '@/types/subscription';
 
 export interface ChartToken {
   chainId: ChainId;
@@ -18,7 +19,7 @@ interface ChartGridState {
   timeframe: ChartTimeframe;
 
   // Actions
-  addToken: (token: ChartToken) => void;
+  addToken: (token: ChartToken, maxTokens?: number) => void;
   removeToken: (chainId: ChainId, address: string) => void;
   clearTokens: () => void;
   setLayout: (layout: GridLayout) => void;
@@ -26,10 +27,16 @@ interface ChartGridState {
   reorderTokens: (fromIndex: number, toIndex: number) => void;
 }
 
-const MAX_TOKENS = 9;
+// Export limits for use in components
+export const CHART_LIMITS = {
+  free: TIER_LIMITS.free.chartSlots,
+  pro: TIER_LIMITS.pro.chartSlots,
+};
 
 const getKey = (chainId: ChainId, address: string) =>
   `${chainId}-${address.toLowerCase()}`;
+
+export { getKey as getChartTokenKey };
 
 export const useChartGridStore = create<ChartGridState>()(
   persist(
@@ -38,7 +45,7 @@ export const useChartGridStore = create<ChartGridState>()(
       layout: 'auto',
       timeframe: '1d',
 
-      addToken: (token) => {
+      addToken: (token, maxTokens = CHART_LIMITS.pro) => {
         const state = get();
         // Prevent duplicates
         const exists = state.tokens.some(
@@ -46,8 +53,8 @@ export const useChartGridStore = create<ChartGridState>()(
         );
         if (exists) return;
 
-        // Limit to max tokens
-        if (state.tokens.length >= MAX_TOKENS) return;
+        // Limit to max tokens based on subscription tier
+        if (state.tokens.length >= maxTokens) return;
 
         set({ tokens: [...state.tokens, token] });
       },

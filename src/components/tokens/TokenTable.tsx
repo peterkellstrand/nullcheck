@@ -33,6 +33,7 @@ const COLUMNS: {
   { field: 'priceChange7d', label: '7d', width: 'w-14', hideOnMobile: true },
   { field: 'volume24h', label: 'Vol', width: 'w-16', hideOnMobile: true },
   { field: 'liquidity', label: 'Liq', width: 'w-16' },
+  { field: 'whales', label: 'Whales', width: 'w-14', hideOnMobile: true },
   { field: 'risk', label: 'Risk', width: 'w-14' },
 ];
 
@@ -112,6 +113,11 @@ export function TokenTable({
           aValue = a.risk?.totalScore ?? 50;
           bValue = b.risk?.totalScore ?? 50;
           break;
+        case 'whales':
+          // Sort by total transactions as a proxy for whale activity
+          aValue = (a.metrics.buys24h || 0) + (a.metrics.sells24h || 0);
+          bValue = (b.metrics.buys24h || 0) + (b.metrics.sells24h || 0);
+          break;
         default:
           aValue = a.metrics.volume24h;
           bValue = b.metrics.volume24h;
@@ -128,18 +134,18 @@ export function TokenTable({
   return (
     <div className="w-full h-full flex flex-col">
       {/* Sticky Header - Controls + Table Header */}
-      <div className="sticky top-0 z-20 bg-black">
+      <div className="sticky top-0 z-20 bg-[var(--bg-primary)]">
         {/* Header Controls */}
-        <div className="px-7 py-2.5">
-          <div className="flex items-center justify-between gap-4">
+        <div className="px-4 sm:px-7 py-2.5">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4">
             {/* Chain Filter */}
-            <div className="flex items-center gap-2.5 text-base">
-              <span className="text-neutral-500">chain:</span>
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2.5 text-sm sm:text-base">
+              <span className="text-[var(--text-muted)]">chain:</span>
               <button
                 onClick={() => setSelectedChain(undefined)}
                 className={cn(
-                  'hover:text-neutral-100 transition-colors',
-                  !selectedChain ? 'text-neutral-100' : 'text-neutral-500'
+                  'hover:text-[var(--text-primary)] transition-colors',
+                  !selectedChain ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'
                 )}
               >
                 all
@@ -149,8 +155,8 @@ export function TokenTable({
                   key={chain.id}
                   onClick={() => setSelectedChain(chain.id)}
                   className={cn(
-                    'hover:text-neutral-100 transition-colors',
-                    selectedChain === chain.id ? 'text-neutral-100' : 'text-neutral-500'
+                    'hover:text-[var(--text-primary)] transition-colors',
+                    selectedChain === chain.id ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'
                   )}
                 >
                   {chain.id}
@@ -164,13 +170,13 @@ export function TokenTable({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="search"
-              className="bg-transparent border-none outline-none text-neutral-200 text-base w-28 sm:w-36 placeholder:text-neutral-500 focus:placeholder:text-transparent caret-transparent p-0"
+              className="bg-transparent border-none outline-none text-[var(--text-primary)] text-sm sm:text-base w-24 sm:w-36 placeholder:text-[var(--text-muted)] focus:placeholder:text-transparent caret-transparent p-0"
             />
           </div>
         </div>
 
         {/* Table Header */}
-        <div className="flex items-center px-4 py-2.5 text-neutral-600 text-xs">
+        <div className="flex items-center px-4 py-2.5 text-[var(--text-muted)] text-xs">
           {showStars && <div className="w-6 flex-shrink-0"></div>}
           <div className="w-6 flex-shrink-0 text-left">#</div>
           <div className="flex-[2] min-w-0 text-left">Token</div>
@@ -178,7 +184,7 @@ export function TokenTable({
             <div
               key={col.field}
               className={cn(
-                'flex-1 cursor-pointer hover:text-neutral-400 transition-colors text-right',
+                'flex-1 cursor-pointer hover:text-[var(--text-secondary)] transition-colors text-right',
                 col.hideOnMobile && 'hidden sm:flex'
               )}
               onClick={() => handleSort(col.field)}
@@ -186,7 +192,7 @@ export function TokenTable({
               <span className="inline-flex items-center justify-end gap-0.5 w-full">
                 {col.label}
                 {sortConfig.field === col.field && (
-                  <span className="text-neutral-500">
+                  <span className="text-[var(--text-secondary)]">
                     {sortConfig.direction === 'desc' ? '↓' : '↑'}
                   </span>
                 )}
@@ -194,7 +200,7 @@ export function TokenTable({
             </div>
           ))}
         </div>
-        <div className="border-b border-[#ffffff]" />
+        <div className="border-b border-[var(--border)]" />
       </div>
 
       {/* Table */}

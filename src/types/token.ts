@@ -80,7 +80,8 @@ export type SortField =
   | 'marketCap'
   | 'holders'
   | 'txns24h'
-  | 'risk';
+  | 'risk'
+  | 'whales';
 
 export type SortDirection = 'asc' | 'desc';
 

@@ -7,6 +7,7 @@ import { TokenWithMetrics } from '@/types/token';
 import { RiskScore } from '@/types/risk';
 import { RiskPanel } from '@/components/risk/RiskPanel';
 import { PriceChart } from '@/components/charts/PriceChart';
+import { TopHoldersPanel, WhaleActivityFeed } from '@/components/whale';
 import { formatPrice, formatNumber, formatPercent } from '@/lib/utils/format';
 
 export default function TokenDetailPage() {
@@ -229,6 +230,15 @@ export default function TokenDetailPage() {
             </div>
           </div>
         )}
+
+        {/* Whale Data */}
+        <div className="p-6 border-b border-[#ffffff]">
+          <div className="text-xs text-neutral-500 mb-3">whale data</div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <TopHoldersPanel chainId={chain} tokenAddress={address} />
+            <WhaleActivityFeed chainId={chain} tokenAddress={address} />
+          </div>
+        </div>
 
         {/* Risk Analysis */}
         {risk && (

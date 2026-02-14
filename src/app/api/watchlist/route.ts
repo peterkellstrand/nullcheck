@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseServer } from '@/lib/db/supabase-server';
+import { getSupabaseServer, getSupabaseServerWithServiceRole } from '@/lib/db/supabase-server';
 import { getWatchedTokenKeys, addToWatchlist } from '@/lib/db/watchlist';
+import { getUserSubscription } from '@/lib/db/subscription';
 import { ChainId } from '@/types/chain';
+import { TIER_LIMITS } from '@/types/subscription';
 
 // GET - Fetch user's watchlist token keys
 export async function GET() {
@@ -47,6 +49,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { success: false, error: 'Missing chainId or address' },
         { status: 400 }
+      );
+    }
+
+    // Check subscription limits
+    const serviceSupabase = await getSupabaseServerWithServiceRole();
+    const subscription = await getUserSubscription(serviceSupabase, user.id);
+    const tier = subscription?.tier === 'pro' && subscription?.status === 'active' ? 'pro' : 'free';
+    const limit = TIER_LIMITS[tier].watchlistTokens;
+
+    const currentKeys = await getWatchedTokenKeys(supabase, user.id);
+    if (currentKeys.length >= limit) {
+      return NextResponse.json(
+        { success: false, error: 'LIMIT_REACHED', limit },
+        { status: 403 }
       );
     }
 

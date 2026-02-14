@@ -5,6 +5,8 @@ import { useState, useEffect, createContext, type ReactNode } from 'react';
 import { User, AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { getSupabaseBrowser } from '@/lib/db/supabase-browser';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
+import { ThemeProvider } from '@/components/ThemeProvider';
+import { SubscriptionProvider } from '@/components/subscription/SubscriptionProvider';
 
 interface AuthContextType {
   user: User | null;
@@ -65,7 +67,11 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <SubscriptionProvider>
+            <ThemeProvider>{children}</ThemeProvider>
+          </SubscriptionProvider>
+        </AuthProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );
