@@ -61,6 +61,41 @@ The DEX screener landscape is cluttered with promoted tokens, paid placements, a
 - **Stripe Integration** — Secure payment processing
 - **Customer Portal** — Manage subscription anytime
 
+### API for AI Agents & Bots
+
+PRO subscribers can create API keys to access null//check data programmatically. Perfect for trading bots, AI agents, and automated analysis.
+
+**3-Tier Pricing:**
+
+| Tier | API Calls/Day | Batch Size | Price |
+|------|---------------|------------|-------|
+| Starter | 10,000 | 10 tokens | Free with PRO |
+| Builder | 100,000 | 50 tokens | $19/month |
+| Scale | 1,000,000 | 100 tokens | $49/month |
+
+**Authentication:**
+```bash
+# Header authentication
+curl -H "x-api-key: nk_your_key_here" https://nullcheck.io/api/tokens
+
+# Query parameter authentication
+curl "https://nullcheck.io/api/tokens?api_key=nk_your_key_here"
+```
+
+**Available Endpoints:**
+- `GET /api/tokens` — List trending tokens with metrics
+- `GET /api/token/{chain}/{address}` — Token details and risk score
+- `GET /api/whale/holders/{chain}/{address}` — Top token holders
+- `GET /api/whale/activity/{chain}/{address}` — Whale transaction activity
+- `GET /api/risk/{chain}/{address}` — Risk analysis for a token
+- `POST /api/risk/batch` — Batch risk analysis (up to batch size limit)
+
+**Features:**
+- Daily usage tracking and limits
+- Automatic rate limiting per key
+- Usage dashboard in the UI
+- Revoke keys anytime
+
 ### UI/UX
 - **Terminal Aesthetic** — Monochrome design with SF Mono typography
 - **Dark/Light Mode** — Toggle between themes
@@ -108,6 +143,7 @@ Tokens are analyzed across multiple risk vectors:
 src/
 ├── app/                       # Next.js App Router
 │   ├── api/
+│   │   ├── keys/             # API key management (CRUD)
 │   │   ├── ohlcv/            # OHLCV chart data
 │   │   ├── risk/             # Risk analysis (single + batch)
 │   │   ├── search/           # Token search
@@ -120,6 +156,7 @@ src/
 │   │   └── whale/            # Whale tracking (holders, activity)
 │   ├── auth/callback/        # OAuth callback
 │   ├── charts/               # Multi-chart page
+│   ├── keys/                 # API key management page
 │   ├── pricing/              # Subscription pricing
 │   ├── token/[chain]/[addr]/ # Token detail page
 │   ├── watchlist/            # Watchlist page
@@ -144,6 +181,8 @@ src/
 ├── lib/
 │   ├── api/                  # External API clients
 │   │   └── whale.ts          # Whale data (holders, activity)
+│   ├── auth/                 # Authentication helpers
+│   │   └── verify-api-access.ts  # API key + session verification
 │   ├── db/                   # Supabase clients + helpers
 │   ├── risk/                 # Risk analysis engine
 │   ├── stripe/               # Stripe client + config
@@ -172,6 +211,15 @@ user_subscriptions (
   user_id, stripe_customer_id, stripe_subscription_id,
   tier, status, current_period_start, current_period_end
 )
+
+-- API keys for agents/bots
+api_keys (
+  id, user_id, api_key, name, tier,
+  daily_limit, created_at, last_used, is_revoked
+)
+
+-- API usage tracking
+api_usage (api_key_id, date, request_count)
 
 -- Token data (cached)
 tokens, token_metrics, risk_scores, pools
@@ -268,6 +316,7 @@ stripe listen --forward-to localhost:3000/api/stripe/webhook
 - [x] Dark/light theme toggle
 - [x] PRO subscription system
 - [x] Whale tracking (top holders, activity feed)
+- [x] API keys for AI agents/bots (3-tier pricing)
 
 ### In Progress
 - [ ] Price alerts (Telegram/Discord)
