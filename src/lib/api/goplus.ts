@@ -20,6 +20,7 @@ const CHAIN_ID_MAP: Record<ChainId, string> = {
   base: '8453',
   solana: 'solana',
   arbitrum: '42161',
+  polygon: '137',
 };
 
 async function fetchApi<T>(endpoint: string): Promise<T> {

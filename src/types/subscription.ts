@@ -1,6 +1,6 @@
 export type SubscriptionTier = 'free' | 'pro';
 export type SubscriptionStatus = 'active' | 'canceled' | 'past_due' | 'trialing';
-export type AgentTier = 'agent_basic' | 'agent_pro';
+export type AgentTier = 'starter' | 'builder' | 'scale';
 
 export interface SubscriptionLimits {
   watchlistTokens: number;
@@ -13,6 +13,8 @@ export interface SubscriptionLimits {
 export interface AgentLimits {
   apiCallsPerDay: number;
   batchSize: number;
+  price: number;
+  label: string;
 }
 
 export const TIER_LIMITS: Record<SubscriptionTier, SubscriptionLimits> = {
@@ -33,13 +35,23 @@ export const TIER_LIMITS: Record<SubscriptionTier, SubscriptionLimits> = {
 };
 
 export const AGENT_LIMITS: Record<AgentTier, AgentLimits> = {
-  agent_basic: {
-    apiCallsPerDay: 5000,
+  starter: {
+    apiCallsPerDay: 10000,
     batchSize: 10,
+    price: 0,
+    label: 'Starter',
   },
-  agent_pro: {
-    apiCallsPerDay: Infinity,
+  builder: {
+    apiCallsPerDay: 100000,
+    batchSize: 50,
+    price: 19,
+    label: 'Builder',
+  },
+  scale: {
+    apiCallsPerDay: 1000000,
     batchSize: 100,
+    price: 49,
+    label: 'Scale',
   },
 };
 
@@ -48,7 +60,7 @@ export interface ApiKey {
   userId: string;
   apiKey: string;
   name: string;
-  tier: 'basic' | 'pro';
+  tier: AgentTier;
   dailyLimit: number;
   createdAt: string;
   lastUsed: string | null;

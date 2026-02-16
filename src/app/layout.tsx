@@ -50,7 +50,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${sfMono.variable} font-mono antialiased bg-black text-neutral-200 overflow-x-hidden`}
+        className={`${sfMono.variable} font-mono antialiased bg-[var(--bg-primary)] text-[var(--text-primary)] overflow-x-hidden`}
       >
         <Providers>
           <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 overflow-visible">

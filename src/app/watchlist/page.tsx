@@ -53,7 +53,7 @@ export default function WatchlistPage() {
   if (authLoading) {
     return (
       <div className="w-full max-w-4xl relative">
-        <div className="border-2 border-[#ffffff] bg-black p-6">
+        <div className="border-2 border-[var(--border)] bg-[var(--bg-primary)] p-6">
           <div className="text-neutral-500">loading...</div>
         </div>
       </div>
@@ -78,7 +78,7 @@ export default function WatchlistPage() {
       </div>
 
       {/* Main Terminal Window */}
-      <div className="border-2 border-[#ffffff] bg-black">
+      <div className="border-2 border-[var(--border)] bg-[var(--bg-primary)]">
         {!isAuthenticated ? (
           <div className="p-12 text-center">
             <p className="text-neutral-500 mb-4">sign in to view your watchlist</p>

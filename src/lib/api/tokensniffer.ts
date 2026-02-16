@@ -9,6 +9,7 @@ const CHAIN_ID_MAP: Record<ChainId, number> = {
   base: 8453,
   solana: -1, // Not supported
   arbitrum: 42161,
+  polygon: 137,
 };
 
 async function fetchApi<T>(endpoint: string, apiKey: string): Promise<T> {

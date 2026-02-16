@@ -1,4 +1,4 @@
-export type ChainId = 'ethereum' | 'base' | 'solana' | 'arbitrum';
+export type ChainId = 'ethereum' | 'base' | 'solana' | 'arbitrum' | 'polygon';
 
 export interface Chain {
   id: ChainId;
@@ -64,6 +64,19 @@ export const CHAINS: Record<ChainId, Chain> = {
     nativeCurrency: {
       name: 'Ether',
       symbol: 'ETH',
+      decimals: 18,
+    },
+    isEvm: true,
+  },
+  polygon: {
+    id: 'polygon',
+    name: 'Polygon',
+    symbol: 'MATIC',
+    rpcUrl: 'https://polygon-rpc.com',
+    explorerUrl: 'https://polygonscan.com',
+    nativeCurrency: {
+      name: 'MATIC',
+      symbol: 'MATIC',
       decimals: 18,
     },
     isEvm: true,

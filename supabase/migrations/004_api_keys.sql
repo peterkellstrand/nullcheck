@@ -4,8 +4,8 @@ CREATE TABLE IF NOT EXISTS public.api_keys (
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   api_key TEXT UNIQUE NOT NULL,
   name TEXT,
-  tier TEXT DEFAULT 'basic' CHECK (tier IN ('basic', 'pro')),
-  daily_limit INTEGER DEFAULT 5000,
+  tier TEXT DEFAULT 'starter' CHECK (tier IN ('starter', 'builder', 'scale')),
+  daily_limit INTEGER DEFAULT 10000,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   last_used TIMESTAMPTZ,
   is_revoked BOOLEAN DEFAULT FALSE

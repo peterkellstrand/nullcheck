@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Parse request body
-  let body: { name?: string; tier?: 'basic' | 'pro' } = {};
+  let body: { name?: string; tier?: 'starter' | 'builder' | 'scale' } = {};
   try {
     body = await req.json();
   } catch {
@@ -63,8 +63,15 @@ export async function POST(req: NextRequest) {
   }
 
   const name = body.name || 'API Key';
-  const tier = body.tier || 'basic';
-  const dailyLimit = tier === 'pro' ? 100000 : 5000;
+  const tier = body.tier || 'starter';
+
+  // Set daily limit based on tier
+  const dailyLimits: Record<string, number> = {
+    starter: 10000,
+    builder: 100000,
+    scale: 1000000,
+  };
+  const dailyLimit = dailyLimits[tier] || 10000;
 
   // Generate API key with prefix
   const apiKey = `nk_${nanoid(32)}`;

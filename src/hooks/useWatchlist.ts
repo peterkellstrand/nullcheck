@@ -71,7 +71,7 @@ export function useWatchlist() {
           if (!data.success) {
             // Rollback
             removeToken(chainId, address);
-            return { success: false };
+            return { success: false, error: data.error };
           }
         }
 

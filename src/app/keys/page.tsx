@@ -8,7 +8,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 interface ApiKey {
   id: string;
   name: string;
-  tier: 'basic' | 'pro';
+  tier: 'starter' | 'builder' | 'scale';
   daily_limit: number;
   created_at: string;
   last_used: string | null;
@@ -34,7 +34,7 @@ export default function ApiKeysPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [newKeyName, setNewKeyName] = useState('');
-  const [newKeyTier, setNewKeyTier] = useState<'basic' | 'pro'>('basic');
+  const [newKeyTier, setNewKeyTier] = useState<'starter' | 'builder' | 'scale'>('starter');
   const [isCreating, setIsCreating] = useState(false);
   const [newlyCreatedKey, setNewlyCreatedKey] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -237,11 +237,12 @@ export default function ApiKeysPage() {
             />
             <select
               value={newKeyTier}
-              onChange={(e) => setNewKeyTier(e.target.value as 'basic' | 'pro')}
+              onChange={(e) => setNewKeyTier(e.target.value as 'starter' | 'builder' | 'scale')}
               className="bg-neutral-900 border border-neutral-700 px-4 py-2 text-sm text-[#ffffff] focus:outline-none focus:border-neutral-500"
             >
-              <option value="basic">Basic (5K/day)</option>
-              <option value="pro">Pro (100K/day)</option>
+              <option value="starter">Starter (10K/day) - Free</option>
+              <option value="builder">Builder (100K/day) - $19/mo</option>
+              <option value="scale">Scale (1M/day) - $49/mo</option>
             </select>
             <button
               onClick={createKey}
@@ -277,7 +278,9 @@ export default function ApiKeysPage() {
                       </span>
                       <span
                         className={`px-2 py-0.5 text-[10px] ${
-                          key.tier === 'pro'
+                          key.tier === 'scale'
+                            ? 'bg-violet-900/50 text-violet-400 border border-violet-800'
+                            : key.tier === 'builder'
                             ? 'bg-emerald-900/50 text-emerald-400 border border-emerald-800'
                             : 'bg-neutral-800 text-neutral-400 border border-neutral-700'
                         }`}
@@ -307,15 +310,29 @@ export default function ApiKeysPage() {
 
         {/* Usage Info */}
         <div className="p-6 border-t border-neutral-800 bg-neutral-900/30">
-          <h2 className="text-sm text-neutral-400 mb-3">API Usage</h2>
+          <h2 className="text-sm text-neutral-400 mb-3">API Tiers</h2>
+          <div className="grid grid-cols-3 gap-4 mb-4 text-xs">
+            <div className="p-3 border border-neutral-700 bg-neutral-900">
+              <div className="text-neutral-300 font-medium">Starter</div>
+              <div className="text-neutral-500">10K calls/day</div>
+              <div className="text-emerald-400 mt-1">Free with PRO</div>
+            </div>
+            <div className="p-3 border border-emerald-800 bg-emerald-900/20">
+              <div className="text-emerald-400 font-medium">Builder</div>
+              <div className="text-neutral-500">100K calls/day</div>
+              <div className="text-emerald-400 mt-1">$19/mo</div>
+            </div>
+            <div className="p-3 border border-violet-800 bg-violet-900/20">
+              <div className="text-violet-400 font-medium">Scale</div>
+              <div className="text-neutral-500">1M calls/day</div>
+              <div className="text-violet-400 mt-1">$49/mo</div>
+            </div>
+          </div>
           <div className="text-xs text-neutral-500 space-y-2">
             <p>
-              <span className="text-neutral-300">Authentication:</span> Include your API key in requests using the{' '}
+              <span className="text-neutral-300">Authentication:</span> Include your API key using the{' '}
               <code className="px-1 py-0.5 bg-neutral-800 text-emerald-400">x-api-key</code> header or{' '}
               <code className="px-1 py-0.5 bg-neutral-800 text-emerald-400">?api_key=</code> query parameter.
-            </p>
-            <p>
-              <span className="text-neutral-300">Rate Limits:</span> Basic keys: 5,000 calls/day. Pro keys: 100,000 calls/day.
             </p>
             <p>
               <span className="text-neutral-300">Example:</span>{' '}

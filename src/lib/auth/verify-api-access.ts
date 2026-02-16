@@ -78,13 +78,13 @@ export async function verifyApiAccess(req: NextRequest): Promise<ApiAccess> {
       .update({ last_used: new Date().toISOString() })
       .eq('id', key.id);
 
-    const tier: AgentTier = key.tier === 'pro' ? 'agent_pro' : 'agent_basic';
+    const tier = (key.tier as AgentTier) || 'starter';
     return {
       type: 'agent',
       tier,
       userId: key.user_id,
       keyId: key.id,
-      limits: AGENT_LIMITS[tier],
+      limits: AGENT_LIMITS[tier] || AGENT_LIMITS.starter,
     };
   }
 

@@ -52,7 +52,7 @@ function PricingContent() {
       {/* Pricing cards */}
       <div className="grid gap-6 md:grid-cols-2">
         {/* Free tier */}
-        <div className="border-2 border-neutral-700 bg-neutral-900 p-6">
+        <div className="flex flex-col border-2 border-neutral-700 bg-neutral-900 p-6">
           <div className="mb-4">
             <h2 className="text-xl font-semibold text-white">Free</h2>
             <div className="mt-2 text-3xl font-bold text-white">$0</div>
@@ -82,22 +82,24 @@ function PricingContent() {
             </li>
           </ul>
 
-          {tier === 'free' && isAuthenticated && (
-            <div className="border border-neutral-700 bg-neutral-800 py-3 text-center text-sm text-neutral-400">
-              Current plan
-            </div>
-          )}
-          {!isAuthenticated && (
-            <Link href="/">
-              <Button variant="secondary" className="w-full py-3">
-                Get started
-              </Button>
-            </Link>
-          )}
+          <div className="mt-auto">
+            {tier === 'free' && isAuthenticated && (
+              <div className="border border-neutral-700 bg-neutral-800 py-3 text-center text-sm text-neutral-400">
+                Current plan
+              </div>
+            )}
+            {!isAuthenticated && (
+              <Link href="/">
+                <Button variant="secondary" className="w-full py-3">
+                  Get started
+                </Button>
+              </Link>
+            )}
+          </div>
         </div>
 
         {/* PRO tier */}
-        <div className="border-2 border-emerald-500 bg-neutral-900 p-6">
+        <div className="flex flex-col border-2 border-emerald-500 bg-neutral-900 p-6">
           <div className="mb-4">
             <div className="flex items-center gap-2">
               <h2 className="text-xl font-semibold text-white">PRO</h2>
@@ -141,47 +143,49 @@ function PricingContent() {
             </li>
           </ul>
 
-          {isPro ? (
-            <Button
-              onClick={handlePortal}
-              disabled={isLoading !== null || subLoading}
-              variant="secondary"
-              className="w-full py-3"
-            >
-              {isLoading === 'portal' ? 'Loading...' : 'Manage subscription'}
-            </Button>
-          ) : isAuthenticated ? (
-            <div className="flex flex-col gap-3">
+          <div className="mt-auto">
+            {isPro ? (
               <Button
-                onClick={() => handleCheckout('yearly')}
-                disabled={isLoading !== null || subLoading}
-                className="w-full border-2 border-emerald-500 bg-emerald-500/20 py-3 text-emerald-400 hover:bg-emerald-500/30"
-              >
-                {isLoading === 'yearly' ? 'Loading...' : (
-                  <>
-                    Subscribe yearly
-                    <span className="ml-2 rounded bg-emerald-500/30 px-2 py-0.5 text-xs">
-                      save {PRICING.yearly.savings}
-                    </span>
-                  </>
-                )}
-              </Button>
-              <Button
-                onClick={() => handleCheckout('monthly')}
+                onClick={handlePortal}
                 disabled={isLoading !== null || subLoading}
                 variant="secondary"
                 className="w-full py-3"
               >
-                {isLoading === 'monthly' ? 'Loading...' : 'Subscribe monthly'}
+                {isLoading === 'portal' ? 'Loading...' : 'Manage subscription'}
               </Button>
-            </div>
-          ) : (
-            <Link href="/">
-              <Button className="w-full border-2 border-emerald-500 bg-emerald-500/20 py-3 text-emerald-400 hover:bg-emerald-500/30">
-                Sign in to subscribe
-              </Button>
-            </Link>
-          )}
+            ) : isAuthenticated ? (
+              <div className="flex flex-col gap-3">
+                <Button
+                  onClick={() => handleCheckout('yearly')}
+                  disabled={isLoading !== null || subLoading}
+                  className="w-full border-2 border-emerald-500 bg-emerald-500/20 py-3 text-emerald-400 hover:bg-emerald-500/30"
+                >
+                  {isLoading === 'yearly' ? 'Loading...' : (
+                    <>
+                      Subscribe yearly
+                      <span className="ml-2 rounded bg-emerald-500/30 px-2 py-0.5 text-xs">
+                        save {PRICING.yearly.savings}
+                      </span>
+                    </>
+                  )}
+                </Button>
+                <Button
+                  onClick={() => handleCheckout('monthly')}
+                  disabled={isLoading !== null || subLoading}
+                  variant="secondary"
+                  className="w-full py-3"
+                >
+                  {isLoading === 'monthly' ? 'Loading...' : 'Subscribe monthly'}
+                </Button>
+              </div>
+            ) : (
+              <Link href="/">
+                <Button className="w-full border-2 border-emerald-500 bg-emerald-500/20 py-3 text-emerald-400 hover:bg-emerald-500/30">
+                  Sign in to subscribe
+                </Button>
+              </Link>
+            )}
+          </div>
         </div>
       </div>
 

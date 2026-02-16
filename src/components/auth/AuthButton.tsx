@@ -11,7 +11,7 @@ export function AuthButton() {
 
   if (isLoading) {
     return (
-      <span className="text-neutral-600 text-sm">...</span>
+      <span className="text-[var(--text-muted)] text-sm">...</span>
     );
   }
 
@@ -26,7 +26,7 @@ export function AuthButton() {
       <div className="relative">
         <button
           onClick={() => setShowMenu(!showMenu)}
-          className="text-neutral-400 hover:text-[#ffffff] text-sm transition-colors"
+          className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-sm transition-colors"
         >
           {displayEmail}
         </button>
@@ -37,13 +37,13 @@ export function AuthButton() {
               className="fixed inset-0 z-40"
               onClick={() => setShowMenu(false)}
             />
-            <div className="absolute right-0 top-full mt-2 border border-neutral-700 bg-black z-50">
+            <div className="absolute right-0 top-full mt-2 border border-[var(--border-light)] bg-[var(--bg-primary)] z-50">
               <button
                 onClick={async () => {
                   await signOut();
                   setShowMenu(false);
                 }}
-                className="block w-full px-4 py-2 text-sm text-neutral-400 hover:text-[#ffffff] hover:bg-neutral-900 transition-colors text-left whitespace-nowrap"
+                className="block w-full px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors text-left whitespace-nowrap"
               >
                 sign out
               </button>
@@ -58,7 +58,7 @@ export function AuthButton() {
     <>
       <button
         onClick={() => setShowModal(true)}
-        className="text-neutral-500 hover:text-[#ffffff] text-sm transition-colors"
+        className="text-[var(--text-muted)] hover:text-[var(--text-primary)] text-sm transition-colors"
       >
         sign in
       </button>

@@ -25,7 +25,7 @@ export default function ChartsPage() {
   return (
     <div className="w-full max-w-6xl">
       {/* Header */}
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-5">
         <div className="flex items-center gap-4 ml-1">
           <Link
             href="/"
@@ -40,7 +40,7 @@ export default function ChartsPage() {
 
         {/* Controls */}
         {tokens.length > 0 && (
-          <div className="flex items-center gap-4 mr-1">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4 mr-1 ml-1 sm:ml-0">
             {/* Layout selector */}
             <div className="flex items-center gap-2">
               <span className="text-neutral-500 text-xs">layout:</span>
@@ -95,7 +95,7 @@ export default function ChartsPage() {
       </div>
 
       {/* Main Container */}
-      <div className="border-2 border-[#ffffff] bg-black min-h-[60vh]">
+      <div className="border-2 border-[var(--border)] bg-[var(--bg-primary)] min-h-[60vh]">
         {tokens.length === 0 ? (
           <div className="p-12 text-center">
             <p className="text-neutral-500 mb-6">no tokens selected</p>
