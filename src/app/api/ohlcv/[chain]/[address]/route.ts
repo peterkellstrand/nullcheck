@@ -57,7 +57,6 @@ export async function GET(
 
     if (!dexResponse.ok) {
       // If DexScreener fails, generate placeholder chart data
-      console.log(`DexScreener returned ${dexResponse.status} for ${address}`);
       const placeholderOhlcv = generatePlaceholderOHLCV(0.001, limit, interval);
       return NextResponse.json({
         success: true,
