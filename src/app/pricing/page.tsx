@@ -43,7 +43,7 @@ function PricingContent() {
 
       {/* Title */}
       <div className="mb-12 text-center">
-        <h1 className="text-4xl font-bold text-white">Pricing</h1>
+        <h1 className="text-4xl font-bold text-[var(--text-primary)]">Pricing</h1>
         <p className="mt-2 text-neutral-400">
           Zero promoted tokens. Ever.
         </p>
@@ -52,10 +52,10 @@ function PricingContent() {
       {/* Pricing cards */}
       <div className="grid gap-6 md:grid-cols-2">
         {/* Free tier */}
-        <div className="flex flex-col border-2 border-neutral-700 bg-neutral-900 p-6">
+        <div className="flex flex-col border-2 border-neutral-700 bg-[var(--bg-secondary)] p-6">
           <div className="mb-4">
-            <h2 className="text-xl font-semibold text-white">Free</h2>
-            <div className="mt-2 text-3xl font-bold text-white">$0</div>
+            <h2 className="text-xl font-semibold text-[var(--text-primary)]">Free</h2>
+            <div className="mt-2 text-3xl font-bold text-[var(--text-primary)]">$0</div>
             <div className="text-sm text-neutral-500">forever</div>
           </div>
 
@@ -99,16 +99,16 @@ function PricingContent() {
         </div>
 
         {/* PRO tier */}
-        <div className="flex flex-col border-2 border-emerald-500 bg-neutral-900 p-6">
+        <div className="flex flex-col border-2 border-emerald-500 bg-[var(--bg-secondary)] p-6">
           <div className="mb-4">
             <div className="flex items-center gap-2">
-              <h2 className="text-xl font-semibold text-white">PRO</h2>
+              <h2 className="text-xl font-semibold text-[var(--text-primary)]">PRO</h2>
               <span className="rounded bg-emerald-500/20 px-2 py-0.5 text-xs text-emerald-400">
                 recommended
               </span>
             </div>
             <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-white">${PRICING.yearly.amount}</span>
+              <span className="text-3xl font-bold text-[var(--text-primary)]">${PRICING.yearly.amount}</span>
               <span className="text-neutral-500">/year</span>
             </div>
             <div className="text-sm text-emerald-400">
@@ -191,28 +191,28 @@ function PricingContent() {
 
       {/* FAQ */}
       <div className="mt-12 border-t border-neutral-800 pt-12">
-        <h2 className="mb-6 text-xl font-semibold text-white">FAQ</h2>
+        <h2 className="mb-6 text-xl font-semibold text-[var(--text-primary)]">FAQ</h2>
         <div className="space-y-6">
           <div>
-            <h3 className="font-medium text-white">Can I cancel anytime?</h3>
+            <h3 className="font-medium text-[var(--text-primary)]">Can I cancel anytime?</h3>
             <p className="mt-1 text-sm text-neutral-400">
               Yes. Cancel anytime from the customer portal. You&apos;ll keep PRO access until the end of your billing period.
             </p>
           </div>
           <div>
-            <h3 className="font-medium text-white">What payment methods are accepted?</h3>
+            <h3 className="font-medium text-[var(--text-primary)]">What payment methods are accepted?</h3>
             <p className="mt-1 text-sm text-neutral-400">
               All major credit cards via Stripe. No crypto payments at this time.
             </p>
           </div>
           <div>
-            <h3 className="font-medium text-white">Will you ever promote tokens?</h3>
+            <h3 className="font-medium text-[var(--text-primary)]">Will you ever promote tokens?</h3>
             <p className="mt-1 text-sm text-neutral-400">
               No. nullcheck will never accept payment from token projects. Our revenue comes from users, keeping our analysis unbiased.
             </p>
           </div>
           <div>
-            <h3 className="font-medium text-white">What are API keys for?</h3>
+            <h3 className="font-medium text-[var(--text-primary)]">What are API keys for?</h3>
             <p className="mt-1 text-sm text-neutral-400">
               PRO subscribers can create API keys for AI agents, trading bots, or scripts to access nullcheck data programmatically. Basic keys include 5,000 calls/day, Pro keys include 100,000 calls/day.
             </p>
@@ -225,11 +225,11 @@ function PricingContent() {
 
 export default function PricingPage() {
   return (
-    <main className="min-h-screen bg-black p-4 sm:p-8">
+    <main className="min-h-screen bg-[var(--bg-primary)] p-4 sm:p-8">
       <div className="mx-auto max-w-4xl">
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
-          <Link href="/" className="text-2xl font-bold text-white hover:text-neutral-300">
+          <Link href="/" className="text-2xl font-bold text-[var(--text-primary)] hover:text-neutral-300">
             null//check
           </Link>
         </div>

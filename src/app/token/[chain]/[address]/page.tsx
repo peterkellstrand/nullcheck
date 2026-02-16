@@ -78,7 +78,7 @@ export default function TokenDetailPage() {
   if (isLoading) {
     return (
       <div className="w-full max-w-4xl">
-        <div className="border-2 border-[#ffffff] bg-black p-6">
+        <div className="border-2 border-[var(--border)] bg-[var(--bg-primary)] p-6">
           <div className="animate-pulse space-y-4">
             <div className="h-8 bg-neutral-800 w-1/3"></div>
             <div className="h-64 bg-neutral-800"></div>
@@ -92,7 +92,7 @@ export default function TokenDetailPage() {
   if (error || !token) {
     return (
       <div className="w-full max-w-4xl">
-        <div className="border-2 border-[#ffffff] bg-black p-6">
+        <div className="border-2 border-[var(--border)] bg-[var(--bg-primary)] p-6">
           <button
             onClick={() => router.back()}
             className="text-neutral-500 hover:text-neutral-300 text-sm mb-4"
@@ -114,7 +114,7 @@ export default function TokenDetailPage() {
       <div className="flex items-center justify-between mb-4">
         <button
           onClick={() => router.back()}
-          className="text-neutral-500 hover:text-[#ffffff] text-sm transition-colors"
+          className="text-neutral-500 hover:text-[var(--text-primary)] text-sm transition-colors"
         >
           ← back
         </button>
@@ -122,16 +122,16 @@ export default function TokenDetailPage() {
           href={`${chainInfo.explorerUrl}/token/${address}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-neutral-500 hover:text-[#ffffff] text-xs transition-colors"
+          className="text-neutral-500 hover:text-[var(--text-primary)] text-xs transition-colors"
         >
           view on {chainInfo.name.toLowerCase()} ↗
         </a>
       </div>
 
       {/* Main Container */}
-      <div className="border-2 border-[#ffffff] bg-black">
+      <div className="border-2 border-[var(--border)] bg-[var(--bg-primary)]">
         {/* Token Header */}
-        <div className="p-6 border-b border-[#ffffff]">
+        <div className="p-6 border-b border-[var(--border)]">
           <div className="flex items-start justify-between">
             <div>
               <div className="flex items-center gap-3 mb-2">
@@ -143,7 +143,7 @@ export default function TokenDetailPage() {
                   />
                 )}
                 <div>
-                  <h1 className="text-xl text-[#ffffff]">{token.symbol}</h1>
+                  <h1 className="text-xl text-[var(--text-primary)]">{token.symbol}</h1>
                   <span className="text-sm text-neutral-500">{token.name}</span>
                 </div>
                 <span className="text-xs text-neutral-600 border border-neutral-700 px-2 py-0.5">
@@ -151,7 +151,7 @@ export default function TokenDetailPage() {
                 </span>
               </div>
               <div className="flex items-baseline gap-3">
-                <span className="text-2xl text-[#ffffff] tabular-nums">
+                <span className="text-2xl text-[var(--text-primary)] tabular-nums">
                   {formatPrice(token.metrics.price)}
                 </span>
                 <span className={`text-sm tabular-nums ${priceChangeColor}`}>
@@ -176,7 +176,7 @@ export default function TokenDetailPage() {
         </div>
 
         {/* Chart */}
-        <div className="p-6 border-b border-[#ffffff]">
+        <div className="p-6 border-b border-[var(--border)]">
           <PriceChart
             chainId={chain}
             tokenAddress={address}
@@ -187,7 +187,7 @@ export default function TokenDetailPage() {
         </div>
 
         {/* Metrics Grid */}
-        <div className="p-6 border-b border-[#ffffff]">
+        <div className="p-6 border-b border-[var(--border)]">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
             <MetricCard label="price" value={formatPrice(token.metrics.price)} />
             <MetricCard
@@ -210,7 +210,7 @@ export default function TokenDetailPage() {
 
         {/* Transaction Stats */}
         {(token.metrics.buys24h !== undefined || token.metrics.sells24h !== undefined) && (
-          <div className="p-6 border-b border-[#ffffff]">
+          <div className="p-6 border-b border-[var(--border)]">
             <div className="text-xs text-neutral-500 mb-3">24h transactions</div>
             <div className="flex items-center gap-4">
               <div className="flex-1">
@@ -238,7 +238,7 @@ export default function TokenDetailPage() {
         )}
 
         {/* Whale Data */}
-        <div className="p-6 border-b border-[#ffffff]">
+        <div className="p-6 border-b border-[var(--border)]">
           <div className="text-xs text-neutral-500 mb-3">whale data</div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <TopHoldersPanel chainId={chain} tokenAddress={address} />
@@ -277,7 +277,7 @@ function MetricCard({
   return (
     <div>
       <div className="text-xs text-neutral-500 mb-1">{label}</div>
-      <div className={`text-sm tabular-nums ${className || 'text-[#ffffff]'}`}>
+      <div className={`text-sm tabular-nums ${className || 'text-[var(--text-primary)]'}`}>
         {prefix}{value}
       </div>
     </div>

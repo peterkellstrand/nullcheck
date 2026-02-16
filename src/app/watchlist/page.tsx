@@ -84,7 +84,7 @@ export default function WatchlistPage() {
             <p className="text-neutral-500 mb-4">sign in to view your watchlist</p>
             <button
               onClick={() => setShowAuthModal(true)}
-              className="border border-[#ffffff] px-4 py-2 text-sm text-[#ffffff] hover:bg-neutral-900 transition-colors"
+              className="border border-[var(--border)] px-4 py-2 text-sm text-[#ffffff] hover:bg-neutral-900 transition-colors"
             >
               sign in
             </button>

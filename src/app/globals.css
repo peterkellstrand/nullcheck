@@ -1,5 +1,38 @@
 @import "tailwindcss";
 
+/* Theme-aware utility classes */
+.bg-theme {
+  background-color: var(--bg-primary);
+}
+
+.bg-theme-secondary {
+  background-color: var(--bg-secondary);
+}
+
+.bg-theme-tertiary {
+  background-color: var(--bg-tertiary);
+}
+
+.text-theme {
+  color: var(--text-primary);
+}
+
+.text-theme-secondary {
+  color: var(--text-secondary);
+}
+
+.text-theme-muted {
+  color: var(--text-muted);
+}
+
+.border-theme {
+  border-color: var(--border);
+}
+
+.border-theme-light {
+  border-color: var(--border-light);
+}
+
 /* Terminal color palette - Dark theme (default) */
 :root {
   --bg-primary: #000000;
@@ -18,16 +51,22 @@
   --orange: #c85;
 }
 
-/* Light theme */
+/* Light theme - Cream/Charcoal palette */
 .light {
-  --bg-primary: #ffffff;
-  --bg-secondary: #f5f5f5;
-  --bg-tertiary: #eeeeee;
-  --text-primary: #000000;
-  --text-secondary: #333333;
-  --text-muted: #666666;
-  --border: #000000;
-  --border-light: #333333;
+  --bg-primary: #EDEBE6;
+  --bg-secondary: #E5E3DE;
+  --bg-tertiary: #DDDBD6;
+  --text-primary: #1A1A1A;
+  --text-secondary: #3D3D3D;
+  --text-muted: #6B6B6B;
+  --border: #1A1A1A;
+  --border-light: #3D3D3D;
+
+  /* Status colors - adjusted for light bg */
+  --green: #2D8B6F;
+  --red: #B84444;
+  --yellow: #A68B2D;
+  --orange: #B86A2D;
 }
 
 :root {
@@ -61,7 +100,7 @@ body {
   color: var(--text-primary);
   font-family: var(--font-mono), "SF Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
   font-size: var(--font-size-sm);
-  font-weight: 400;
+  font-weight: 600;
   line-height: var(--line-height-normal);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -128,10 +167,28 @@ h3 {
   color: var(--text-primary);
 }
 
+.light ::selection {
+  background: #1A1A1A;
+  color: #EDEBE6;
+}
+
 /* Focus ring - subtle */
 :focus-visible {
   outline: 1px solid #333;
   outline-offset: 1px;
+}
+
+.light :focus-visible {
+  outline: 1px solid #1A1A1A;
+}
+
+/* Light theme scrollbar */
+.light ::-webkit-scrollbar-thumb {
+  background: #BDBDB8;
+}
+
+.light ::-webkit-scrollbar-thumb:hover {
+  background: #A0A09B;
 }
 
 /* Tabular numbers for data */

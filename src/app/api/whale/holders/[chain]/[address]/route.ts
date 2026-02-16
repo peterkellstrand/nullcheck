@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ChainId, CHAINS } from '@/types/chain';
-import { TIER_LIMITS } from '@/types/subscription';
+import { TIER_LIMITS, AGENT_LIMITS } from '@/types/subscription';
 import { getTopHolders } from '@/lib/api/whale';
-import { getSupabaseServer, getSupabaseServerWithServiceRole } from '@/lib/db/supabase-server';
-import { getUserSubscription } from '@/lib/db/subscription';
+import { verifyApiAccess } from '@/lib/auth/verify-api-access';
 
 interface RouteParams {
   params: Promise<{
@@ -25,25 +24,24 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
   const chainId = chain as ChainId;
 
-  // Determine limit based on subscription
+  // Verify access (supports both human sessions and API keys)
+  const access = await verifyApiAccess(request);
+
+  if (access.type === 'error') {
+    return NextResponse.json(
+      { success: false, error: access.error },
+      { status: 401 }
+    );
+  }
+
+  // Determine limit based on access type
   let limit = TIER_LIMITS.free.topHolders;
 
-  try {
-    const supabase = await getSupabaseServer();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (user) {
-      const serviceSupabase = await getSupabaseServerWithServiceRole();
-      const subscription = await getUserSubscription(serviceSupabase, user.id);
-
-      if (subscription?.tier === 'pro' && subscription?.status === 'active') {
-        limit = TIER_LIMITS.pro.topHolders;
-      }
-    }
-  } catch {
-    // Use free limit if auth check fails
+  if (access.type === 'human' && access.tier === 'pro') {
+    limit = TIER_LIMITS.pro.topHolders;
+  } else if (access.type === 'agent') {
+    // Agents get PRO-level access
+    limit = TIER_LIMITS.pro.topHolders;
   }
 
   try {

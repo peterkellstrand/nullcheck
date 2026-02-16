@@ -138,14 +138,14 @@ export default function ApiKeysPage() {
         <div className="flex items-center justify-between mb-4">
           <Link
             href="/"
-            className="text-neutral-500 hover:text-[#ffffff] text-sm transition-colors"
+            className="text-neutral-500 hover:text-[var(--text-primary)] text-sm transition-colors"
           >
             ← back
           </Link>
         </div>
 
-        <div className="border-2 border-[#ffffff] bg-black p-8">
-          <h1 className="text-xl text-[#ffffff] mb-4">API Keys</h1>
+        <div className="border-2 border-[var(--border)] bg-[var(--bg-primary)] p-8">
+          <h1 className="text-xl text-[var(--text-primary)] mb-4">API Keys</h1>
           <p className="text-neutral-400 mb-6">
             API keys allow AI agents and scripts to access null//check data programmatically.
           </p>
@@ -171,17 +171,17 @@ export default function ApiKeysPage() {
       <div className="flex items-center justify-between mb-4">
         <Link
           href="/"
-          className="text-neutral-500 hover:text-[#ffffff] text-sm transition-colors"
+          className="text-neutral-500 hover:text-[var(--text-primary)] text-sm transition-colors"
         >
           ← back
         </Link>
       </div>
 
       {/* Main Container */}
-      <div className="border-2 border-[#ffffff] bg-black">
+      <div className="border-2 border-[var(--border)] bg-[var(--bg-primary)]">
         {/* Title */}
-        <div className="p-6 border-b border-[#ffffff]">
-          <h1 className="text-xl text-[#ffffff] mb-2">API Keys</h1>
+        <div className="p-6 border-b border-[var(--border)]">
+          <h1 className="text-xl text-[var(--text-primary)] mb-2">API Keys</h1>
           <p className="text-sm text-neutral-400">
             Create API keys for AI agents and scripts to access null//check data.
           </p>
@@ -189,20 +189,20 @@ export default function ApiKeysPage() {
 
         {/* Newly Created Key Alert */}
         {newlyCreatedKey && (
-          <div className="p-6 border-b border-[#ffffff] bg-emerald-950/30">
+          <div className="p-6 border-b border-[var(--border)] bg-emerald-950/30">
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
                 <p className="text-emerald-400 text-sm mb-2">
                   API key created successfully. Copy it now — it won't be shown again.
                 </p>
-                <code className="block bg-black px-4 py-3 text-sm text-[#ffffff] font-mono break-all border border-neutral-800">
+                <code className="block bg-[var(--bg-primary)] px-4 py-3 text-sm text-[var(--text-primary)] font-mono break-all border border-neutral-800">
                   {newlyCreatedKey}
                 </code>
               </div>
               <div className="flex gap-2">
                 <button
                   onClick={() => copyToClipboard(newlyCreatedKey)}
-                  className="px-3 py-1 text-xs bg-neutral-800 hover:bg-neutral-700 text-[#ffffff] transition-colors"
+                  className="px-3 py-1 text-xs bg-neutral-800 hover:bg-neutral-700 text-[var(--text-primary)] transition-colors"
                 >
                   {copied ? 'copied!' : 'copy'}
                 </button>
@@ -219,13 +219,13 @@ export default function ApiKeysPage() {
 
         {/* Error Message */}
         {error && (
-          <div className="px-6 py-3 border-b border-[#ffffff] bg-red-950/30">
+          <div className="px-6 py-3 border-b border-[var(--border)] bg-red-950/30">
             <p className="text-red-400 text-sm">{error}</p>
           </div>
         )}
 
         {/* Create New Key */}
-        <div className="p-6 border-b border-[#ffffff]">
+        <div className="p-6 border-b border-[var(--border)]">
           <h2 className="text-sm text-neutral-400 mb-4">Create New Key</h2>
           <div className="flex flex-col sm:flex-row gap-3">
             <input
@@ -233,12 +233,12 @@ export default function ApiKeysPage() {
               value={newKeyName}
               onChange={(e) => setNewKeyName(e.target.value)}
               placeholder="Key name (e.g., Trading Bot)"
-              className="flex-1 bg-neutral-900 border border-neutral-700 px-4 py-2 text-sm text-[#ffffff] placeholder:text-neutral-600 focus:outline-none focus:border-neutral-500"
+              className="flex-1 bg-neutral-900 border border-neutral-700 px-4 py-2 text-sm text-[var(--text-primary)] placeholder:text-neutral-600 focus:outline-none focus:border-neutral-500"
             />
             <select
               value={newKeyTier}
               onChange={(e) => setNewKeyTier(e.target.value as 'starter' | 'builder' | 'scale')}
-              className="bg-neutral-900 border border-neutral-700 px-4 py-2 text-sm text-[#ffffff] focus:outline-none focus:border-neutral-500"
+              className="bg-neutral-900 border border-neutral-700 px-4 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-neutral-500"
             >
               <option value="starter">Starter (10K/day) - Free</option>
               <option value="builder">Builder (100K/day) - $19/mo</option>
@@ -273,7 +273,7 @@ export default function ApiKeysPage() {
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[#ffffff] text-sm font-medium truncate">
+                      <span className="text-[var(--text-primary)] text-sm font-medium truncate">
                         {key.name}
                       </span>
                       <span

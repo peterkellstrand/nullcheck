@@ -29,7 +29,7 @@ export default function ChartsPage() {
         <div className="flex items-center gap-4 ml-1">
           <Link
             href="/"
-            className="text-neutral-500 hover:text-[#ffffff] text-sm transition-colors"
+            className="text-neutral-500 hover:text-[var(--text-primary)] text-sm transition-colors"
           >
             &larr; back
           </Link>
@@ -52,7 +52,7 @@ export default function ChartsPage() {
                     className={cn(
                       'px-2 py-1 text-xs transition-colors',
                       layout === l.value
-                        ? 'text-[#ffffff] bg-neutral-800'
+                        ? 'text-[var(--text-primary)] bg-neutral-800'
                         : 'text-neutral-500 hover:text-neutral-300'
                     )}
                   >
@@ -73,7 +73,7 @@ export default function ChartsPage() {
                     className={cn(
                       'px-2 py-1 text-xs transition-colors',
                       timeframe === tf.value
-                        ? 'text-[#ffffff] bg-neutral-800'
+                        ? 'text-[var(--text-primary)] bg-neutral-800'
                         : 'text-neutral-500 hover:text-neutral-300'
                     )}
                   >

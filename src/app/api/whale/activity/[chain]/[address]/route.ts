@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ChainId, CHAINS } from '@/types/chain';
 import { getWhaleActivity } from '@/lib/api/whale';
+import { verifyApiAccess } from '@/lib/auth/verify-api-access';
 
 interface RouteParams {
   params: Promise<{
@@ -21,6 +22,16 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   }
 
   const chainId = chain as ChainId;
+
+  // Verify access (supports both human sessions and API keys)
+  const access = await verifyApiAccess(request);
+
+  if (access.type === 'error') {
+    return NextResponse.json(
+      { success: false, error: access.error },
+      { status: 401 }
+    );
+  }
 
   try {
     const activity = await getWhaleActivity(chainId, address);
