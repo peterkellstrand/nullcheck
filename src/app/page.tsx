@@ -125,7 +125,7 @@ export default function Home() {
 
   return (
     <>
-      <div className="w-full max-w-4xl relative">
+      <div className="w-full max-w-[1030px] relative">
       {/* Title Row */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-5">
         <h1 className="text-3xl sm:text-4xl text-[var(--text-primary)] ml-1">
@@ -144,6 +144,14 @@ export default function Home() {
           >
             watchlist
           </Link>
+          {isPro && (
+            <Link
+              href="/keys"
+              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] text-sm transition-colors"
+            >
+              api keys
+            </Link>
+          )}
           <Link
             href="/pricing"
             className={`text-sm transition-colors ${
@@ -162,7 +170,7 @@ export default function Home() {
       </div>
 
       {/* Main Terminal Window */}
-      <div className="border-2 border-[var(--border)] bg-[var(--bg-primary)]">
+      <div className="border-2 border-[#ffffff] bg-[var(--bg-primary)]">
         {/* Status bar */}
         {(statusMessage || error) && (
           <div className="px-5 py-2.5 border-b border-[var(--border)] text-sm text-[var(--text-muted)]">

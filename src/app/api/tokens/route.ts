@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ChainId } from '@/types/chain';
 import { TokenWithMetrics } from '@/types/token';
 import { getRiskLevel } from '@/types/risk';
-import * as dexscreener from '@/lib/api/dexscreener';
+import * as geckoterminal from '@/lib/api/geckoterminal';
 import * as db from '@/lib/db/supabase';
 import { calculateTrendingScores } from '@/lib/trending';
 
@@ -16,6 +16,10 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const chainId = searchParams.get('chain') as ChainId | null;
   const limit = parseInt(searchParams.get('limit') || '50', 10);
+
+  // Note: API access tracking is optional for public data endpoints
+  // Agents can access this endpoint with or without API key
+  // Rate limiting is handled at the infrastructure level
 
   try {
     let tokens: TokenWithMetrics[] = [];
@@ -42,58 +46,28 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Cache miss or stale - fetch fresh data
+    // Cache miss or stale - fetch fresh data from GeckoTerminal trending
     if (!fromCache) {
-      const chains = chainId ? [chainId] : (['ethereum', 'base', 'solana', 'arbitrum'] as ChainId[]);
+      const chains = chainId ? [chainId] : (['ethereum', 'base', 'solana', 'arbitrum', 'polygon'] as ChainId[]);
+      const tokensPerChain = Math.ceil((limit * 2) / chains.length);
 
-      const pairPromises = chains.map(async (chain) => {
+      const trendingPromises = chains.map(async (chain) => {
         try {
-          // Get trending pairs
-          const pairs = await dexscreener.getTrendingPairs(chain);
+          // Get actually trending tokens from GeckoTerminal
+          const trendingTokens = await geckoterminal.getTrendingTokens(chain, tokensPerChain);
 
-          // For Solana, also get boosted tokens (includes pump.fun graduates)
-          let allPairs = pairs;
-          if (chain === 'solana') {
-            const boostedPairs = await dexscreener.getLatestBoostedTokens();
-            allPairs = [...pairs, ...boostedPairs];
-          }
-
-          return allPairs.slice(0, Math.ceil(limit / chains.length)).map((pair) => {
-            const riskScore = generatePlaceholderRiskScore(pair);
-
-            return {
-              address: pair.baseToken.address,
-              chainId: chain,
-              symbol: pair.baseToken.symbol,
-              name: pair.baseToken.name,
-              decimals: 18,
-              logoUrl: pair.info?.imageUrl,
-              metrics: {
-                tokenAddress: pair.baseToken.address,
-                chainId: chain,
-                price: parseFloat(pair.priceUsd) || 0,
-                priceChange1h: pair.priceChange?.h1 || 0,
-                priceChange24h: pair.priceChange?.h24 || 0,
-                priceChange7d: 0,
-                volume24h: pair.volume?.h24 || 0,
-                liquidity: pair.liquidity?.usd || 0,
-                marketCap: pair.marketCap,
-                fdv: pair.fdv,
-                txns24h: (pair.txns?.h24?.buys || 0) + (pair.txns?.h24?.sells || 0),
-                buys24h: pair.txns?.h24?.buys || 0,
-                sells24h: pair.txns?.h24?.sells || 0,
-                updatedAt: new Date().toISOString(),
-              },
-              risk: riskScore,
-            } as TokenWithMetrics;
-          });
+          // Add placeholder risk scores
+          return trendingTokens.map((token) => ({
+            ...token,
+            risk: generatePlaceholderRiskScore(token),
+          }));
         } catch (error) {
-          console.error(`Failed to fetch pairs for ${chain}:`, error);
+          console.error(`Failed to fetch trending for ${chain}:`, error);
           return [];
         }
       });
 
-      const results = await Promise.all(pairPromises);
+      const results = await Promise.all(trendingPromises);
       tokens = results.flat();
 
       // Dedupe by address (same token might appear on multiple DEXes)
@@ -165,10 +139,10 @@ async function cacheTokens(tokens: TokenWithMetrics[]): Promise<void> {
 
 // Generate placeholder risk scores based on available data
 // In production, this would call the actual risk analysis API
-function generatePlaceholderRiskScore(pair: dexscreener.DexScreenerPair) {
-  const liquidity = pair.liquidity?.usd || 0;
-  const volume = pair.volume?.h24 || 0;
-  const txns = (pair.txns?.h24?.buys || 0) + (pair.txns?.h24?.sells || 0);
+function generatePlaceholderRiskScore(token: TokenWithMetrics) {
+  const liquidity = token.metrics.liquidity || 0;
+  const volume = token.metrics.volume24h || 0;
+  const txns = token.metrics.txns24h || 0;
 
   // Simple heuristic scoring
   let score = 0;
@@ -193,8 +167,8 @@ function generatePlaceholderRiskScore(pair: dexscreener.DexScreenerPair) {
   const level = getRiskLevel(score);
 
   return {
-    tokenAddress: pair.baseToken.address,
-    chainId: pair.chainId as ChainId,
+    tokenAddress: token.address,
+    chainId: token.chainId,
     totalScore: score,
     level,
     liquidity: {

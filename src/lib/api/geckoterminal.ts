@@ -13,6 +13,7 @@ const NETWORK_MAP: Record<ChainId, string> = {
   base: 'base',
   solana: 'solana',
   arbitrum: 'arbitrum',
+  polygon: 'polygon_pos',
 };
 
 async function fetchApi<T>(endpoint: string): Promise<T> {
@@ -105,6 +106,61 @@ export async function getTopGainerPools(chainId: ChainId): Promise<Pool[]> {
   });
 
   return response.data.map((pool) => mapPool(pool, chainId, tokens));
+}
+
+// Get trending tokens with full metrics for the main table
+export async function getTrendingTokens(
+  chainId: ChainId,
+  limit: number = 20
+): Promise<TokenWithMetrics[]> {
+  const network = NETWORK_MAP[chainId];
+  const response = await fetchApi<GeckoResponse<GeckoTerminalPool[]>>(
+    `/networks/${network}/trending_pools?include=base_token&page=1`
+  );
+
+  const tokens = new Map<string, GeckoTerminalToken>();
+  response.included?.forEach((token) => {
+    tokens.set(token.id, token);
+  });
+
+  // Dedupe by base token address
+  const seen = new Set<string>();
+  const uniquePools = response.data.filter((pool) => {
+    const addr = pool.relationships.base_token.data.id;
+    if (seen.has(addr)) return false;
+    seen.add(addr);
+    return true;
+  });
+
+  return uniquePools.slice(0, limit).map((pool) => {
+    const baseToken = tokens.get(pool.relationships.base_token.data.id);
+    const attrs = pool.attributes;
+
+    return {
+      address: baseToken?.attributes.address || attrs.address,
+      chainId,
+      symbol: baseToken?.attributes.symbol || attrs.name?.split('/')[0] || 'UNKNOWN',
+      name: baseToken?.attributes.name || attrs.name || 'Unknown Token',
+      decimals: baseToken?.attributes.decimals || 18,
+      logoUrl: baseToken?.attributes.image_url,
+      metrics: {
+        tokenAddress: baseToken?.attributes.address || attrs.address,
+        chainId,
+        price: parseFloat(attrs.base_token_price_usd) || 0,
+        priceChange1h: parseFloat(attrs.price_change_percentage?.h1 || '0') || 0,
+        priceChange24h: parseFloat(attrs.price_change_percentage?.h24 || '0') || 0,
+        priceChange7d: 0,
+        volume24h: parseFloat(attrs.volume_usd?.h24 || '0') || 0,
+        liquidity: parseFloat(attrs.reserve_in_usd) || 0,
+        marketCap: parseFloat(attrs.market_cap_usd || '0') || undefined,
+        fdv: parseFloat(attrs.fdv_usd || '0') || undefined,
+        txns24h: (attrs.transactions?.h24?.buys || 0) + (attrs.transactions?.h24?.sells || 0),
+        buys24h: attrs.transactions?.h24?.buys || 0,
+        sells24h: attrs.transactions?.h24?.sells || 0,
+        updatedAt: new Date().toISOString(),
+      },
+    };
+  });
 }
 
 export async function getPool(

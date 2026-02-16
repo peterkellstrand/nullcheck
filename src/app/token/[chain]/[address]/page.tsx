@@ -177,7 +177,13 @@ export default function TokenDetailPage() {
 
         {/* Chart */}
         <div className="p-6 border-b border-[#ffffff]">
-          <PriceChart chainId={chain} tokenAddress={address} />
+          <PriceChart
+            chainId={chain}
+            tokenAddress={address}
+            height={400}
+            showVolume={true}
+            showMA={true}
+          />
         </div>
 
         {/* Metrics Grid */}

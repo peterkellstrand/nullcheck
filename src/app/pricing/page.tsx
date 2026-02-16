@@ -129,6 +129,14 @@ function PricingContent() {
             </li>
             <li className="flex items-center gap-2 text-neutral-300">
               <span className="text-emerald-500">[+]</span>
+              API keys for agents/bots
+            </li>
+            <li className="flex items-center gap-2 text-neutral-300">
+              <span className="text-emerald-500">[+]</span>
+              {TIER_LIMITS.pro.topHolders} whale holders shown
+            </li>
+            <li className="flex items-center gap-2 text-neutral-300">
+              <span className="text-emerald-500">[+]</span>
               Everything in Free
             </li>
           </ul>
@@ -197,6 +205,12 @@ function PricingContent() {
             <h3 className="font-medium text-white">Will you ever promote tokens?</h3>
             <p className="mt-1 text-sm text-neutral-400">
               No. nullcheck will never accept payment from token projects. Our revenue comes from users, keeping our analysis unbiased.
+            </p>
+          </div>
+          <div>
+            <h3 className="font-medium text-white">What are API keys for?</h3>
+            <p className="mt-1 text-sm text-neutral-400">
+              PRO subscribers can create API keys for AI agents, trading bots, or scripts to access nullcheck data programmatically. Basic keys include 5,000 calls/day, Pro keys include 100,000 calls/day.
             </p>
           </div>
         </div>

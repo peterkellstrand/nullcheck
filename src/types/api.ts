@@ -69,12 +69,21 @@ export interface GeckoTerminalPool {
     reserve_in_usd: string;
     base_token_price_usd: string;
     quote_token_price_usd: string;
+    market_cap_usd?: string;
+    fdv_usd?: string;
     volume_usd: {
+      h1?: string;
+      h6?: string;
       h24: string;
     };
-    price_change_percentage: {
-      h1: string;
-      h24: string;
+    price_change_percentage?: {
+      h1?: string;
+      h6?: string;
+      h24?: string;
+    };
+    transactions?: {
+      h1?: { buys: number; sells: number };
+      h24?: { buys: number; sells: number };
     };
   };
   relationships: {
