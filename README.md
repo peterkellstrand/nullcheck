@@ -1,229 +1,507 @@
 # null//check
 
-A risk-first DEX screener with a cyberpunk terminal aesthetic. Zero promoted tokens. Organic trending. Honeypot detection first.
+**The risk-first DEX screener that puts your safety before profits.**
 
-## Philosophy
+Zero promoted tokens. Zero paid placements. Zero bullshit.
 
-The DEX screener landscape is cluttered with promoted tokens, paid placements, and interfaces that bury critical risk information. null//check takes a different approach:
+[![License: MIT](https://img.shields.io/badge/License-MIT-emerald.svg)](LICENSE)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
 
-- **Risk First** — Honeypot detection and rug-pull indicators are prominently displayed, not hidden in submenus
-- **Zero Promoted Tokens** — What you see is organic. No paid placements, no "trending" manipulation
-- **Dense Information** — Terminal-style UI optimized for power users who need data at a glance
-- **User-Funded** — Revenue comes from PRO subscriptions, not token projects, keeping analysis unbiased
+---
+
+## Mission Statement
+
+The cryptocurrency space is plagued by scams. Every day, traders lose money to honeypots, rug pulls, and malicious contracts. Existing DEX screeners have become part of the problem—accepting payment from token projects to "trend" their coins, burying risk information in submenus, and prioritizing engagement over user safety.
+
+**null//check exists to fix this.**
+
+We believe that:
+
+- **Risk should be visible, not hidden.** Honeypot detection and rug-pull indicators belong front and center, not buried three clicks deep.
+- **Trending should be organic.** What you see should reflect actual market activity, not who paid the most for visibility.
+- **Tools should serve users, not advertisers.** Our revenue comes from subscriptions, keeping our incentives aligned with yours.
+- **Data should be accessible.** AI agents and trading bots deserve the same quality data as human traders.
+
+null//check is built for the paranoid trader—the one who checks the contract before aping, who wants to know holder concentration before buying, who understands that in crypto, the house always wins unless you do your homework.
+
+---
+
+## Why null//check?
+
+### The Problem
+
+| What Other Screeners Do | What null//check Does |
+|------------------------|----------------------|
+| Accept payment for "trending" placement | Show only organic activity |
+| Hide risk scores in submenus | Display risk badges prominently |
+| Optimize for engagement metrics | Optimize for trader safety |
+| Charge projects for visibility | Charge users for features |
+| Show you what they're paid to show | Show you what's actually happening |
+
+### The Difference
+
+When you open null//check, the first thing you see is the **risk score**. Not the price. Not the volume. The risk score. Because knowing whether you can actually sell your tokens matters more than knowing the current price.
+
+We analyze every token across five risk vectors:
+
+1. **Honeypot Detection** — Can you actually sell? We simulate transactions to find out.
+2. **Contract Analysis** — Proxy contracts, mint functions, blacklist capabilities, pause functions.
+3. **Holder Concentration** — Who owns how much? Is the creator still holding?
+4. **Liquidity Risk** — Pool depth, LP lock status, time since deployment.
+5. **LP Security** — Burned vs. locked liquidity, pool composition.
+
+---
 
 ## Features
 
-### Live Data & Streaming
-- **Real-Time Price Updates** — Server-Sent Events (SSE) stream price changes live
-- **Multi-Chain Support** — Ethereum, Base, and Solana tokens in a unified view
-- **Live Token Data** — Prices, 1h/24h changes, volume, and liquidity via DexScreener API
+### Real-Time Risk Analysis
 
-### Risk Analysis
-- **Real-Time Risk Scoring** — Integrated GoPlus security API for honeypot detection, contract analysis, and holder concentration
-- **Batch Risk Analysis** — Analyze multiple tokens simultaneously
-- **Risk Badges** — Color-coded indicators (LOW/MEDIUM/HIGH/CRITICAL) at a glance
+Every token displayed on null//check has been analyzed for potential risks. Our scoring system provides clear, actionable intelligence:
 
-### Charts
-- **Multi-Chart Grid** — View up to 4 charts (Free) or 16 charts (PRO) simultaneously
-- **Multiple Layouts** — 2x2, 3x3, or auto-responsive grid layouts
-- **Timeframe Selection** — 1h, 4h, 1d, 1w chart intervals
-- **OHLCV Data** — Full candlestick charts with volume
+| Risk Level | Score | What It Means |
+|------------|-------|---------------|
+| `LOW` | 0-14 | Standard caution applies. Generally safe. |
+| `MEDIUM` | 15-29 | Some concerns identified. Investigate further. |
+| `HIGH` | 30-49 | Significant red flags. High probability of loss. |
+| `CRITICAL` | 50+ | Likely scam or honeypot. Avoid entirely. |
 
-### Watchlist
-- **Personal Watchlist** — Save tokens you're tracking
-- **Quick Toggle** — Star/unstar tokens from any view
-- **Persistent Storage** — Synced to your account via Supabase
+Risk badges are color-coded and visible at a glance—no clicking required.
 
-### User Accounts
-- **Magic Link Auth** — Passwordless email authentication
-- **Session Persistence** — Stay logged in across sessions
-- **Secure** — Powered by Supabase Auth with Row Level Security
+### Live Price Streaming
+
+Prices update in real-time via Server-Sent Events (SSE). No refresh needed. Watch the market move as it happens.
+
+- Sub-second price updates
+- Flash indicators for significant moves
+- Connection status always visible
+
+### Multi-Chain Support
+
+Trade across the chains that matter:
+
+- **Ethereum** — The original DeFi ecosystem
+- **Base** — Coinbase's L2 with growing activity
+- **Solana** — High-speed, low-cost transactions
+- **Arbitrum** — Ethereum scaling with deep liquidity
+- **Polygon** — Accessible DeFi for everyone
+
+All chains in a unified interface. Filter by chain or view everything together.
 
 ### Whale Tracking
-- **Top Holders Panel** — View largest token holders with percentage bars and wallet tags
-- **Whale Activity Feed** — Track recent large transactions with buy/sell indicators
-- **Whale Column** — See whale sentiment at a glance in the main token table
-- **Multi-Chain Support** — Works across Ethereum, Base, and Solana
-- **Data Sources** — Helius for Solana, GoPlus for EVM chains
 
-### PRO Subscription
-- **$5/month or $39/year** (save 35%)
-- **Expanded Limits:**
+Know what the big players are doing:
+
+- **Top Holders Panel** — See the largest wallets, their percentage ownership, and whether they're contracts or EOAs
+- **Whale Activity Feed** — Track large buys and sells in real-time
+- **Sentiment Indicators** — Quick read on whether whales are accumulating or distributing
+- **Wallet Tags** — Identify DEX routers, burn addresses, team wallets, and locked tokens
 
 | Feature | Free | PRO |
 |---------|------|-----|
-| Watchlist | 10 tokens | Unlimited |
-| Charts | 4 slots | 16 slots |
-| Alerts | 3 | Unlimited |
-| Top Holders | 5 wallets | 20 wallets |
-| Whale Feed | 5 transactions | Unlimited |
+| Top Holders Shown | 5 wallets | 20 wallets |
+| Whale Feed | Last 5 transactions | Unlimited |
 
-- **Stripe Integration** — Secure payment processing
-- **Customer Portal** — Manage subscription anytime
+### Multi-Chart Grid
 
-### API for AI Agents & Bots
+Serious traders watch multiple tokens simultaneously. null//check supports:
 
-PRO subscribers can create API keys to access null//check data programmatically. Perfect for trading bots, AI agents, and automated analysis.
+- **2x2 Grid** — Four charts, perfect for focused analysis
+- **3x3 Grid** — Nine charts for broader market monitoring
+- **Auto Layout** — Responsive grid that adapts to your screen
 
-**3-Tier Pricing:**
+Each chart includes:
+- OHLCV candlesticks
+- Volume histogram
+- Moving averages (7 and 25 period)
+- Multiple timeframes (5m, 15m, 1h, 4h, 1d, 1w)
+
+### Watchlist
+
+Track the tokens that matter to you:
+
+- Star any token to add it to your watchlist
+- Access your watchlist from any device
+- Synced to your account automatically
+
+### Terminal Aesthetic
+
+null//check is designed for power users who value information density over visual fluff:
+
+- **SF Mono typography** — Monospace font for aligned data columns
+- **Dark/Light modes** — Easy on the eyes, day or night
+- **Minimal chrome** — Every pixel serves a purpose
+- **Keyboard-friendly** — Navigate efficiently
+
+---
+
+## PRO Subscription
+
+Support the mission and unlock enhanced capabilities.
+
+**$5/month** or **$39/year** (save 35%)
+
+| Feature | Free | PRO |
+|---------|------|-----|
+| Watchlist Tokens | 10 | Unlimited |
+| Chart Slots | 4 | 16 |
+| Price Alerts | 3 | Unlimited |
+| Top Holders Shown | 5 | 20 |
+| Whale Feed Depth | 5 transactions | Unlimited |
+| API Access | — | Included |
+
+PRO subscriptions directly fund development and keep null//check free from advertising pressure.
+
+---
+
+## API for AI Agents & Bots
+
+The future of trading is automated. null//check provides programmatic access to our data for AI agents, trading bots, and custom integrations.
+
+### Why API Access Matters
+
+- **AI Agents** need reliable data sources to make informed decisions
+- **Trading Bots** require real-time risk assessment before executing trades
+- **Research Tools** benefit from structured, queryable token data
+- **Portfolio Managers** can automate risk monitoring across holdings
+
+### Pricing Tiers
 
 | Tier | API Calls/Day | Batch Size | Price |
 |------|---------------|------------|-------|
-| Starter | 10,000 | 10 tokens | Free with PRO |
-| Builder | 100,000 | 50 tokens | $19/month |
-| Scale | 1,000,000 | 100 tokens | $49/month |
+| **Starter** | 10,000 | 10 tokens | Free with PRO |
+| **Builder** | 100,000 | 50 tokens | $19/month |
+| **Scale** | 1,000,000 | 100 tokens | $49/month |
 
-**Authentication:**
+### Authentication
+
 ```bash
-# Header authentication
+# Header authentication (recommended)
 curl -H "x-api-key: nk_your_key_here" https://nullcheck.io/api/tokens
 
 # Query parameter authentication
 curl "https://nullcheck.io/api/tokens?api_key=nk_your_key_here"
 ```
 
-**Available Endpoints:**
-- `GET /api/tokens` — List trending tokens with metrics
-- `GET /api/token/{chain}/{address}` — Token details and risk score
-- `GET /api/whale/holders/{chain}/{address}` — Top token holders
-- `GET /api/whale/activity/{chain}/{address}` — Whale transaction activity
-- `GET /api/risk/{chain}/{address}` — Risk analysis for a token
-- `POST /api/risk/batch` — Batch risk analysis (up to batch size limit)
+### Available Endpoints
 
-**Features:**
-- Daily usage tracking and limits
-- Automatic rate limiting per key
-- Usage dashboard in the UI
-- Revoke keys anytime
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/tokens` | GET | List trending tokens with metrics and risk scores |
+| `/api/token/{chain}/{address}` | GET | Detailed token information |
+| `/api/risk/{chain}/{address}` | GET | Full risk analysis for a single token |
+| `/api/risk/batch` | POST | Analyze multiple tokens in one request |
+| `/api/whale/holders/{chain}/{address}` | GET | Top token holders |
+| `/api/whale/activity/{chain}/{address}` | GET | Recent whale transactions |
+| `/api/search?q={query}` | GET | Search tokens by name, symbol, or address |
 
-### UI/UX
-- **Terminal Aesthetic** — Monochrome design with SF Mono typography
-- **Dark/Light Mode** — Toggle between themes
-- **Sortable Data Grid** — Click any column header to sort
-- **Chain Filtering** — Filter by blockchain
-- **Token Search** — Find tokens by name, symbol, or address
+### Response Format
 
-## Risk Scoring System
+All endpoints return JSON with consistent structure:
 
-Tokens are analyzed across multiple risk vectors:
+```json
+{
+  "success": true,
+  "data": { ... },
+  "meta": {
+    "timestamp": "2024-01-15T12:00:00Z",
+    "cached": false
+  }
+}
+```
 
-| Category | Max Points | What It Checks |
-|----------|------------|----------------|
-| Honeypot Detection | 50 | Can you actually sell? Simulated buy/sell transactions |
-| Contract Risks | 30 | Proxy contracts, mint functions, blacklist capabilities |
-| Holder Concentration | 25 | Top holder %, creator holdings, distribution |
-| Liquidity Risk | 25 | Pool depth, LP lock status, rug-pull potential |
-| LP Security | 20 | Burned LP, locked liquidity, pool age |
+### Rate Limiting
 
-**Risk Levels:**
-- `LOW` (0-14): Generally safe, standard caution applies
-- `MEDIUM` (15-29): Some concerns, investigate before aping
-- `HIGH` (30-49): Significant red flags, high risk of loss
-- `CRITICAL` (50+): Likely scam or honeypot, avoid
+- Requests are tracked per API key per day
+- Limits reset at midnight UTC
+- Usage dashboard available in the UI
+- Overage requests return `429 Too Many Requests`
 
-## Tech Stack
+---
 
-- **Framework**: Next.js 16 (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS v4
-- **State**: Zustand + React Query
-- **Database**: Supabase (PostgreSQL + Auth)
-- **Payments**: Stripe
-- **Font**: SF Mono (local)
-- **APIs**:
-  - DexScreener — Token data, pools, prices
-  - GoPlus Security — Risk analysis, honeypot detection
-  - GeckoTerminal — Backup data source
-  - Helius — Solana RPC
-  - Alchemy — EVM RPC
+## Marketing Plan
 
-## Architecture
+### Phase 1: Foundation (Weeks 1-4)
+
+**Objective:** Establish presence and credibility on X (Twitter)
+
+#### Content Pillars
+
+1. **Educational Content** (40%)
+   - "How to spot a honeypot in 30 seconds"
+   - "5 red flags in token contracts"
+   - "What LP lock actually means"
+   - Thread format for deep dives
+
+2. **Real-Time Alerts** (30%)
+   - High-risk tokens trending on other platforms
+   - Whale movements on significant tokens
+   - New token launches with risk analysis
+   - "This token has a 94 risk score. Here's why."
+
+3. **Product Updates** (20%)
+   - Feature announcements
+   - Behind-the-scenes development
+   - User feedback implementation
+   - Roadmap progress
+
+4. **Community Engagement** (10%)
+   - Reply to crypto discussions
+   - Quote tweet popular takes with data
+   - Answer questions about token safety
+
+#### Posting Schedule
+
+| Day | Content Type | Time (UTC) |
+|-----|--------------|------------|
+| Monday | Educational thread | 14:00 |
+| Tuesday | Risk alert | 16:00 |
+| Wednesday | Product update | 15:00 |
+| Thursday | Educational thread | 14:00 |
+| Friday | Weekly recap + risk alerts | 17:00 |
+| Weekend | Community engagement | Flexible |
+
+#### Voice & Tone
+
+- **Direct** — No hedging, no "maybe this is a scam"
+- **Data-driven** — Always back claims with numbers
+- **Helpful** — Educate, don't condescend
+- **Confident** — We know our product is better
+
+#### Sample Posts
+
+**Educational:**
+```
+🧵 How to spot a honeypot in 30 seconds:
+
+1. Check if sell tax > buy tax (red flag)
+2. Look for blacklist functions in contract
+3. Verify LP is locked, not just "locked"
+4. Check holder concentration—if top 10 hold >50%, be careful
+
+Or just use null//check. We do this automatically.
+```
+
+**Risk Alert:**
+```
+⚠️ $TRENDING is currently #3 on [competitor]
+
+Our analysis:
+- Risk Score: 87 (CRITICAL)
+- Sell tax: 99%
+- Top holder: 45% of supply
+- LP: Unlocked
+
+This is a honeypot. You cannot sell.
+
+Data: nullcheck.io/token/eth/0x...
+```
+
+**Product Update:**
+```
+New: Whale tracking is live 🐋
+
+See exactly who's buying and selling:
+- Top 20 holders (PRO)
+- Real-time whale transactions
+- Buy/sell sentiment indicators
+
+Because knowing what smart money does matters.
+
+nullcheck.io
+```
+
+### Phase 2: Growth (Weeks 5-12)
+
+**Objective:** Build community and establish thought leadership
+
+#### Tactics
+
+1. **Influencer Outreach**
+   - Identify 10-20 crypto safety advocates
+   - Offer free PRO accounts for honest reviews
+   - Collaborate on educational content
+   - No paid promotions (stays authentic)
+
+2. **Community Building**
+   - Launch Discord server
+   - Create Telegram announcement channel
+   - Host weekly "Rug Report" spaces on X
+   - Spotlight community members who catch scams
+
+3. **SEO Content**
+   - Blog posts on token safety
+   - Guides for new traders
+   - Comparison content (vs competitors)
+   - Target "how to avoid crypto scams" keywords
+
+4. **Partnerships**
+   - Wallet providers (risk warnings)
+   - Other non-competing tools
+   - Educational platforms
+   - Security researchers
+
+### Phase 3: Scale (Weeks 13+)
+
+**Objective:** Become the default risk-checking tool
+
+#### Tactics
+
+1. **API Adoption**
+   - Reach out to bot developers
+   - Create SDK/libraries for popular languages
+   - Showcase integrations
+   - Developer documentation and examples
+
+2. **Media Coverage**
+   - Press releases for major features
+   - Contributed articles to crypto publications
+   - Podcast appearances
+   - Conference presentations
+
+3. **Paid Acquisition** (if metrics support)
+   - X promoted posts for educational content
+   - Retargeting for site visitors
+   - Conversion-focused landing pages
+
+### Key Metrics
+
+| Metric | Week 4 Target | Week 12 Target |
+|--------|---------------|----------------|
+| X Followers | 1,000 | 10,000 |
+| Daily Active Users | 500 | 5,000 |
+| PRO Subscribers | 50 | 500 |
+| API Keys Created | 20 | 200 |
+| Risk Checks/Day | 10,000 | 100,000 |
+
+### Budget Allocation
+
+| Category | % of Budget | Notes |
+|----------|-------------|-------|
+| Content Creation | 40% | Graphics, video, writing |
+| Community Management | 25% | Engagement, moderation |
+| Influencer Partnerships | 20% | Free accounts, collaborations |
+| Paid Promotion | 10% | X ads (Phase 3 only) |
+| Tools & Software | 5% | Scheduling, analytics |
+
+---
+
+## Technical Architecture
 
 ```
 src/
-├── app/                       # Next.js App Router
+├── app/                          # Next.js App Router
 │   ├── api/
-│   │   ├── keys/             # API key management (CRUD)
-│   │   ├── ohlcv/            # OHLCV chart data
-│   │   ├── risk/             # Risk analysis (single + batch)
-│   │   ├── search/           # Token search
-│   │   ├── stream/           # SSE price streaming
-│   │   ├── stripe/           # Checkout, portal, webhook
-│   │   ├── subscription/     # User subscription status
-│   │   ├── token/            # Token details
-│   │   ├── tokens/           # Token list
-│   │   ├── watchlist/        # Watchlist CRUD
-│   │   └── whale/            # Whale tracking (holders, activity)
-│   ├── auth/callback/        # OAuth callback
-│   ├── charts/               # Multi-chart page
-│   ├── keys/                 # API key management page
-│   ├── pricing/              # Subscription pricing
-│   ├── token/[chain]/[addr]/ # Token detail page
-│   ├── watchlist/            # Watchlist page
-│   └── page.tsx              # Homepage
+│   │   ├── keys/                 # API key management
+│   │   ├── ohlcv/                # Chart data (OHLCV)
+│   │   ├── risk/                 # Risk analysis
+│   │   ├── search/               # Token search
+│   │   ├── stream/               # SSE price streaming
+│   │   ├── stripe/               # Payment processing
+│   │   ├── subscription/         # Subscription status
+│   │   ├── token/                # Token details
+│   │   ├── tokens/               # Token listing
+│   │   ├── watchlist/            # Watchlist CRUD
+│   │   └── whale/                # Whale tracking
+│   ├── auth/callback/            # OAuth callback
+│   ├── charts/                   # Multi-chart page
+│   ├── keys/                     # API key management UI
+│   ├── pricing/                  # Subscription page
+│   ├── token/[chain]/[address]/  # Token detail page
+│   ├── watchlist/                # Watchlist page
+│   └── page.tsx                  # Homepage
 ├── components/
-│   ├── auth/                 # AuthButton, AuthModal
-│   ├── charts/               # ChartGrid, PriceChart
-│   ├── layout/               # Header, Footer
-│   ├── risk/                 # RiskBadge, RiskPanel
-│   ├── subscription/         # SubscriptionProvider, UpgradePrompt
-│   ├── tokens/               # TokenTable, TokenRow, TokenSearch
-│   ├── ui/                   # Button, Badge, Skeleton, etc.
-│   ├── watchlist/            # StarButton
-│   └── whale/                # TopHoldersPanel, WhaleActivityFeed, WhaleActivityBadge
-├── hooks/
-│   ├── useAuth.ts            # Authentication hook
-│   ├── usePriceStream.ts     # SSE connection hook
-│   ├── useRisk.ts            # Risk data hook
-│   ├── useSubscription.ts    # Subscription status hook
-│   ├── useTokens.ts          # Token data hook
-│   └── useWatchlist.ts       # Watchlist management hook
+│   ├── auth/                     # Authentication UI
+│   ├── charts/                   # Chart components
+│   ├── risk/                     # Risk display components
+│   ├── subscription/             # Subscription components
+│   ├── tokens/                   # Token table components
+│   ├── ui/                       # Base UI components
+│   ├── watchlist/                # Watchlist components
+│   └── whale/                    # Whale tracking components
+├── hooks/                        # React hooks
 ├── lib/
-│   ├── api/                  # External API clients
-│   │   └── whale.ts          # Whale data (holders, activity)
-│   ├── auth/                 # Authentication helpers
-│   │   └── verify-api-access.ts  # API key + session verification
-│   ├── db/                   # Supabase clients + helpers
-│   ├── risk/                 # Risk analysis engine
-│   ├── stripe/               # Stripe client + config
-│   └── utils/                # Formatters, helpers
-├── stores/                   # Zustand state stores
-│   ├── chartGrid.ts          # Chart grid state
-│   ├── filters.ts            # Filter state
-│   ├── theme.ts              # Theme state
-│   ├── tokens.ts             # Token data state
-│   ├── ui.ts                 # UI state
-│   └── watchlist.ts          # Watchlist state
-├── types/                    # TypeScript definitions
-│   ├── whale.ts              # Whale tracking types
-│   └── ...
-└── middleware.ts             # Auth session refresh
+│   ├── api/                      # External API clients
+│   ├── auth/                     # Authentication helpers
+│   ├── db/                       # Database clients
+│   ├── risk/                     # Risk analysis engine
+│   ├── stripe/                   # Payment integration
+│   └── utils/                    # Utility functions
+├── stores/                       # Zustand state stores
+└── types/                        # TypeScript definitions
 ```
 
-## Database Schema
+### Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Framework | Next.js 16 (App Router) |
+| Language | TypeScript (strict mode) |
+| Styling | Tailwind CSS v4 |
+| State Management | Zustand |
+| Database | Supabase (PostgreSQL) |
+| Authentication | Supabase Auth |
+| Payments | Stripe |
+| Font | SF Mono (local) |
+
+### External APIs
+
+| Provider | Purpose |
+|----------|---------|
+| DexScreener | Token data, prices, pools |
+| GeckoTerminal | Trending tokens, backup data |
+| GoPlus Security | Risk analysis, honeypot detection |
+| Helius | Solana RPC, token holders |
+| Alchemy | EVM RPC |
+
+### Database Schema
 
 ```sql
 -- User watchlists
-user_watchlists (user_id, token_address, chain_id)
+user_watchlists (
+  user_id UUID REFERENCES auth.users,
+  token_address TEXT,
+  chain_id TEXT,
+  created_at TIMESTAMPTZ
+)
 
 -- User subscriptions
 user_subscriptions (
-  user_id, stripe_customer_id, stripe_subscription_id,
-  tier, status, current_period_start, current_period_end
+  user_id UUID REFERENCES auth.users,
+  stripe_customer_id TEXT,
+  stripe_subscription_id TEXT,
+  tier TEXT CHECK (tier IN ('free', 'pro')),
+  status TEXT,
+  current_period_start TIMESTAMPTZ,
+  current_period_end TIMESTAMPTZ
 )
 
 -- API keys for agents/bots
 api_keys (
-  id, user_id, api_key, name, tier,
-  daily_limit, created_at, last_used, is_revoked
+  id UUID PRIMARY KEY,
+  user_id UUID REFERENCES auth.users,
+  api_key TEXT UNIQUE,
+  name TEXT,
+  tier TEXT CHECK (tier IN ('starter', 'builder', 'scale')),
+  daily_limit INTEGER,
+  created_at TIMESTAMPTZ,
+  last_used TIMESTAMPTZ,
+  is_revoked BOOLEAN
 )
 
 -- API usage tracking
-api_usage (api_key_id, date, request_count)
+api_usage (
+  api_key_id UUID REFERENCES api_keys,
+  date DATE,
+  request_count INTEGER,
+  UNIQUE(api_key_id, date)
+)
 
--- Token data (cached)
+-- Cached token data
 tokens, token_metrics, risk_scores, pools
 ```
+
+---
 
 ## Getting Started
 
@@ -231,21 +509,22 @@ tokens, token_metrics, risk_scores, pools
 
 - Node.js 18+
 - npm or yarn
-- Supabase account (for auth + database)
+- Supabase account
 - Stripe account (for subscriptions)
 
 ### Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/nullcheck.git
+git clone https://github.com/peterkellstrand/nullcheck.git
 cd nullcheck
 
 # Install dependencies
 npm install
 
-# Copy environment variables
+# Set up environment variables
 cp .env.example .env.local
+# Edit .env.local with your API keys
 
 # Run database migrations
 npx supabase db push
@@ -254,125 +533,85 @@ npx supabase db push
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to see the app.
+Visit [http://localhost:3000](http://localhost:3000)
 
 ### Environment Variables
-
-Create a `.env.local` file with:
 
 ```env
 # Supabase (required)
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
-# Risk Analysis APIs
+# Risk Analysis
 GOPLUS_API_KEY=your_goplus_key
-TOKENSNIFFER_API_KEY=your_tokensniffer_key
-
-# RPC Providers (optional, enhances data)
 HELIUS_API_KEY=your_helius_key
-ALCHEMY_API_KEY=your_alchemy_key
 
-# Stripe (for subscriptions)
+# Stripe
 STRIPE_SECRET_KEY=sk_...
 STRIPE_WEBHOOK_SECRET=whsec_...
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_...
 STRIPE_PRICE_PRO_MONTHLY=price_...
 STRIPE_PRICE_PRO_YEARLY=price_...
 NEXT_PUBLIC_APP_URL=http://localhost:3000
-
-# Optional
-RATE_LIMIT_REQUESTS_PER_MINUTE=60
 ```
 
-### Stripe Setup
-
-1. Create a product "nullcheck PRO" in Stripe Dashboard
-2. Create prices: $5/month and $39/year (recurring)
-3. Configure Customer Portal settings
-4. Add webhook endpoint: `https://yoursite.com/api/stripe/webhook`
-5. Select events: `customer.subscription.*`
-
-For local development:
-```bash
-stripe listen --forward-to localhost:3000/api/stripe/webhook
-```
+---
 
 ## Roadmap
 
 ### Completed
-- [x] Token table with real-time data
-- [x] Multi-chain support (ETH, Base, Solana)
+
+- [x] Real-time token table with risk scores
+- [x] Multi-chain support (ETH, Base, Solana, Arbitrum, Polygon)
 - [x] GoPlus risk integration
 - [x] Search and filtering
 - [x] Terminal UI with SF Mono
 - [x] SSE price streaming
-- [x] Supabase database layer
-- [x] User authentication (magic link)
+- [x] User authentication
 - [x] Watchlist functionality
-- [x] Multi-chart grid view
+- [x] Multi-chart grid
 - [x] Token detail pages
-- [x] Dark/light theme toggle
+- [x] Dark/light theme
 - [x] PRO subscription system
-- [x] Whale tracking (top holders, activity feed)
-- [x] API keys for AI agents/bots (3-tier pricing)
+- [x] Whale tracking
+- [x] API for AI agents (3-tier pricing)
 
 ### In Progress
+
 - [ ] Price alerts (Telegram/Discord)
-- [ ] Trending algorithm (organic, time-weighted)
+- [ ] Mobile-optimized views
+- [ ] Advanced charting tools
 
 ### Planned
-- [ ] Additional chains (Arbitrum, Polygon)
+
+- [ ] Browser extension
 - [ ] Shared watchlists
 - [ ] Token notes/comments
 - [ ] Risk score history
-- [ ] Mobile app
+- [ ] Native mobile app
+- [ ] Additional chains
 
-## Design Principles
-
-### Visual Language
-- **Monochrome palette**: Blacks (#000000), grays (#333-#666), white (#ffffff) accents
-- **Emerald highlights**: PRO features and success states (#10b981)
-- **Dense data**: Maximize information per pixel
-- **No decoration**: Every element serves a purpose
-- **Terminal heritage**: Inspired by Bloomberg terminals and trading CLIs
-
-### Typography
-- **Font**: SF Mono across all text
-- **Hierarchy**: Size and opacity, not weight
-- **Numbers**: Tabular figures for aligned columns
-
-### Interactions
-- **Hover states**: Subtle brightness changes
-- **Click feedback**: Immediate, no animations
-- **Loading**: Skeleton screens, not spinners
-
-## API Rate Limits
-
-The app is designed to minimize API calls:
-
-| API | Rate Limit | Our Usage |
-|-----|------------|-----------|
-| DexScreener | 300/min | ~10/min (cached) |
-| GoPlus | 30/min | On-demand only |
-| GeckoTerminal | 30/min | Backup only |
+---
 
 ## Contributing
 
 Contributions are welcome. Please:
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
+2. Create a feature branch (`git checkout -b feature/your-feature`)
+3. Commit your changes
+4. Push to the branch
 5. Open a Pull Request
 
-### Code Style
+### Code Standards
+
 - TypeScript strict mode
 - Functional components with hooks
-- Tailwind for all styling (no CSS modules)
-- Descriptive variable names over comments
+- Tailwind for styling
+- Descriptive names over comments
+- Test critical paths
+
+---
 
 ## License
 
@@ -380,4 +619,15 @@ MIT License. See [LICENSE](LICENSE) for details.
 
 ---
 
-**null//check** — Because you should know if you can sell before you buy.
+## Contact
+
+- **Website:** [nullcheck.io](https://nullcheck.io)
+- **X (Twitter):** [@nullcheck](https://x.com/nullcheck)
+- **GitHub:** [github.com/peterkellstrand/nullcheck](https://github.com/peterkellstrand/nullcheck)
+
+---
+
+<p align="center">
+  <strong>null//check</strong><br>
+  <em>Because you should know if you can sell before you buy.</em>
+</p>
