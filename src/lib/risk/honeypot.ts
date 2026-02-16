@@ -54,29 +54,3 @@ export async function detectHoneypot(
   }
 }
 
-export function simulateTrade(
-  buyTax: number,
-  sellTax: number,
-  amount: number
-): {
-  netAmount: number;
-  totalTax: number;
-  warning?: string;
-} {
-  const buyAmount = amount * (1 - buyTax / 100);
-  const sellAmount = buyAmount * (1 - sellTax / 100);
-  const totalTax = ((amount - sellAmount) / amount) * 100;
-
-  let warning: string | undefined;
-  if (totalTax > 50) {
-    warning = `Round-trip tax of ${totalTax.toFixed(1)}% - potential honeypot`;
-  } else if (totalTax > 20) {
-    warning = `High round-trip tax: ${totalTax.toFixed(1)}%`;
-  }
-
-  return {
-    netAmount: sellAmount,
-    totalTax,
-    warning,
-  };
-}

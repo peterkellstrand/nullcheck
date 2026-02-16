@@ -78,67 +78,6 @@ export async function analyzeToken(
   };
 }
 
-export function formatRiskScore(score: number): string {
-  if (score <= RISK_THRESHOLDS.low.max) return `${score} (Low Risk)`;
-  if (score <= RISK_THRESHOLDS.medium.max) return `${score} (Medium Risk)`;
-  if (score <= RISK_THRESHOLDS.high.max) return `${score} (High Risk)`;
-  return `${score} (Critical Risk)`;
-}
-
-export function getRiskColor(level: RiskLevel): string {
-  switch (level) {
-    case 'low':
-      return '#00ff00'; // Green
-    case 'medium':
-      return '#ffff00'; // Yellow
-    case 'high':
-      return '#ff8800'; // Orange
-    case 'critical':
-      return '#ff0000'; // Red
-  }
-}
-
-export function getRiskEmoji(level: RiskLevel): string {
-  switch (level) {
-    case 'low':
-      return '✓';
-    case 'medium':
-      return '⚠';
-    case 'high':
-      return '⚠';
-    case 'critical':
-      return '✗';
-  }
-}
-
-export function summarizeRisk(risk: RiskScore): string {
-  const critical = risk.warnings.filter((w) => w.severity === 'critical');
-  const high = risk.warnings.filter((w) => w.severity === 'high');
-
-  if (critical.length > 0) {
-    return critical[0].message;
-  }
-
-  if (high.length > 0) {
-    return high[0].message;
-  }
-
-  if (risk.warnings.length > 0) {
-    return risk.warnings[0].message;
-  }
-
-  return 'No significant risks detected';
-}
-
-export function shouldWarn(risk: RiskScore): boolean {
-  return (
-    risk.level === 'critical' ||
-    risk.level === 'high' ||
-    risk.honeypot.isHoneypot ||
-    risk.honeypot.cannotSell
-  );
-}
-
 // Quick check for obvious red flags without full analysis
 export async function quickRiskCheck(
   chainId: ChainId,
