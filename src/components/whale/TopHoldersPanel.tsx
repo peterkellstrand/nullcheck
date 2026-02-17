@@ -31,11 +31,11 @@ export function TopHoldersPanel({ chainId, tokenAddress }: TopHoldersPanelProps)
         );
         const data = await response.json();
 
-        if (data.success) {
-          setHolders(data.holders);
-          setLimit(data.limit);
+        if (data.success && data.data) {
+          setHolders(data.data.holders || []);
+          setLimit(data.data.limit || 5);
         } else {
-          setError(data.error || 'Failed to load holders');
+          setError(data.error?.message || 'Failed to load holders');
         }
       } catch {
         setError('Failed to load holders');

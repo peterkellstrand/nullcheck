@@ -26,10 +26,10 @@ export function WhaleActivityFeed({ chainId, tokenAddress }: WhaleActivityFeedPr
         );
         const data = await response.json();
 
-        if (data.success) {
-          setActivity(data.activity);
+        if (data.success && data.data?.activity) {
+          setActivity(data.data.activity);
         } else {
-          setError(data.error || 'Failed to load activity');
+          setError(data.error?.message || 'Failed to load activity');
         }
       } catch {
         setError('Failed to load activity');
