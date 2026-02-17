@@ -26,8 +26,14 @@ export function WhaleActivityFeed({ chainId, tokenAddress }: WhaleActivityFeedPr
         );
         const data = await response.json();
 
-        if (data.success && data.data?.activity) {
-          setActivity(data.data.activity);
+        if (data.success && data.data) {
+          // API returns activity fields directly in data.data
+          setActivity({
+            count24h: data.data.count24h || 0,
+            buyCount24h: data.data.buyCount24h || 0,
+            sellCount24h: data.data.sellCount24h || 0,
+            netFlow24h: data.data.netFlow24h || 0,
+          });
         } else {
           setError(data.error?.message || 'Failed to load activity');
         }

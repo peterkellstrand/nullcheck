@@ -210,8 +210,8 @@ export function PriceChart({
         );
         const data = await response.json();
 
-        if (data.success && data.ohlcv && data.ohlcv.length > 0) {
-          const ohlcv: OHLCV[] = data.ohlcv;
+        if (data.success && data.data?.ohlcv && data.data.ohlcv.length > 0) {
+          const ohlcv: OHLCV[] = data.data.ohlcv;
           setOhlcvData(ohlcv);
 
           // Candlestick data
@@ -264,7 +264,7 @@ export function PriceChart({
 
           chartRef.current?.timeScale().fitContent();
         } else {
-          setError(data.error || 'No chart data available');
+          setError(data.error?.message || 'No chart data available');
         }
       } catch (err) {
         setError('Failed to load chart');
