@@ -15,6 +15,8 @@ export interface AgentLimits {
   batchSize: number;
   price: number;
   label: string;
+  overageEnabled: boolean;
+  overagePricePerThousand: number; // USD per 1000 requests over limit
 }
 
 export const TIER_LIMITS: Record<SubscriptionTier, SubscriptionLimits> = {
@@ -40,18 +42,24 @@ export const AGENT_LIMITS: Record<AgentTier, AgentLimits> = {
     batchSize: 10,
     price: 0,
     label: 'Starter',
+    overageEnabled: false, // Free tier has hard limit
+    overagePricePerThousand: 0,
   },
   builder: {
     apiCallsPerDay: 100000,
     batchSize: 50,
     price: 19,
     label: 'Builder',
+    overageEnabled: true,
+    overagePricePerThousand: 0.25, // $0.25 per 1000 requests
   },
   scale: {
     apiCallsPerDay: 1000000,
     batchSize: 100,
     price: 49,
     label: 'Scale',
+    overageEnabled: true,
+    overagePricePerThousand: 0.10, // $0.10 per 1000 requests (volume discount)
   },
 };
 

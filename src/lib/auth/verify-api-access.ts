@@ -37,6 +37,8 @@ export type ApiAccessAgent = {
     remaining: number;
     reset: number; // Unix timestamp
   };
+  isOverage: boolean; // True if request exceeds daily limit (but overage is allowed)
+  overageCount: number; // Number of requests over daily limit today
 };
 
 export type ApiAccessError = {
@@ -118,12 +120,19 @@ export async function verifyApiAccess(req: NextRequest): Promise<ApiAccess> {
 
     const currentUsage = usage?.request_count || 0;
     const resetTimestamp = getResetTimestamp();
+    const tier = (key.tier as AgentTier) || 'starter';
+    const tierLimits = AGENT_LIMITS[tier] || AGENT_LIMITS.starter;
 
-    if (currentUsage >= key.daily_limit) {
+    // Check if limit exceeded
+    const isOverLimit = currentUsage >= key.daily_limit;
+    const overageCount = Math.max(0, currentUsage - key.daily_limit + 1);
+
+    // If over limit and overage NOT enabled, reject the request
+    if (isOverLimit && !tierLimits.overageEnabled) {
       return {
         type: 'error',
         code: 'RATE_LIMITED',
-        error: 'Daily API limit exceeded',
+        error: 'Daily API limit exceeded. Upgrade to Builder or Scale tier for overage billing.',
         rateLimit: {
           limit: key.daily_limit,
           remaining: 0,
@@ -146,18 +155,19 @@ export async function verifyApiAccess(req: NextRequest): Promise<ApiAccess> {
       .update({ last_used: new Date().toISOString() })
       .eq('id', key.id);
 
-    const tier = (key.tier as AgentTier) || 'starter';
     return {
       type: 'agent',
       tier,
       userId: key.user_id,
       keyId: key.id,
-      limits: AGENT_LIMITS[tier] || AGENT_LIMITS.starter,
+      limits: tierLimits,
       rateLimit: {
         limit: key.daily_limit,
-        remaining: key.daily_limit - currentUsage - 1,
+        remaining: Math.max(0, key.daily_limit - currentUsage - 1),
         reset: resetTimestamp,
       },
+      isOverage: isOverLimit,
+      overageCount: isOverLimit ? overageCount : 0,
     };
   }
 
@@ -202,11 +212,20 @@ export function requireAuth(access: ApiAccess): access is ApiAccessHuman | ApiAc
 // Helper to create rate limit headers
 export function createRateLimitHeaders(access: ApiAccess): Record<string, string> {
   if (access.type === 'agent') {
-    return {
+    const headers: Record<string, string> = {
       'X-RateLimit-Limit': access.rateLimit.limit.toString(),
       'X-RateLimit-Remaining': access.rateLimit.remaining.toString(),
       'X-RateLimit-Reset': access.rateLimit.reset.toString(),
     };
+
+    // Add overage headers if applicable
+    if (access.isOverage) {
+      headers['X-RateLimit-Overage'] = 'true';
+      headers['X-RateLimit-Overage-Count'] = access.overageCount.toString();
+      headers['X-RateLimit-Overage-Rate'] = `$${access.limits.overagePricePerThousand}/1000`;
+    }
+
+    return headers;
   }
   if (access.type === 'error' && access.rateLimit) {
     return {
