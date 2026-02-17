@@ -12,6 +12,7 @@ import {
   API_VERSION,
   CACHE_MAX_AGE,
 } from '@/lib/api/utils';
+import { triggerRiskWebhooks, shouldTriggerRiskWebhook } from '@/lib/webhooks/triggers';
 
 export const runtime = 'edge';
 
@@ -197,6 +198,17 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     // Cache the result (ignore errors)
     upsertRiskScore(riskScore).catch(console.error);
+
+    // Trigger webhooks for high/critical risk (fire-and-forget, don't block response)
+    if (shouldTriggerRiskWebhook(riskScore)) {
+      triggerRiskWebhooks(
+        address,
+        chainId,
+        body.symbol || 'UNKNOWN',
+        body.name || 'Unknown Token',
+        riskScore
+      ).catch((err) => console.error('Webhook trigger error:', err));
+    }
 
     const etag = generateETag(riskScore);
 
