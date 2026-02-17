@@ -92,13 +92,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const webhooks: WebhookSubscription[] = (data || []).map((row) => ({
+    // SECURITY: Never return secrets in GET response - only shown at creation time
+    const webhooks: Omit<WebhookSubscription, 'secret'>[] = (data || []).map((row) => ({
       id: row.id,
       apiKeyId: row.api_key_id,
       webhookUrl: row.webhook_url,
       events: row.events,
       isActive: row.is_active,
-      secret: row.secret,
+      // secret intentionally omitted - only returned on POST
       filters: row.filters,
       createdAt: row.created_at,
       updatedAt: row.updated_at,

@@ -18,28 +18,28 @@ interface RouteParams {
 
 /**
  * Verify the request is authorized to run cron jobs
+ * SECURITY: Requires CRON_SECRET or valid Vercel signature
  */
 function verifyAuthorization(request: NextRequest): boolean {
-  // Check for Vercel Cron authorization header
   const authHeader = request.headers.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
 
-  // If CRON_SECRET is set, require it
-  if (cronSecret) {
-    return authHeader === `Bearer ${cronSecret}`;
+  // Option 1: CRON_SECRET via Bearer token (recommended)
+  if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
+    return true;
   }
 
-  // Also accept Vercel's internal cron header
+  // Option 2: Vercel's internal cron - only valid when deployed on Vercel
+  // Vercel sets this header AND the request must come from Vercel's IP range
+  // We verify by checking if VERCEL environment variable is set (only on Vercel)
   const vercelCron = request.headers.get('x-vercel-cron');
-  if (vercelCron) {
+  const isVercelEnvironment = process.env.VERCEL === '1';
+  if (vercelCron && isVercelEnvironment) {
     return true;
   }
 
-  // In development, allow unauthenticated access
-  if (process.env.NODE_ENV === 'development') {
-    return true;
-  }
-
+  // No valid authentication - deny access
+  // SECURITY: Removed NODE_ENV === 'development' bypass
   return false;
 }
 

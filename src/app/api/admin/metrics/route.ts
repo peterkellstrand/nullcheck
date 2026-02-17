@@ -25,19 +25,21 @@ function getServiceClient() {
 }
 
 /**
- * Verify admin access via service key or admin user
+ * Verify admin access via ADMIN_SECRET
+ * SECURITY: Always require ADMIN_SECRET, even in development
  */
 function verifyAdminAccess(request: NextRequest): boolean {
   const authHeader = request.headers.get('authorization');
   const adminSecret = process.env.ADMIN_SECRET;
 
-  // Check admin secret
-  if (adminSecret && authHeader === `Bearer ${adminSecret}`) {
-    return true;
+  // ADMIN_SECRET must be configured
+  if (!adminSecret) {
+    console.error('ADMIN_SECRET not configured - admin access denied');
+    return false;
   }
 
-  // In development, allow access
-  if (process.env.NODE_ENV === 'development') {
+  // Require Bearer token matching ADMIN_SECRET
+  if (authHeader === `Bearer ${adminSecret}`) {
     return true;
   }
 

@@ -16,17 +16,19 @@ interface HealthCheck {
 }
 
 /**
- * Verify admin access
+ * Verify admin access via ADMIN_SECRET
+ * SECURITY: Always require ADMIN_SECRET, even in development
  */
 function verifyAdminAccess(request: NextRequest): boolean {
   const authHeader = request.headers.get('authorization');
   const adminSecret = process.env.ADMIN_SECRET;
 
-  if (adminSecret && authHeader === `Bearer ${adminSecret}`) {
-    return true;
+  if (!adminSecret) {
+    console.error('ADMIN_SECRET not configured - admin access denied');
+    return false;
   }
 
-  if (process.env.NODE_ENV === 'development') {
+  if (authHeader === `Bearer ${adminSecret}`) {
     return true;
   }
 
