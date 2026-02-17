@@ -76,12 +76,14 @@ export async function getToken(
   const normalizedAddr = normalizeAddress(address, chainId);
 
   const result = await withTimeout(
-    supabase
-      .from('tokens')
-      .select('*')
-      .eq('chain_id', chainId)
-      .eq('address', normalizedAddr)
-      .single()
+    Promise.resolve(
+      supabase
+        .from('tokens')
+        .select('*')
+        .eq('chain_id', chainId)
+        .eq('address', normalizedAddr)
+        .single()
+    )
   );
 
   if (!result) {
@@ -136,12 +138,14 @@ export async function getTokenMetrics(
   const normalizedAddr = normalizeAddress(address, chainId);
 
   const result = await withTimeout(
-    supabase
-      .from('token_metrics')
-      .select('*')
-      .eq('chain_id', chainId)
-      .eq('token_address', normalizedAddr)
-      .single()
+    Promise.resolve(
+      supabase
+        .from('token_metrics')
+        .select('*')
+        .eq('chain_id', chainId)
+        .eq('token_address', normalizedAddr)
+        .single()
+    )
   );
 
   if (!result) {
@@ -194,13 +198,15 @@ export async function getRiskScore(
   const normalizedAddr = normalizeAddress(address, chainId);
 
   const result = await withTimeout(
-    supabase
-      .from('risk_scores')
-      .select('*')
-      .eq('chain_id', chainId)
-      .eq('token_address', normalizedAddr)
-      .gt('expires_at', new Date().toISOString())
-      .single()
+    Promise.resolve(
+      supabase
+        .from('risk_scores')
+        .select('*')
+        .eq('chain_id', chainId)
+        .eq('token_address', normalizedAddr)
+        .gt('expires_at', new Date().toISOString())
+        .single()
+    )
   );
 
   if (!result) {
@@ -238,12 +244,14 @@ export async function getRiskScoresBatch(
   // Fetch all chains in parallel
   const promises = Array.from(byChain.entries()).map(async ([chainId, addresses]) => {
     const result = await withTimeout(
-      supabase
-        .from('risk_scores')
-        .select('*')
-        .eq('chain_id', chainId)
-        .in('token_address', addresses)
-        .gt('expires_at', new Date().toISOString()),
+      Promise.resolve(
+        supabase
+          .from('risk_scores')
+          .select('*')
+          .eq('chain_id', chainId)
+          .in('token_address', addresses)
+          .gt('expires_at', new Date().toISOString())
+      ),
       QUERY_TIMEOUT * 2 // Allow more time for batch queries
     );
 
@@ -311,7 +319,7 @@ export async function getTopTokens(
     query = query.eq('chain_id', chainId);
   }
 
-  const result = await withTimeout(query, QUERY_TIMEOUT * 2);
+  const result = await withTimeout(Promise.resolve(query), QUERY_TIMEOUT * 2);
 
   if (!result) {
     console.warn('Database timeout getting top tokens');

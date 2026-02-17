@@ -1,5 +1,6 @@
 import { ChainId } from '@/types/chain';
 import { Token, Pool, TokenMetrics } from '@/types/token';
+import { checkRateLimit } from './rate-limiter';
 
 const BASE_URL = 'https://api.dexscreener.com/latest';
 const TOKEN_PROFILES_URL = 'https://api.dexscreener.com/token-profiles/latest/v1';
@@ -68,6 +69,8 @@ interface DexScreenerResponse {
 }
 
 async function fetchApi<T>(endpoint: string): Promise<T> {
+  await checkRateLimit('dexscreener');
+
   const response = await fetch(`${BASE_URL}${endpoint}`, {
     headers: {
       Accept: 'application/json',

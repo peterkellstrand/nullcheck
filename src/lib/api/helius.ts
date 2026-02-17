@@ -1,6 +1,7 @@
 import { HeliusAsset, HeliusHolders, HeliusTokenAccount } from '@/types/api';
 import { Token } from '@/types/token';
 import { RiskWarning } from '@/types/risk';
+import { checkRateLimit } from './rate-limiter';
 
 const getBaseUrl = () => {
   const apiKey = process.env.HELIUS_API_KEY;
@@ -11,6 +12,8 @@ const getBaseUrl = () => {
 };
 
 async function rpcCall<T>(method: string, params: unknown[]): Promise<T> {
+  await checkRateLimit('helius');
+
   const response = await fetch(getBaseUrl(), {
     method: 'POST',
     headers: {

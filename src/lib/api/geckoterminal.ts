@@ -5,6 +5,7 @@ import {
 } from '@/types/api';
 import { ChainId } from '@/types/chain';
 import { Pool, OHLCV, TokenWithMetrics } from '@/types/token';
+import { checkRateLimit } from './rate-limiter';
 
 const BASE_URL = 'https://api.geckoterminal.com/api/v2';
 
@@ -17,6 +18,8 @@ const NETWORK_MAP: Record<ChainId, string> = {
 };
 
 async function fetchApi<T>(endpoint: string): Promise<T> {
+  await checkRateLimit('geckoterminal');
+
   const response = await fetch(`${BASE_URL}${endpoint}`, {
     headers: {
       Accept: 'application/json',

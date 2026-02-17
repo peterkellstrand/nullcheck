@@ -1,6 +1,7 @@
 import { ChainId } from '@/types/chain';
 import { AlchemyTokenMetadata, AlchemyContractMetadata } from '@/types/api';
 import { Token } from '@/types/token';
+import { checkRateLimit } from './rate-limiter';
 
 const NETWORK_MAP: Record<Exclude<ChainId, 'solana'>, string> = {
   ethereum: 'eth-mainnet',
@@ -23,6 +24,8 @@ async function rpcCall<T>(
   method: string,
   params: unknown[]
 ): Promise<T> {
+  await checkRateLimit('alchemy');
+
   const response = await fetch(getBaseUrl(chainId), {
     method: 'POST',
     headers: {
