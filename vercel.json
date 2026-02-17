@@ -1,0 +1,25 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    {
+      "path": "/api/cron/cleanup-webhooks",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/cleanup-idempotent",
+      "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/cleanup-risk-scores",
+      "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/cron/refresh-trending",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/report-usage",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}
