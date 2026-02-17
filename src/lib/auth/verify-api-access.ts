@@ -71,35 +71,16 @@ export async function verifyApiAccess(req: NextRequest): Promise<ApiAccess> {
   if (apiKey) {
     const service = await getSupabaseServerWithServiceRole();
 
-    // Hash the API key for secure lookup
+    // SECURITY: Hash the API key for secure lookup (never store or compare plain text)
     const hashedKey = await hashApiKey(apiKey);
 
-    // Try hashed_key first (new secure method), fall back to api_key (legacy)
-    let key = null;
-    let error = null;
-
-    // Try hashed lookup first
-    const hashedResult = await service
+    // Look up by hashed key only - plain text keys no longer supported
+    const { data: key, error } = await service
       .from('api_keys')
       .select('id, user_id, tier, daily_limit, is_revoked')
       .eq('hashed_key', hashedKey)
       .eq('is_revoked', false)
       .single();
-
-    if (hashedResult.data) {
-      key = hashedResult.data;
-    } else {
-      // Fall back to plain text lookup (for backward compatibility during migration)
-      const plainResult = await service
-        .from('api_keys')
-        .select('id, user_id, tier, daily_limit, is_revoked')
-        .eq('api_key', apiKey)
-        .eq('is_revoked', false)
-        .single();
-
-      key = plainResult.data;
-      error = plainResult.error;
-    }
 
     if (error || !key) {
       return {

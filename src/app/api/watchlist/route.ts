@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer, getSupabaseServerWithServiceRole } from '@/lib/db/supabase-server';
 import { getWatchedTokenKeys, addToWatchlist } from '@/lib/db/watchlist';
 import { getUserSubscription } from '@/lib/db/subscription';
+import { validateCsrfToken, createCsrfErrorResponse } from '@/lib/auth/csrf';
 import { ChainId } from '@/types/chain';
 import { TIER_LIMITS } from '@/types/subscription';
 
@@ -29,6 +30,11 @@ export async function GET() {
 
 // POST - Add token to watchlist
 export async function POST(request: NextRequest) {
+  // Validate CSRF token for session-based requests
+  if (!(await validateCsrfToken(request))) {
+    return createCsrfErrorResponse();
+  }
+
   const supabase = await getSupabaseServer();
   const {
     data: { user },

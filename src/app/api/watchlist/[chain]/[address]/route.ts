@@ -1,13 +1,19 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/db/supabase-server';
 import { removeFromWatchlist } from '@/lib/db/watchlist';
+import { validateCsrfToken, createCsrfErrorResponse } from '@/lib/auth/csrf';
 import { ChainId } from '@/types/chain';
 
 // DELETE - Remove token from watchlist
 export async function DELETE(
-  _request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ chain: string; address: string }> }
 ) {
+  // Validate CSRF token for session-based requests
+  if (!(await validateCsrfToken(request))) {
+    return createCsrfErrorResponse();
+  }
+
   const { chain, address } = await params;
   const chainId = chain as ChainId;
 

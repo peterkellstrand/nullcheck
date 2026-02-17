@@ -419,13 +419,14 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const webhook: WebhookSubscription = {
+    // SECURITY: Never return secret on updates - only shown at creation time
+    const webhook: Omit<WebhookSubscription, 'secret'> = {
       id: data.id,
       apiKeyId: data.api_key_id,
       webhookUrl: data.webhook_url,
       events: data.events,
       isActive: data.is_active,
-      secret: data.secret,
+      // secret intentionally omitted - only returned on POST
       filters: data.filters,
       createdAt: data.created_at,
       updatedAt: data.updated_at,

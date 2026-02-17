@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { nanoid } from 'nanoid';
 import { getSupabaseServer, getSupabaseServerWithServiceRole } from '@/lib/db/supabase-server';
+import { validateCsrfToken, createCsrfErrorResponse } from '@/lib/auth/csrf';
 
 // Hash API key using SHA-256 (Web Crypto API for edge runtime)
 async function hashApiKey(key: string): Promise<string> {
@@ -45,6 +46,11 @@ export async function GET() {
 
 // POST - Create new API key
 export async function POST(req: NextRequest) {
+  // Validate CSRF token for session-based requests
+  if (!(await validateCsrfToken(req))) {
+    return createCsrfErrorResponse();
+  }
+
   const supabase = await getSupabaseServer();
   const {
     data: { user },
@@ -93,13 +99,14 @@ export async function POST(req: NextRequest) {
   const hashedKey = await hashApiKey(apiKey);
   const keyPrefix = apiKey.substring(0, 12) + '...';
 
+  // SECURITY: Only store hashed key, never plain text
   const { data, error } = await service
     .from('api_keys')
     .insert({
       user_id: user.id,
-      api_key: apiKey, // Store plain text for backward compatibility (will be removed after migration)
-      hashed_key: hashedKey, // Store hashed version for secure lookups
-      key_prefix: keyPrefix, // Store prefix for display
+      // api_key intentionally NOT stored - security risk
+      hashed_key: hashedKey, // Only store hashed version for secure lookups
+      key_prefix: keyPrefix, // Store prefix for display in UI
       name,
       tier,
       daily_limit: dailyLimit,
@@ -131,6 +138,11 @@ export async function POST(req: NextRequest) {
 
 // DELETE - Revoke API key
 export async function DELETE(req: NextRequest) {
+  // Validate CSRF token for session-based requests
+  if (!(await validateCsrfToken(req))) {
+    return createCsrfErrorResponse();
+  }
+
   const supabase = await getSupabaseServer();
   const {
     data: { user },
