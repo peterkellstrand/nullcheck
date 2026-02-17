@@ -55,12 +55,12 @@ export default function Home() {
 
       const data = await response.json();
 
-      if (data.success && data.results) {
+      if (data.success && data.data?.results) {
         // Update tokens with real risk scores
         setTokens(
           tokenList.map(token => {
             const key = `${token.chainId}-${token.address.toLowerCase()}`;
-            const riskScore = data.results[key] as RiskScore | undefined;
+            const riskScore = data.data.results[key] as RiskScore | undefined;
             if (riskScore) {
               return { ...token, risk: riskScore };
             }

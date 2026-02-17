@@ -31,17 +31,17 @@ export default function TokenDetailPage() {
         const response = await fetch(`/api/token/${chain}/${address}`);
         const data = await response.json();
 
-        if (data.success && data.token) {
-          setToken(data.token);
+        if (data.success && data.data?.token) {
+          setToken(data.data.token);
 
           // Fetch risk score
-          if (data.token.risk) {
-            setRisk(data.token.risk);
+          if (data.data.token.risk) {
+            setRisk(data.data.token.risk);
           } else {
             fetchRiskScore();
           }
         } else {
-          setError(data.error || 'Token not found');
+          setError(data.error?.message || 'Token not found');
         }
       } catch (err) {
         setError('Failed to fetch token');
@@ -62,8 +62,8 @@ export default function TokenDetailPage() {
         });
         const data = await response.json();
         const key = `${chain}-${address.toLowerCase()}`;
-        if (data.success && data.results[key]) {
-          setRisk(data.results[key]);
+        if (data.success && data.data?.results?.[key]) {
+          setRisk(data.data.results[key]);
         }
       } catch (err) {
         console.error('Risk fetch error:', err);

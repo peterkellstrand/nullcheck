@@ -51,8 +51,8 @@ export function ChartTokenSelector({ compact = false }: ChartTokenSelectorProps)
       const response = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
       if (!response.ok) throw new Error('Search failed');
       const data = await response.json();
-      if (data.success) {
-        setResults(data.results?.slice(0, 6) ?? []);
+      if (data.success && data.data?.results) {
+        setResults(data.data.results.slice(0, 6));
       }
     } catch (err) {
       console.error('Search error:', err);

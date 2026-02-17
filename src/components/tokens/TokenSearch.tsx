@@ -35,8 +35,8 @@ export function TokenSearch({
       try {
         const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
         const data = await response.json();
-        if (data.success) {
-          setResults(data.results);
+        if (data.success && data.data?.results) {
+          setResults(data.data.results);
           setShowDropdown(true);
         }
       } catch (error) {
