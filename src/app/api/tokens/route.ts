@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ChainId, CHAINS } from '@/types/chain';
-import { TokenWithMetrics } from '@/types/token';
-import { getRiskLevel } from '@/types/risk';
+import { TokenWithMetrics, TokenMetrics } from '@/types/token';
+import { getRiskLevel, RiskLevel } from '@/types/risk';
 import * as geckoterminal from '@/lib/api/geckoterminal';
 import * as db from '@/lib/db/supabase';
+import { TrendingToken } from '@/lib/db/supabase';
 import { calculateTrendingScores } from '@/lib/trending';
 import {
   generateRequestId,
@@ -21,6 +22,83 @@ export const OPTIONS = handleCorsOptions;
 
 // Cache freshness threshold (30 seconds)
 const CACHE_TTL_MS = 30 * 1000;
+
+/**
+ * Convert TrendingToken from materialized view to TokenWithMetrics
+ */
+function mapTrendingToTokenWithMetrics(t: TrendingToken): TokenWithMetrics {
+  const metrics: TokenMetrics = {
+    tokenAddress: t.address,
+    chainId: t.chainId,
+    price: t.price,
+    priceChange1h: t.priceChange1h,
+    priceChange24h: t.priceChange24h,
+    priceChange7d: 0, // Not available in MV
+    volume24h: t.volume24h,
+    liquidity: t.liquidity,
+    marketCap: t.marketCap,
+    fdv: t.fdv,
+    txns24h: t.txns24h,
+    buys24h: t.buys24h,
+    sells24h: t.sells24h,
+    updatedAt: new Date().toISOString(),
+  };
+
+  return {
+    address: t.address,
+    chainId: t.chainId,
+    symbol: t.symbol,
+    name: t.name,
+    decimals: t.decimals,
+    logoUrl: t.logoUrl,
+    metrics,
+    risk: t.riskScore !== undefined ? {
+      tokenAddress: t.address,
+      chainId: t.chainId,
+      totalScore: t.riskScore,
+      level: (t.riskLevel as RiskLevel) || getRiskLevel(t.riskScore),
+      liquidity: {
+        score: 0,
+        liquidity: t.liquidity,
+        lpLocked: false,
+        lpLockedPercent: 0,
+        lpBurnedPercent: 0,
+        warnings: [],
+      },
+      holders: {
+        score: 0,
+        totalHolders: 0,
+        top10Percent: 0,
+        top20Percent: 0,
+        creatorHoldingPercent: 0,
+        warnings: [],
+      },
+      contract: {
+        score: 0,
+        verified: true,
+        renounced: false,
+        hasProxy: false,
+        hasMintFunction: false,
+        hasPauseFunction: false,
+        hasBlacklistFunction: false,
+        maxTaxPercent: 0,
+        warnings: [],
+      },
+      honeypot: {
+        score: 0,
+        isHoneypot: t.isHoneypot || false,
+        buyTax: 0,
+        sellTax: 0,
+        transferTax: 0,
+        cannotSell: false,
+        cannotTransfer: false,
+        warnings: [],
+      },
+      warnings: [],
+      analyzedAt: new Date().toISOString(),
+    } : undefined,
+  };
+}
 
 export async function GET(request: NextRequest) {
   const requestId = request.headers.get('X-Request-ID') || generateRequestId();
@@ -41,25 +119,38 @@ export async function GET(request: NextRequest) {
   try {
     let tokens: TokenWithMetrics[] = [];
     let fromCache = false;
+    let fromMaterializedView = false;
 
-    // Try to get cached tokens from Supabase
-    const cachedTokens = await db.getTopTokens(chainId || undefined, 'volume_24h', limit);
+    // Try materialized view first (fastest - pre-computed data)
+    const trendingTokens = await db.getTrendingTokens(chainId || undefined, limit);
 
-    // Check if cache is fresh (updated within last 30 seconds)
-    if (cachedTokens.length > 0) {
-      const newestUpdate = cachedTokens.reduce((latest, t) => {
-        const updatedAt = new Date(t.metrics.updatedAt || 0).getTime();
-        return updatedAt > latest ? updatedAt : latest;
-      }, 0);
+    if (trendingTokens && trendingTokens.length > 0) {
+      // Materialized view available and has data
+      tokens = trendingTokens.map(mapTrendingToTokenWithMetrics);
+      fromCache = true;
+      fromMaterializedView = true;
+    }
 
-      const cacheAge = Date.now() - newestUpdate;
-      if (cacheAge < CACHE_TTL_MS) {
-        // Cache is fresh, use it
-        tokens = cachedTokens.map((t) => ({
-          ...t,
-          risk: undefined, // Risk scores fetched separately
-        }));
-        fromCache = true;
+    // Fallback: Try regular cached tokens from Supabase
+    if (!fromMaterializedView) {
+      const cachedTokens = await db.getTopTokens(chainId || undefined, 'volume_24h', limit);
+
+      // Check if cache is fresh (updated within last 30 seconds)
+      if (cachedTokens.length > 0) {
+        const newestUpdate = cachedTokens.reduce((latest, t) => {
+          const updatedAt = new Date(t.metrics.updatedAt || 0).getTime();
+          return updatedAt > latest ? updatedAt : latest;
+        }, 0);
+
+        const cacheAge = Date.now() - newestUpdate;
+        if (cacheAge < CACHE_TTL_MS) {
+          // Cache is fresh, use it
+          tokens = cachedTokens.map((t) => ({
+            ...t,
+            risk: undefined, // Risk scores fetched separately
+          }));
+          fromCache = true;
+        }
       }
     }
 
@@ -134,6 +225,7 @@ export async function GET(request: NextRequest) {
             count: tokens.length,
             timestamp: new Date().toISOString(),
             fromCache,
+            source: fromMaterializedView ? 'materialized_view' : fromCache ? 'cache' : 'live',
           },
         },
       },

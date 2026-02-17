@@ -448,3 +448,99 @@ function mapRiskScoreToDb(risk: RiskScore): Record<string, unknown> {
     expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(), // 1 hour
   };
 }
+
+// =============================================================================
+// TRENDING TOKENS (MATERIALIZED VIEW)
+// =============================================================================
+
+export interface TrendingToken {
+  address: string;
+  chainId: ChainId;
+  symbol: string;
+  name: string;
+  logoUrl?: string;
+  decimals: number;
+  price: number;
+  priceChange1h: number;
+  priceChange24h: number;
+  volume24h: number;
+  liquidity: number;
+  marketCap?: number;
+  fdv?: number;
+  txns24h?: number;
+  buys24h?: number;
+  sells24h?: number;
+  riskScore?: number;
+  riskLevel?: string;
+  isHoneypot?: boolean;
+}
+
+/**
+ * Get trending tokens from the materialized view (fast query)
+ * Falls back to null if the view doesn't exist
+ */
+export async function getTrendingTokens(
+  chainId?: ChainId,
+  limit: number = 100
+): Promise<TrendingToken[] | null> {
+  const supabase = getSupabase();
+  if (!supabase) return null;
+
+  try {
+    let query = supabase
+      .from('trending_tokens_mv')
+      .select('*')
+      .order('volume_24h', { ascending: false })
+      .limit(limit);
+
+    if (chainId) {
+      query = query.eq('chain_id', chainId);
+    }
+
+    const result = await withTimeout(Promise.resolve(query), QUERY_TIMEOUT);
+
+    if (!result) {
+      console.warn('Timeout querying trending tokens');
+      return null;
+    }
+
+    const { data, error } = result;
+
+    // If view doesn't exist, return null to trigger fallback
+    if (error) {
+      if (error.message.includes('does not exist') || error.code === '42P01') {
+        console.log('Materialized view not available, using fallback');
+        return null;
+      }
+      console.error('Error querying trending tokens:', error);
+      return null;
+    }
+
+    if (!data || data.length === 0) return null;
+
+    return data.map((row: Record<string, unknown>) => ({
+      address: row.address as string,
+      chainId: row.chain_id as ChainId,
+      symbol: row.symbol as string,
+      name: row.name as string,
+      logoUrl: row.logo_url as string | undefined,
+      decimals: row.decimals as number,
+      price: Number(row.price) || 0,
+      priceChange1h: Number(row.price_change_1h) || 0,
+      priceChange24h: Number(row.price_change_24h) || 0,
+      volume24h: Number(row.volume_24h) || 0,
+      liquidity: Number(row.liquidity) || 0,
+      marketCap: row.market_cap ? Number(row.market_cap) : undefined,
+      fdv: row.fdv ? Number(row.fdv) : undefined,
+      txns24h: row.txns_24h as number | undefined,
+      buys24h: row.buys_24h as number | undefined,
+      sells24h: row.sells_24h as number | undefined,
+      riskScore: row.risk_score as number | undefined,
+      riskLevel: row.risk_level as string | undefined,
+      isHoneypot: row.is_honeypot as boolean | undefined,
+    }));
+  } catch (error) {
+    console.error('Failed to query trending tokens:', error);
+    return null;
+  }
+}

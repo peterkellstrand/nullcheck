@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
 
   // Parse request
   const body = await request.json().catch(() => ({ tokens: [] }));
-  let tokens: TokenRequest[] = body.tokens || [];
+  const tokens: TokenRequest[] = body.tokens || [];
 
   if (tokens.length === 0) {
     return new Response(
