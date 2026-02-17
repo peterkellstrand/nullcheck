@@ -1,8 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ChainId, CHAINS } from '@/types/chain';
 import { OHLCV } from '@/types/token';
+import {
+  generateRequestId,
+  generateETag,
+  getCorsHeaders,
+  createErrorResponse,
+  validateAddress,
+  handleCorsOptions,
+  API_VERSION,
+} from '@/lib/api/utils';
 
 export const runtime = 'edge';
+
+// Handle CORS preflight
+export const OPTIONS = handleCorsOptions;
 
 // Map our chain IDs to GeckoTerminal network IDs
 const GECKO_NETWORK_MAP: Record<ChainId, string> = {
@@ -27,6 +39,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ chain: string; address: string }> }
 ) {
+  const requestId = request.headers.get('X-Request-ID') || generateRequestId();
   const { chain, address } = await params;
   const chainId = chain as ChainId;
 
@@ -36,11 +49,30 @@ export async function GET(
 
   // Validate chain
   if (!CHAINS[chainId]) {
-    return NextResponse.json(
-      { success: false, error: 'Invalid chain' },
-      { status: 400 }
+    return createErrorResponse(
+      'INVALID_CHAIN',
+      `Chain '${chain}' is not supported. Valid chains: ${Object.keys(CHAINS).join(', ')}`,
+      400,
+      requestId
     );
   }
+
+  // Validate address format
+  if (!validateAddress(chainId, address)) {
+    return createErrorResponse(
+      'INVALID_ADDRESS',
+      `Invalid ${chainId} address format`,
+      400,
+      requestId
+    );
+  }
+
+  const responseHeaders = {
+    ...getCorsHeaders(),
+    'X-Request-ID': requestId,
+    'X-API-Version': API_VERSION,
+    'Cache-Control': 'public, max-age=30',
+  };
 
   try {
     // First, get the pool address for this token from DexScreener
@@ -51,19 +83,16 @@ export async function GET(
           Accept: 'application/json',
           'User-Agent': 'nullcheck/1.0',
         },
-        next: { revalidate: 60 }, // Cache for 60 seconds to reduce rate limiting
+        next: { revalidate: 60 },
       }
     );
 
     if (!dexResponse.ok) {
-      // If DexScreener fails, generate placeholder chart data
       const placeholderOhlcv = generatePlaceholderOHLCV(0.001, limit, interval);
-      return NextResponse.json({
-        success: true,
-        ohlcv: placeholderOhlcv,
-        fallback: true,
-        reason: 'dexscreener_unavailable',
-      });
+      return NextResponse.json(
+        { success: true, data: { ohlcv: placeholderOhlcv }, fallback: true, reason: 'dexscreener_unavailable' },
+        { headers: responseHeaders }
+      );
     }
 
     const dexData = await dexResponse.json();
@@ -75,32 +104,26 @@ export async function GET(
       polygon: 'polygon',
     };
 
-    // Find the highest liquidity pool on this chain
     let pools = dexData.pairs?.filter(
       (p: { chainId: string }) => p.chainId === chainMap[chainId]
     ) || [];
 
-    // If no pools on this chain, try any available pools
     if (pools.length === 0 && dexData.pairs?.length > 0) {
       pools = dexData.pairs;
     }
 
     if (pools.length === 0) {
-      // Generate placeholder chart data
       const placeholderOhlcv = generatePlaceholderOHLCV(0.001, limit, interval);
-      return NextResponse.json({
-        success: true,
-        ohlcv: placeholderOhlcv,
-        fallback: true,
-        reason: 'no_pools',
-      });
+      return NextResponse.json(
+        { success: true, data: { ohlcv: placeholderOhlcv }, fallback: true, reason: 'no_pools' },
+        { headers: responseHeaders }
+      );
     }
 
     const mainPool = pools.reduce((a: { liquidity?: { usd: number } }, b: { liquidity?: { usd: number } }) =>
       (a.liquidity?.usd || 0) > (b.liquidity?.usd || 0) ? a : b
     );
 
-    // Fetch OHLCV from GeckoTerminal
     const network = GECKO_NETWORK_MAP[chainId];
     const timeframe = INTERVAL_MAP[interval] || 'hour';
     const aggregate = interval === '4h' ? 4 : interval === '15m' ? 15 : interval === '5m' ? 5 : 1;
@@ -112,57 +135,62 @@ export async function GET(
         Accept: 'application/json',
         'User-Agent': 'nullcheck/1.0',
       },
-      next: { revalidate: 30 }, // Cache for 30 seconds
+      next: { revalidate: 30 },
     });
 
     if (!geckoResponse.ok) {
-      // Fallback: generate placeholder data from current price
       const currentPrice = parseFloat(mainPool.priceUsd) || 0;
       const ohlcv = generatePlaceholderOHLCV(currentPrice, limit, interval);
-
-      return NextResponse.json({
-        success: true,
-        ohlcv,
-        fallback: true,
-      });
+      return NextResponse.json(
+        { success: true, data: { ohlcv, pool: mainPool.pairAddress }, fallback: true },
+        { headers: responseHeaders }
+      );
     }
 
     const geckoData = await geckoResponse.json();
     const ohlcvList = geckoData.data?.attributes?.ohlcv_list || [];
 
     if (ohlcvList.length === 0) {
-      // Fallback: generate placeholder data
       const currentPrice = parseFloat(mainPool.priceUsd) || 0;
       const ohlcv = generatePlaceholderOHLCV(currentPrice, limit, interval);
-
-      return NextResponse.json({
-        success: true,
-        ohlcv,
-        fallback: true,
-      });
+      return NextResponse.json(
+        { success: true, data: { ohlcv, pool: mainPool.pairAddress }, fallback: true },
+        { headers: responseHeaders }
+      );
     }
 
     // Transform GeckoTerminal format to our OHLCV format
-    // GeckoTerminal format: [timestamp, open, high, low, close, volume]
     const ohlcv: OHLCV[] = ohlcvList.map((candle: number[]) => ({
-      timestamp: candle[0] * 1000, // Convert to milliseconds
+      timestamp: candle[0] * 1000,
       open: candle[1],
       high: candle[2],
       low: candle[3],
       close: candle[4],
       volume: candle[5],
-    })).reverse(); // GeckoTerminal returns newest first, we want oldest first
+    })).reverse();
 
-    return NextResponse.json({
-      success: true,
-      ohlcv,
-      pool: mainPool.pairAddress,
-    });
+    const etag = generateETag(ohlcv);
+
+    // Check If-None-Match for conditional GET
+    const ifNoneMatch = request.headers.get('If-None-Match');
+    if (ifNoneMatch === etag) {
+      return new NextResponse(null, {
+        status: 304,
+        headers: { ...responseHeaders, ETag: etag },
+      });
+    }
+
+    return NextResponse.json(
+      { success: true, data: { ohlcv, pool: mainPool.pairAddress } },
+      { headers: { ...responseHeaders, ETag: etag } }
+    );
   } catch (error) {
     console.error('OHLCV fetch error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to fetch OHLCV data' },
-      { status: 500 }
+    return createErrorResponse(
+      'INTERNAL_ERROR',
+      'Failed to fetch OHLCV data',
+      500,
+      requestId
     );
   }
 }

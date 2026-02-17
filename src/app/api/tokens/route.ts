@@ -1,25 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ChainId } from '@/types/chain';
+import { ChainId, CHAINS } from '@/types/chain';
 import { TokenWithMetrics } from '@/types/token';
 import { getRiskLevel } from '@/types/risk';
 import * as geckoterminal from '@/lib/api/geckoterminal';
 import * as db from '@/lib/db/supabase';
 import { calculateTrendingScores } from '@/lib/trending';
+import {
+  generateRequestId,
+  generateETag,
+  getCorsHeaders,
+  createErrorResponse,
+  handleCorsOptions,
+  API_VERSION,
+} from '@/lib/api/utils';
 
 export const runtime = 'edge';
 export const revalidate = 30;
+
+export const OPTIONS = handleCorsOptions;
 
 // Cache freshness threshold (30 seconds)
 const CACHE_TTL_MS = 30 * 1000;
 
 export async function GET(request: NextRequest) {
+  const requestId = request.headers.get('X-Request-ID') || generateRequestId();
   const searchParams = request.nextUrl.searchParams;
   const chainId = searchParams.get('chain') as ChainId | null;
-  const limit = parseInt(searchParams.get('limit') || '50', 10);
+  const limit = Math.min(parseInt(searchParams.get('limit') || '50', 10), 100);
 
-  // Note: API access tracking is optional for public data endpoints
-  // Agents can access this endpoint with or without API key
-  // Rate limiting is handled at the infrastructure level
+  // Validate chain if provided
+  if (chainId && !(chainId in CHAINS)) {
+    return createErrorResponse(
+      'INVALID_CHAIN',
+      `Chain '${chainId}' is not supported. Valid chains: ${Object.keys(CHAINS).join(', ')}`,
+      400,
+      requestId
+    );
+  }
 
   try {
     let tokens: TokenWithMetrics[] = [];
@@ -92,24 +109,51 @@ export async function GET(request: NextRequest) {
     // Calculate trending scores for all tokens
     tokens = calculateTrendingScores(tokens);
 
-    return NextResponse.json({
-      success: true,
-      tokens,
-      meta: {
-        count: tokens.length,
-        timestamp: new Date().toISOString(),
-        fromCache,
-      },
-    });
-  } catch (error) {
-    console.error('API error:', error);
+    const etag = generateETag({ tokens: tokens.map(t => t.address), count: tokens.length });
+
+    // Check If-None-Match for conditional GET
+    const ifNoneMatch = request.headers.get('If-None-Match');
+    if (ifNoneMatch === etag) {
+      return new NextResponse(null, {
+        status: 304,
+        headers: {
+          ...getCorsHeaders(),
+          'X-Request-ID': requestId,
+          'X-API-Version': API_VERSION,
+          ETag: etag,
+        },
+      });
+    }
+
     return NextResponse.json(
       {
-        success: false,
-        error: 'Failed to fetch tokens',
-        tokens: [],
+        success: true,
+        data: {
+          tokens,
+          meta: {
+            count: tokens.length,
+            timestamp: new Date().toISOString(),
+            fromCache,
+          },
+        },
       },
-      { status: 500 }
+      {
+        headers: {
+          ...getCorsHeaders(),
+          'X-Request-ID': requestId,
+          'X-API-Version': API_VERSION,
+          'Cache-Control': 'public, max-age=30',
+          ETag: etag,
+        },
+      }
+    );
+  } catch (error) {
+    console.error('API error:', error);
+    return createErrorResponse(
+      'INTERNAL_ERROR',
+      'Failed to fetch tokens',
+      500,
+      requestId
     );
   }
 }

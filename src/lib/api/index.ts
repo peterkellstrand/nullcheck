@@ -4,3 +4,7 @@ export * as goplus from './goplus';
 export * as helius from './helius';
 export * as alchemy from './alchemy';
 export * as whale from './whale';
+export * from './utils';
+export * from './rate-limiter';
+export * from './cache';
+export * from './errors';

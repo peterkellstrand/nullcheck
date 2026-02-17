@@ -10,6 +10,15 @@ import {
   AgentLimits,
 } from '@/types/subscription';
 
+// Hash API key using SHA-256 (Web Crypto API for edge runtime)
+async function hashApiKey(key: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(key);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 export type ApiAccessHuman = {
   type: 'human';
   tier: SubscriptionTier;
@@ -23,14 +32,34 @@ export type ApiAccessAgent = {
   userId: string;
   keyId: string;
   limits: AgentLimits;
+  rateLimit: {
+    limit: number;
+    remaining: number;
+    reset: number; // Unix timestamp
+  };
 };
 
 export type ApiAccessError = {
   type: 'error';
+  code: 'UNAUTHORIZED' | 'INVALID_KEY' | 'RATE_LIMITED';
   error: string;
+  rateLimit?: {
+    limit: number;
+    remaining: number;
+    reset: number;
+  };
 };
 
 export type ApiAccess = ApiAccessHuman | ApiAccessAgent | ApiAccessError;
+
+// Calculate midnight UTC for rate limit reset
+function getResetTimestamp(): number {
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+  tomorrow.setUTCHours(0, 0, 0, 0);
+  return Math.floor(tomorrow.getTime() / 1000);
+}
 
 export async function verifyApiAccess(req: NextRequest): Promise<ApiAccess> {
   // 1. Check for API key (agents)
@@ -39,15 +68,43 @@ export async function verifyApiAccess(req: NextRequest): Promise<ApiAccess> {
 
   if (apiKey) {
     const service = await getSupabaseServerWithServiceRole();
-    const { data: key, error } = await service
+
+    // Hash the API key for secure lookup
+    const hashedKey = await hashApiKey(apiKey);
+
+    // Try hashed_key first (new secure method), fall back to api_key (legacy)
+    let key = null;
+    let error = null;
+
+    // Try hashed lookup first
+    const hashedResult = await service
       .from('api_keys')
       .select('id, user_id, tier, daily_limit, is_revoked')
-      .eq('api_key', apiKey)
+      .eq('hashed_key', hashedKey)
       .eq('is_revoked', false)
       .single();
 
+    if (hashedResult.data) {
+      key = hashedResult.data;
+    } else {
+      // Fall back to plain text lookup (for backward compatibility during migration)
+      const plainResult = await service
+        .from('api_keys')
+        .select('id, user_id, tier, daily_limit, is_revoked')
+        .eq('api_key', apiKey)
+        .eq('is_revoked', false)
+        .single();
+
+      key = plainResult.data;
+      error = plainResult.error;
+    }
+
     if (error || !key) {
-      return { type: 'error', error: 'Invalid or revoked API key' };
+      return {
+        type: 'error',
+        code: 'INVALID_KEY',
+        error: 'Invalid or revoked API key'
+      };
     }
 
     // Check daily usage limit
@@ -60,8 +117,19 @@ export async function verifyApiAccess(req: NextRequest): Promise<ApiAccess> {
       .single();
 
     const currentUsage = usage?.request_count || 0;
+    const resetTimestamp = getResetTimestamp();
+
     if (currentUsage >= key.daily_limit) {
-      return { type: 'error', error: 'Daily API limit exceeded' };
+      return {
+        type: 'error',
+        code: 'RATE_LIMITED',
+        error: 'Daily API limit exceeded',
+        rateLimit: {
+          limit: key.daily_limit,
+          remaining: 0,
+          reset: resetTimestamp,
+        }
+      };
     }
 
     // Increment usage counter (upsert)
@@ -85,6 +153,11 @@ export async function verifyApiAccess(req: NextRequest): Promise<ApiAccess> {
       userId: key.user_id,
       keyId: key.id,
       limits: AGENT_LIMITS[tier] || AGENT_LIMITS.starter,
+      rateLimit: {
+        limit: key.daily_limit,
+        remaining: key.daily_limit - currentUsage - 1,
+        reset: resetTimestamp,
+      },
     };
   }
 
@@ -124,4 +197,23 @@ export function requireAuth(access: ApiAccess): access is ApiAccessHuman | ApiAc
   if (access.type === 'error') return false;
   if (access.type === 'human' && access.userId === 'anonymous') return false;
   return true;
+}
+
+// Helper to create rate limit headers
+export function createRateLimitHeaders(access: ApiAccess): Record<string, string> {
+  if (access.type === 'agent') {
+    return {
+      'X-RateLimit-Limit': access.rateLimit.limit.toString(),
+      'X-RateLimit-Remaining': access.rateLimit.remaining.toString(),
+      'X-RateLimit-Reset': access.rateLimit.reset.toString(),
+    };
+  }
+  if (access.type === 'error' && access.rateLimit) {
+    return {
+      'X-RateLimit-Limit': access.rateLimit.limit.toString(),
+      'X-RateLimit-Remaining': access.rateLimit.remaining.toString(),
+      'X-RateLimit-Reset': access.rateLimit.reset.toString(),
+    };
+  }
+  return {};
 }

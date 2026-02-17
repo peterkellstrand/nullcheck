@@ -2,8 +2,6 @@ import { ChainId } from '@/types/chain';
 import {
   GoPlusSecurityResponse,
   GoPlusTokenSecurity,
-  GoPlusHolder,
-  GoPlusLPHolder,
 } from '@/types/api';
 import {
   HoneypotRisk,
@@ -12,8 +10,12 @@ import {
   LiquidityRisk,
   RiskWarning,
 } from '@/types/risk';
+import { checkRateLimit } from './rate-limiter';
+import { apiCache, CACHE_TTL } from './cache';
+import { ApiError, createApiErrorFromResponse, fetchWithTimeout } from './errors';
 
 const BASE_URL = 'https://api.gopluslabs.io/api/v1';
+const REQUEST_TIMEOUT = 10000; // 10 seconds
 
 const CHAIN_ID_MAP: Record<ChainId, string> = {
   ethereum: '1',
@@ -23,47 +25,153 @@ const CHAIN_ID_MAP: Record<ChainId, string> = {
   polygon: '137',
 };
 
-async function fetchApi<T>(endpoint: string): Promise<T> {
+/**
+ * Fetch from GoPlus API with rate limiting, caching, and error handling
+ */
+async function fetchApi<T>(endpoint: string, skipRateLimit = false): Promise<T> {
+  // Check rate limit before calling
+  if (!skipRateLimit) {
+    await checkRateLimit('goplus');
+  }
+
   const response = await fetch(`${BASE_URL}${endpoint}`, {
     headers: {
       Accept: 'application/json',
     },
-    next: { revalidate: 300 }, // Cache for 5 minutes
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT),
   });
 
   if (!response.ok) {
-    throw new Error(`GoPlus API error: ${response.status}`);
+    throw createApiErrorFromResponse('goplus', response);
   }
 
   return response.json();
 }
 
+/**
+ * Get token security data for a single token
+ */
 export async function getTokenSecurity(
   chainId: ChainId,
   tokenAddress: string
 ): Promise<GoPlusTokenSecurity | null> {
-  const chain = CHAIN_ID_MAP[chainId];
+  const normalizedAddress = chainId === 'solana' ? tokenAddress : tokenAddress.toLowerCase();
+  const cacheKey = `goplus:security:${chainId}:${normalizedAddress}`;
 
-  // Solana uses a different endpoint
-  if (chainId === 'solana') {
-    return getSolanaTokenSecurity(tokenAddress);
+  // Check cache first
+  const cached = apiCache.get<GoPlusTokenSecurity>(cacheKey);
+  if (cached) {
+    return cached;
   }
 
-  const data = await fetchApi<GoPlusSecurityResponse>(
-    `/token_security/${chain}?contract_addresses=${tokenAddress}`
-  );
+  try {
+    const chain = CHAIN_ID_MAP[chainId];
 
-  if (data.code !== 1 || !data.result) {
+    // Solana uses a different endpoint
+    if (chainId === 'solana') {
+      return getSolanaTokenSecurity(tokenAddress);
+    }
+
+    const data = await fetchApi<GoPlusSecurityResponse>(
+      `/token_security/${chain}?contract_addresses=${tokenAddress}`
+    );
+
+    if (data.code !== 1 || !data.result) {
+      return null;
+    }
+
+    const security = data.result[normalizedAddress] || null;
+
+    // Cache the result
+    if (security) {
+      apiCache.set(cacheKey, security, CACHE_TTL.tokenSecurity, 'goplus');
+    }
+
+    return security;
+  } catch (error) {
+    if (error instanceof ApiError) {
+      console.error(`GoPlus API error for ${tokenAddress}:`, error.toJSON());
+    }
     return null;
   }
+}
 
-  const addressLower = tokenAddress.toLowerCase();
-  return data.result[addressLower] || null;
+/**
+ * Get token security data for multiple tokens (batch request)
+ * GoPlus supports up to 50 addresses per request
+ */
+export async function getTokenSecurityBatch(
+  chainId: ChainId,
+  tokenAddresses: string[]
+): Promise<Map<string, GoPlusTokenSecurity>> {
+  const results = new Map<string, GoPlusTokenSecurity>();
+
+  if (tokenAddresses.length === 0) return results;
+
+  const chain = CHAIN_ID_MAP[chainId];
+  const isSolana = chainId === 'solana';
+
+  // Check cache for all tokens first
+  const uncachedAddresses: string[] = [];
+
+  for (const address of tokenAddresses) {
+    const normalizedAddress = isSolana ? address : address.toLowerCase();
+    const cacheKey = `goplus:security:${chainId}:${normalizedAddress}`;
+    const cached = apiCache.get<GoPlusTokenSecurity>(cacheKey);
+
+    if (cached) {
+      results.set(normalizedAddress, cached);
+    } else {
+      uncachedAddresses.push(address);
+    }
+  }
+
+  // Fetch uncached tokens in batches of 50
+  const batchSize = 50;
+
+  for (let i = 0; i < uncachedAddresses.length; i += batchSize) {
+    const batch = uncachedAddresses.slice(i, i + batchSize);
+
+    try {
+      await checkRateLimit('goplus');
+
+      const addresses = batch.join(',');
+      const endpoint = isSolana
+        ? `/solana/token_security?contract_addresses=${addresses}`
+        : `/token_security/${chain}?contract_addresses=${addresses}`;
+
+      const data = await fetchApi<GoPlusSecurityResponse>(endpoint, true);
+
+      if (data.code === 1 && data.result) {
+        for (const [addr, security] of Object.entries(data.result)) {
+          const normalizedAddr = isSolana ? addr : addr.toLowerCase();
+          results.set(normalizedAddr, security);
+
+          // Cache each result
+          const cacheKey = `goplus:security:${chainId}:${normalizedAddr}`;
+          apiCache.set(cacheKey, security, CACHE_TTL.tokenSecurity, 'goplus');
+        }
+      }
+    } catch (error) {
+      console.error(`GoPlus batch request failed for ${chainId}:`, error);
+      // Continue with other batches
+    }
+  }
+
+  return results;
 }
 
 async function getSolanaTokenSecurity(
   tokenAddress: string
 ): Promise<GoPlusTokenSecurity | null> {
+  const cacheKey = `goplus:security:solana:${tokenAddress}`;
+
+  // Check cache
+  const cached = apiCache.get<GoPlusTokenSecurity>(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
   try {
     const data = await fetchApi<GoPlusSecurityResponse>(
       `/solana/token_security?contract_addresses=${tokenAddress}`
@@ -73,7 +181,13 @@ async function getSolanaTokenSecurity(
       return null;
     }
 
-    return data.result[tokenAddress] || null;
+    const security = data.result[tokenAddress] || null;
+
+    if (security) {
+      apiCache.set(cacheKey, security, CACHE_TTL.tokenSecurity, 'goplus');
+    }
+
+    return security;
   } catch {
     return null;
   }

@@ -1,10 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ChainId } from '@/types/chain';
 import { TokenSearchResult } from '@/types/token';
+import {
+  generateRequestId,
+  generateETag,
+  getCorsHeaders,
+  createErrorResponse,
+  handleCorsOptions,
+  API_VERSION,
+} from '@/lib/api/utils';
 
 const BASE_URL = 'https://api.dexscreener.com/latest';
 
 export const runtime = 'edge';
+
+export const OPTIONS = handleCorsOptions;
 
 interface DexScreenerSearchResult {
   chainId: string;
@@ -21,14 +31,17 @@ interface DexScreenerSearchResult {
 }
 
 export async function GET(request: NextRequest) {
+  const requestId = request.headers.get('X-Request-ID') || generateRequestId();
   const query = request.nextUrl.searchParams.get('q');
 
   if (!query || query.length < 2) {
-    return NextResponse.json({
-      success: false,
-      error: 'Query must be at least 2 characters',
-      results: [],
-    });
+    return createErrorResponse(
+      'VALIDATION_ERROR',
+      'Query must be at least 2 characters',
+      400,
+      requestId,
+      { minLength: 2 }
+    );
   }
 
   try {
@@ -72,23 +85,50 @@ export async function GET(request: NextRequest) {
       if (results.length >= 20) break;
     }
 
-    return NextResponse.json({
-      success: true,
-      results,
-      meta: {
-        query,
-        count: results.length,
-      },
-    });
-  } catch (error) {
-    console.error('Search error:', error);
+    const etag = generateETag({ query, results: results.map(r => r.address) });
+
+    // Check If-None-Match for conditional GET
+    const ifNoneMatch = request.headers.get('If-None-Match');
+    if (ifNoneMatch === etag) {
+      return new NextResponse(null, {
+        status: 304,
+        headers: {
+          ...getCorsHeaders(),
+          'X-Request-ID': requestId,
+          'X-API-Version': API_VERSION,
+          ETag: etag,
+        },
+      });
+    }
+
     return NextResponse.json(
       {
-        success: false,
-        error: 'Search failed',
-        results: [],
+        success: true,
+        data: {
+          results,
+          meta: {
+            query,
+            count: results.length,
+          },
+        },
       },
-      { status: 500 }
+      {
+        headers: {
+          ...getCorsHeaders(),
+          'X-Request-ID': requestId,
+          'X-API-Version': API_VERSION,
+          'Cache-Control': 'public, max-age=30',
+          ETag: etag,
+        },
+      }
+    );
+  } catch (error) {
+    console.error('Search error:', error);
+    return createErrorResponse(
+      'INTERNAL_ERROR',
+      'Search failed',
+      500,
+      requestId
     );
   }
 }

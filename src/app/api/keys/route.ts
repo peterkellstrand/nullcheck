@@ -2,6 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { nanoid } from 'nanoid';
 import { getSupabaseServer, getSupabaseServerWithServiceRole } from '@/lib/db/supabase-server';
 
+// Hash API key using SHA-256 (Web Crypto API for edge runtime)
+async function hashApiKey(key: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(key);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 // GET - List user's API keys
 export async function GET() {
   const supabase = await getSupabaseServer();
@@ -16,7 +25,7 @@ export async function GET() {
   const service = await getSupabaseServerWithServiceRole();
   const { data, error } = await service
     .from('api_keys')
-    .select('id, name, tier, daily_limit, created_at, last_used, is_revoked')
+    .select('id, name, tier, daily_limit, created_at, last_used, is_revoked, key_prefix')
     .eq('user_id', user.id)
     .eq('is_revoked', false)
     .order('created_at', { ascending: false });
@@ -25,7 +34,13 @@ export async function GET() {
     return NextResponse.json({ error: 'Failed to fetch API keys' }, { status: 500 });
   }
 
-  return NextResponse.json({ success: true, keys: data });
+  // Map keys to include display-friendly key preview
+  const keys = data?.map(key => ({
+    ...key,
+    keyPreview: key.key_prefix || 'nk_****...', // Show prefix or placeholder
+  }));
+
+  return NextResponse.json({ success: true, keys });
 }
 
 // POST - Create new API key
@@ -75,12 +90,16 @@ export async function POST(req: NextRequest) {
 
   // Generate API key with prefix
   const apiKey = `nk_${nanoid(32)}`;
+  const hashedKey = await hashApiKey(apiKey);
+  const keyPrefix = apiKey.substring(0, 12) + '...';
 
   const { data, error } = await service
     .from('api_keys')
     .insert({
       user_id: user.id,
-      api_key: apiKey,
+      api_key: apiKey, // Store plain text for backward compatibility (will be removed after migration)
+      hashed_key: hashedKey, // Store hashed version for secure lookups
+      key_prefix: keyPrefix, // Store prefix for display
       name,
       tier,
       daily_limit: dailyLimit,
@@ -90,16 +109,23 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     console.error('Failed to create API key:', error);
+    // Check if it's a key limit error
+    if (error.message?.includes('API key limit')) {
+      return NextResponse.json({ error: error.message }, { status: 403 });
+    }
     return NextResponse.json({ error: 'Failed to create API key' }, { status: 500 });
   }
 
   // Return the full API key only once (won't be shown again)
+  // IMPORTANT: This is the only time the user sees their full key
   return NextResponse.json({
     success: true,
     key: {
       ...data,
-      apiKey, // Only returned on creation
+      apiKey, // Only returned on creation - user must save this!
+      keyPreview: keyPrefix,
     },
+    warning: 'Save this API key securely. You will not be able to see it again.',
   });
 }
 
