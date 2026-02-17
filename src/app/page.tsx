@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { TokenTable } from '@/components/tokens/TokenTable';
@@ -22,7 +22,7 @@ export default function Home() {
   const [riskStatus, setRiskStatus] = useState<string>('');
 
   // Connect to SSE price stream
-  const { isConnected } = usePriceStream({ enabled: tokens.length > 0 });
+  usePriceStream({ enabled: tokens.length > 0 });
 
   // Fetch real risk scores for tokens
   const fetchRiskScores = useCallback(async (tokenList: TokenWithMetrics[]) => {
@@ -123,49 +123,96 @@ export default function Home() {
 
   const statusMessage = getStatusMessage();
 
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   return (
     <>
       <div className="w-full max-w-[1030px] relative">
       {/* Title Row */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-5">
+      <div className="flex items-center justify-between mb-5">
         <h1 className="text-3xl sm:text-4xl text-[var(--text-primary)] ml-1">
           null//check
         </h1>
-        <div className="flex items-center gap-3 sm:gap-4 mr-1 ml-1 sm:ml-0">
-          <Link
-            href="/charts"
-            className="text-[var(--text-muted)] hover:text-[var(--text-primary)] text-sm transition-colors"
-          >
-            charts
-          </Link>
-          <Link
-            href="/watchlist"
-            className="text-[var(--text-muted)] hover:text-[var(--text-primary)] text-sm transition-colors"
-          >
-            watchlist
-          </Link>
-          {isPro && (
-            <Link
-              href="/keys"
-              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] text-sm transition-colors"
+        <div className="flex items-center gap-3 mr-1">
+          {/* Menu Button */}
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-[var(--border)] hover:border-[var(--border-light)] transition-colors"
+              aria-label="Menu"
             >
-              api keys
-            </Link>
-          )}
-          <Link
-            href="/pricing"
-            className={`text-sm transition-colors ${
-              isPro
-                ? 'text-emerald-500'
-                : 'text-[var(--text-muted)] hover:text-emerald-400'
-            }`}
-          >
-            {isPro ? 'PRO' : 'pricing'}
-          </Link>
-          <AuthButton />
-          {isConnected && (
-            <span className="text-sm text-[var(--text-primary)] animate-pulse-slow">live</span>
-          )}
+              <svg
+                className={`w-4 h-4 transition-transform ${menuOpen ? 'rotate-90' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+              <span>menu</span>
+            </button>
+            {/* Dropdown */}
+            {menuOpen && (
+              <div className="absolute right-0 top-full mt-1 min-w-[160px] border border-[var(--border)] bg-[var(--bg-primary)] shadow-lg z-50">
+                <Link
+                  href="/charts"
+                  className="block px-4 py-2 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  charts
+                </Link>
+                <Link
+                  href="/watchlist"
+                  className="block px-4 py-2 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  watchlist
+                </Link>
+                {isPro && (
+                  <Link
+                    href="/keys"
+                    className="block px-4 py-2 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    api keys
+                  </Link>
+                )}
+                <Link
+                  href="/docs"
+                  className="block px-4 py-2 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  docs
+                </Link>
+                <Link
+                  href="/pricing"
+                  className={`block px-4 py-2 text-sm transition-colors hover:bg-[var(--bg-secondary)] ${
+                    isPro
+                      ? 'text-emerald-500'
+                      : 'text-[var(--text-muted)] hover:text-emerald-400'
+                  }`}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  {isPro ? 'PRO' : 'pricing'}
+                </Link>
+                <div className="border-t border-[var(--border)] px-4 py-2">
+                  <AuthButton />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
