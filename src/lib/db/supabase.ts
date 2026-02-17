@@ -1,34 +1,71 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { ChainId } from '@/types/chain';
-import { Token, TokenMetrics, Pool } from '@/types/token';
-import { RiskScore, RiskLevel } from '@/types/risk';
+import { Token, TokenMetrics } from '@/types/token';
+import { RiskScore, RiskLevel, RiskWarning } from '@/types/risk';
 
+// Environment variables
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
-// Lazy initialization of supabase client
-let _supabase: SupabaseClient | null = null;
+// Singleton clients for connection pooling
+const _anonClient: SupabaseClient | null =
+  supabaseUrl && supabaseAnonKey
+    ? createClient(supabaseUrl, supabaseAnonKey, {
+        auth: { persistSession: false },
+        db: { schema: 'public' },
+      })
+    : null;
 
-function getSupabase(): SupabaseClient | null {
-  if (!supabaseUrl || !supabaseAnonKey) {
-    return null;
-  }
-  if (!_supabase) {
-    _supabase = createClient(supabaseUrl, supabaseAnonKey);
-  }
-  return _supabase;
+const _serverClient: SupabaseClient | null =
+  supabaseUrl && serviceRoleKey
+    ? createClient(supabaseUrl, serviceRoleKey, {
+        auth: { persistSession: false, autoRefreshToken: false },
+        db: { schema: 'public' },
+      })
+    : null;
+
+// Query timeout (5 seconds)
+const QUERY_TIMEOUT = 5000;
+
+/**
+ * Get the anon client (for public queries)
+ */
+export function getSupabase(): SupabaseClient | null {
+  return _anonClient;
 }
 
-// Server-side client with service role
+/**
+ * Get the server client (for privileged operations)
+ */
 export function createServerClient(): SupabaseClient | null {
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!serviceRoleKey || !supabaseUrl) {
-    return null;
-  }
-  return createClient(supabaseUrl, serviceRoleKey);
+  return _serverClient;
 }
 
-// Token operations
+/**
+ * Normalize address based on chain (EVM = lowercase, Solana = as-is)
+ */
+function normalizeAddress(address: string, chainId: ChainId): string {
+  return chainId === 'solana' ? address : address.toLowerCase();
+}
+
+/**
+ * Wrap a query with timeout protection
+ */
+async function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number = QUERY_TIMEOUT
+): Promise<T | null> {
+  const timeoutPromise = new Promise<null>((resolve) =>
+    setTimeout(() => resolve(null), timeoutMs)
+  );
+  return Promise.race([promise, timeoutPromise]);
+}
+
+// =============================================================================
+// TOKEN OPERATIONS
+// =============================================================================
+
 export async function getToken(
   chainId: ChainId,
   address: string
@@ -36,13 +73,23 @@ export async function getToken(
   const supabase = getSupabase();
   if (!supabase) return null;
 
-  const { data, error } = await supabase
-    .from('tokens')
-    .select('*')
-    .eq('chain_id', chainId)
-    .eq('address', address.toLowerCase())
-    .single();
+  const normalizedAddr = normalizeAddress(address, chainId);
 
+  const result = await withTimeout(
+    supabase
+      .from('tokens')
+      .select('*')
+      .eq('chain_id', chainId)
+      .eq('address', normalizedAddr)
+      .single()
+  );
+
+  if (!result) {
+    console.warn(`Database timeout getting token ${chainId}:${address}`);
+    return null;
+  }
+
+  const { data, error } = result;
   if (error || !data) return null;
 
   return {
@@ -63,7 +110,7 @@ export async function upsertToken(token: Token): Promise<void> {
 
   await db.from('tokens').upsert(
     {
-      address: token.address.toLowerCase(),
+      address: normalizeAddress(token.address, token.chainId),
       chain_id: token.chainId,
       symbol: token.symbol,
       name: token.name,
@@ -75,7 +122,10 @@ export async function upsertToken(token: Token): Promise<void> {
   );
 }
 
-// Token metrics operations
+// =============================================================================
+// TOKEN METRICS OPERATIONS
+// =============================================================================
+
 export async function getTokenMetrics(
   chainId: ChainId,
   address: string
@@ -83,32 +133,26 @@ export async function getTokenMetrics(
   const supabase = getSupabase();
   if (!supabase) return null;
 
-  const { data, error } = await supabase
-    .from('token_metrics')
-    .select('*')
-    .eq('chain_id', chainId)
-    .eq('token_address', address.toLowerCase())
-    .single();
+  const normalizedAddr = normalizeAddress(address, chainId);
 
+  const result = await withTimeout(
+    supabase
+      .from('token_metrics')
+      .select('*')
+      .eq('chain_id', chainId)
+      .eq('token_address', normalizedAddr)
+      .single()
+  );
+
+  if (!result) {
+    console.warn(`Database timeout getting metrics ${chainId}:${address}`);
+    return null;
+  }
+
+  const { data, error } = result;
   if (error || !data) return null;
 
-  return {
-    tokenAddress: data.token_address,
-    chainId: data.chain_id as ChainId,
-    price: parseFloat(data.price) || 0,
-    priceChange1h: parseFloat(data.price_change_1h) || 0,
-    priceChange24h: parseFloat(data.price_change_24h) || 0,
-    priceChange7d: parseFloat(data.price_change_7d) || 0,
-    volume24h: parseFloat(data.volume_24h) || 0,
-    liquidity: parseFloat(data.liquidity) || 0,
-    marketCap: data.market_cap ? parseFloat(data.market_cap) : undefined,
-    fdv: data.fdv ? parseFloat(data.fdv) : undefined,
-    holders: data.holders,
-    txns24h: data.txns_24h,
-    buys24h: data.buys_24h,
-    sells24h: data.sells_24h,
-    updatedAt: data.updated_at,
-  };
+  return mapTokenMetricsFromDb(data);
 }
 
 export async function upsertTokenMetrics(metrics: TokenMetrics): Promise<void> {
@@ -117,7 +161,7 @@ export async function upsertTokenMetrics(metrics: TokenMetrics): Promise<void> {
 
   await db.from('token_metrics').upsert(
     {
-      token_address: metrics.tokenAddress.toLowerCase(),
+      token_address: normalizeAddress(metrics.tokenAddress, metrics.chainId),
       chain_id: metrics.chainId,
       price: metrics.price,
       price_change_1h: metrics.priceChange1h,
@@ -136,7 +180,10 @@ export async function upsertTokenMetrics(metrics: TokenMetrics): Promise<void> {
   );
 }
 
-// Risk score operations
+// =============================================================================
+// RISK SCORE OPERATIONS
+// =============================================================================
+
 export async function getRiskScore(
   chainId: ChainId,
   address: string
@@ -144,17 +191,72 @@ export async function getRiskScore(
   const supabase = getSupabase();
   if (!supabase) return null;
 
-  const { data, error } = await supabase
-    .from('risk_scores')
-    .select('*')
-    .eq('chain_id', chainId)
-    .eq('token_address', address.toLowerCase())
-    .gt('expires_at', new Date().toISOString())
-    .single();
+  const normalizedAddr = normalizeAddress(address, chainId);
 
+  const result = await withTimeout(
+    supabase
+      .from('risk_scores')
+      .select('*')
+      .eq('chain_id', chainId)
+      .eq('token_address', normalizedAddr)
+      .gt('expires_at', new Date().toISOString())
+      .single()
+  );
+
+  if (!result) {
+    console.warn(`Database timeout getting risk score ${chainId}:${address}`);
+    return null;
+  }
+
+  const { data, error } = result;
   if (error || !data) return null;
 
   return mapRiskScoreFromDb(data);
+}
+
+/**
+ * Batch get risk scores for multiple tokens
+ * Much more efficient than individual queries
+ */
+export async function getRiskScoresBatch(
+  requests: { chainId: ChainId; address: string }[]
+): Promise<Map<string, RiskScore>> {
+  const supabase = getSupabase();
+  const results = new Map<string, RiskScore>();
+
+  if (!supabase || requests.length === 0) return results;
+
+  // Group by chain for efficient queries
+  const byChain = new Map<ChainId, string[]>();
+  requests.forEach((req) => {
+    const normalized = normalizeAddress(req.address, req.chainId);
+    const existing = byChain.get(req.chainId) || [];
+    existing.push(normalized);
+    byChain.set(req.chainId, existing);
+  });
+
+  // Fetch all chains in parallel
+  const promises = Array.from(byChain.entries()).map(async ([chainId, addresses]) => {
+    const result = await withTimeout(
+      supabase
+        .from('risk_scores')
+        .select('*')
+        .eq('chain_id', chainId)
+        .in('token_address', addresses)
+        .gt('expires_at', new Date().toISOString()),
+      QUERY_TIMEOUT * 2 // Allow more time for batch queries
+    );
+
+    if (result?.data) {
+      result.data.forEach((row: Record<string, unknown>) => {
+        const key = `${chainId}-${row.token_address}`;
+        results.set(key, mapRiskScoreFromDb(row));
+      });
+    }
+  });
+
+  await Promise.all(promises);
+  return results;
 }
 
 export async function upsertRiskScore(risk: RiskScore): Promise<void> {
@@ -162,40 +264,30 @@ export async function upsertRiskScore(risk: RiskScore): Promise<void> {
   if (!db) return;
 
   await db.from('risk_scores').upsert(
-    {
-      token_address: risk.tokenAddress.toLowerCase(),
-      chain_id: risk.chainId,
-      total_score: risk.totalScore,
-      risk_level: risk.level,
-      liquidity_score: risk.liquidity.score,
-      liquidity_usd: risk.liquidity.liquidity,
-      lp_locked: risk.liquidity.lpLocked,
-      lp_locked_percent: risk.liquidity.lpLockedPercent,
-      holder_score: risk.holders.score,
-      total_holders: risk.holders.totalHolders,
-      top_10_percent: risk.holders.top10Percent,
-      creator_percent: risk.holders.creatorHoldingPercent,
-      contract_score: risk.contract.score,
-      is_verified: risk.contract.verified,
-      is_renounced: risk.contract.renounced,
-      has_mint: risk.contract.hasMintFunction,
-      has_pause: risk.contract.hasPauseFunction,
-      has_blacklist: risk.contract.hasBlacklistFunction,
-      max_tax_percent: risk.contract.maxTaxPercent,
-      honeypot_score: risk.honeypot.score,
-      is_honeypot: risk.honeypot.isHoneypot,
-      buy_tax: risk.honeypot.buyTax,
-      sell_tax: risk.honeypot.sellTax,
-      cannot_sell: risk.honeypot.cannotSell,
-      warnings: risk.warnings,
-      analyzed_at: risk.analyzedAt,
-      expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(), // 1 hour
-    },
+    mapRiskScoreToDb(risk),
     { onConflict: 'token_address,chain_id' }
   );
 }
 
-// Top tokens query
+/**
+ * Batch upsert risk scores - single DB call for multiple tokens
+ */
+export async function upsertRiskScoreBatch(risks: RiskScore[]): Promise<void> {
+  const db = createServerClient();
+  if (!db || risks.length === 0) return;
+
+  const records = risks.map(mapRiskScoreToDb);
+
+  await db.from('risk_scores').upsert(records, {
+    onConflict: 'token_address,chain_id',
+    ignoreDuplicates: false,
+  });
+}
+
+// =============================================================================
+// TOP TOKENS QUERY
+// =============================================================================
+
 export async function getTopTokens(
   chainId?: ChainId,
   orderBy: 'volume_24h' | 'liquidity' = 'volume_24h',
@@ -219,37 +311,54 @@ export async function getTopTokens(
     query = query.eq('chain_id', chainId);
   }
 
-  const { data, error } = await query;
+  const result = await withTimeout(query, QUERY_TIMEOUT * 2);
 
+  if (!result) {
+    console.warn('Database timeout getting top tokens');
+    return [];
+  }
+
+  const { data, error } = result;
   if (error || !data) return [];
 
-  return data.map((row) => ({
-    address: row.tokens.address,
-    chainId: row.chain_id as ChainId,
-    symbol: row.tokens.symbol,
-    name: row.tokens.name,
-    decimals: row.tokens.decimals,
-    logoUrl: row.tokens.logo_url,
-    totalSupply: row.tokens.total_supply,
-    createdAt: row.tokens.created_at,
-    metrics: {
-      tokenAddress: row.token_address,
+  return data.map((row: Record<string, unknown>) => {
+    const tokens = row.tokens as Record<string, unknown>;
+    return {
+      address: tokens.address as string,
       chainId: row.chain_id as ChainId,
-      price: parseFloat(row.price) || 0,
-      priceChange1h: parseFloat(row.price_change_1h) || 0,
-      priceChange24h: parseFloat(row.price_change_24h) || 0,
-      priceChange7d: parseFloat(row.price_change_7d) || 0,
-      volume24h: parseFloat(row.volume_24h) || 0,
-      liquidity: parseFloat(row.liquidity) || 0,
-      marketCap: row.market_cap ? parseFloat(row.market_cap) : undefined,
-      fdv: row.fdv ? parseFloat(row.fdv) : undefined,
-      holders: row.holders,
-      txns24h: row.txns_24h,
-      buys24h: row.buys_24h,
-      sells24h: row.sells_24h,
-      updatedAt: row.updated_at,
-    },
-  }));
+      symbol: tokens.symbol as string,
+      name: tokens.name as string,
+      decimals: tokens.decimals as number,
+      logoUrl: tokens.logo_url as string | undefined,
+      totalSupply: tokens.total_supply as string | undefined,
+      createdAt: tokens.created_at as string | undefined,
+      metrics: mapTokenMetricsFromDb(row),
+    };
+  });
+}
+
+// =============================================================================
+// HELPER FUNCTIONS
+// =============================================================================
+
+function mapTokenMetricsFromDb(data: Record<string, unknown>): TokenMetrics {
+  return {
+    tokenAddress: data.token_address as string,
+    chainId: data.chain_id as ChainId,
+    price: Number(data.price) || 0,
+    priceChange1h: Number(data.price_change_1h) || 0,
+    priceChange24h: Number(data.price_change_24h) || 0,
+    priceChange7d: Number(data.price_change_7d) || 0,
+    volume24h: Number(data.volume_24h) || 0,
+    liquidity: Number(data.liquidity) || 0,
+    marketCap: data.market_cap ? Number(data.market_cap) : undefined,
+    fdv: data.fdv ? Number(data.fdv) : undefined,
+    holders: data.holders as number | undefined,
+    txns24h: data.txns_24h as number | undefined,
+    buys24h: data.buys_24h as number | undefined,
+    sells24h: data.sells_24h as number | undefined,
+    updatedAt: data.updated_at as string,
+  };
 }
 
 function mapRiskScoreFromDb(data: Record<string, unknown>): RiskScore {
@@ -260,18 +369,18 @@ function mapRiskScoreFromDb(data: Record<string, unknown>): RiskScore {
     level: data.risk_level as RiskLevel,
     liquidity: {
       score: data.liquidity_score as number,
-      liquidity: parseFloat(data.liquidity_usd as string) || 0,
+      liquidity: Number(data.liquidity_usd) || 0,
       lpLocked: data.lp_locked as boolean,
-      lpLockedPercent: parseFloat(data.lp_locked_percent as string) || 0,
+      lpLockedPercent: Number(data.lp_locked_percent) || 0,
       lpBurnedPercent: 0,
       warnings: [],
     },
     holders: {
       score: data.holder_score as number,
       totalHolders: data.total_holders as number,
-      top10Percent: parseFloat(data.top_10_percent as string) || 0,
+      top10Percent: Number(data.top_10_percent) || 0,
       top20Percent: 0,
-      creatorHoldingPercent: parseFloat(data.creator_percent as string) || 0,
+      creatorHoldingPercent: Number(data.creator_percent) || 0,
       warnings: [],
     },
     contract: {
@@ -282,20 +391,52 @@ function mapRiskScoreFromDb(data: Record<string, unknown>): RiskScore {
       hasMintFunction: data.has_mint as boolean,
       hasPauseFunction: data.has_pause as boolean,
       hasBlacklistFunction: data.has_blacklist as boolean,
-      maxTaxPercent: parseFloat(data.max_tax_percent as string) || 0,
+      maxTaxPercent: Number(data.max_tax_percent) || 0,
       warnings: [],
     },
     honeypot: {
       score: data.honeypot_score as number,
       isHoneypot: data.is_honeypot as boolean,
-      buyTax: parseFloat(data.buy_tax as string) || 0,
-      sellTax: parseFloat(data.sell_tax as string) || 0,
+      buyTax: Number(data.buy_tax) || 0,
+      sellTax: Number(data.sell_tax) || 0,
       transferTax: 0,
       cannotSell: data.cannot_sell as boolean,
       cannotTransfer: false,
       warnings: [],
     },
-    warnings: (data.warnings as unknown[]) || [],
+    warnings: (data.warnings as RiskWarning[]) || [],
     analyzedAt: data.analyzed_at as string,
-  } as RiskScore;
+  };
+}
+
+function mapRiskScoreToDb(risk: RiskScore): Record<string, unknown> {
+  return {
+    token_address: normalizeAddress(risk.tokenAddress, risk.chainId),
+    chain_id: risk.chainId,
+    total_score: risk.totalScore,
+    risk_level: risk.level,
+    liquidity_score: risk.liquidity.score,
+    liquidity_usd: risk.liquidity.liquidity,
+    lp_locked: risk.liquidity.lpLocked,
+    lp_locked_percent: risk.liquidity.lpLockedPercent,
+    holder_score: risk.holders.score,
+    total_holders: risk.holders.totalHolders,
+    top_10_percent: risk.holders.top10Percent,
+    creator_percent: risk.holders.creatorHoldingPercent,
+    contract_score: risk.contract.score,
+    is_verified: risk.contract.verified,
+    is_renounced: risk.contract.renounced,
+    has_mint: risk.contract.hasMintFunction,
+    has_pause: risk.contract.hasPauseFunction,
+    has_blacklist: risk.contract.hasBlacklistFunction,
+    max_tax_percent: risk.contract.maxTaxPercent,
+    honeypot_score: risk.honeypot.score,
+    is_honeypot: risk.honeypot.isHoneypot,
+    buy_tax: risk.honeypot.buyTax,
+    sell_tax: risk.honeypot.sellTax,
+    cannot_sell: risk.honeypot.cannotSell,
+    warnings: risk.warnings,
+    analyzed_at: risk.analyzedAt,
+    expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(), // 1 hour
+  };
 }
