@@ -87,16 +87,16 @@ export default function Home() {
 
         const data = await response.json();
 
-        if (data.success && data.tokens) {
-          setTokens(data.tokens);
+        if (data.success && data.data?.tokens) {
+          setTokens(data.data.tokens);
           setError(null);
 
           // Fetch real risk scores after a short delay
           setTimeout(() => {
-            fetchRiskScores(data.tokens);
+            fetchRiskScores(data.data.tokens);
           }, 500);
         } else {
-          setError(data.error || 'Failed to fetch tokens');
+          setError(data.error?.message || 'Failed to fetch tokens');
         }
       } catch (err) {
         setError('Failed to connect to API');
