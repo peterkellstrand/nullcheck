@@ -101,8 +101,8 @@ export async function verifyApiAccess(req: NextRequest): Promise<ApiAccess> {
 
     const currentUsage = usage?.request_count || 0;
     const resetTimestamp = getResetTimestamp();
-    const tier = (key.tier as AgentTier) || 'starter';
-    const tierLimits = AGENT_LIMITS[tier] || AGENT_LIMITS.starter;
+    const tier = (key.tier as AgentTier) || 'developer';
+    const tierLimits = AGENT_LIMITS[tier] || AGENT_LIMITS.developer;
 
     // Check if limit exceeded
     const isOverLimit = currentUsage >= key.daily_limit;
@@ -203,7 +203,7 @@ export function createRateLimitHeaders(access: ApiAccess): Record<string, string
     if (access.isOverage) {
       headers['X-RateLimit-Overage'] = 'true';
       headers['X-RateLimit-Overage-Count'] = access.overageCount.toString();
-      headers['X-RateLimit-Overage-Rate'] = `$${access.limits.overagePricePerThousand}/1000`;
+      headers['X-RateLimit-Overage-Rate'] = `$${access.limits.overagePricePerHundred}/1000`;
     }
 
     return headers;

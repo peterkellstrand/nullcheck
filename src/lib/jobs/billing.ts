@@ -118,7 +118,7 @@ export async function reportDailyUsageToStripe(): Promise<Record<string, unknown
     // For now, we'll just log the overage
     console.log(
       `[billing] Overage for key ${apiKey.id}: ${overageCount} requests ` +
-        `($${((overageCount / 1000) * limits.overagePricePerThousand).toFixed(2)})`
+        `($${((overageCount / 100) * limits.overagePricePerHundred).toFixed(2)})`
     );
 
     // TODO: Implement actual Stripe usage reporting
@@ -219,7 +219,7 @@ export async function generateMonthlySummary(): Promise<Record<string, unknown>>
     summary.overageRequests += dailyOverage;
 
     if (limits?.overageEnabled && dailyOverage > 0) {
-      summary.overageCharge += (dailyOverage / 1000) * limits.overagePricePerThousand;
+      summary.overageCharge += (dailyOverage / 100) * limits.overagePricePerHundred;
     }
   }
 

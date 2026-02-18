@@ -180,15 +180,13 @@ export default function Home() {
                 >
                   watchlist
                 </Link>
-                {isPro && (
-                  <Link
-                    href="/keys"
-                    className="block px-4 py-2 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    api keys
-                  </Link>
-                )}
+                <Link
+                  href="/keys"
+                  className="block px-4 py-2 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  api
+                </Link>
                 <Link
                   href="/docs"
                   className="block px-4 py-2 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors"

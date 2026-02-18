@@ -125,7 +125,7 @@ export async function getKeyBillingUsage(apiKeyId: string): Promise<BillingPerio
 
   // Calculate overage charge
   const overageCharge = limits.overageEnabled
-    ? (overageRequests / 1000) * limits.overagePricePerThousand
+    ? (overageRequests / 100) * limits.overagePricePerHundred
     : 0;
 
   return {
@@ -276,7 +276,7 @@ export async function checkDailyLimitStatus(
   const exceeded = currentUsage >= dailyLimit;
   const overageCount = Math.max(0, currentUsage - dailyLimit);
   const estimatedCharge = limits.overageEnabled
-    ? (overageCount / 1000) * limits.overagePricePerThousand
+    ? (overageCount / 100) * limits.overagePricePerHundred
     : 0;
 
   return {

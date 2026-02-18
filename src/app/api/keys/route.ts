@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { nanoid } from 'nanoid';
 import { getSupabaseServer, getSupabaseServerWithServiceRole } from '@/lib/db/supabase-server';
 import { validateCsrfToken, createCsrfErrorResponse } from '@/lib/auth/csrf';
+import { AgentTier, AGENT_LIMITS } from '@/types/subscription';
 
 // Hash API key using SHA-256 (Web Crypto API for edge runtime)
 async function hashApiKey(key: string): Promise<string> {
@@ -76,7 +77,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Parse request body
-  let body: { name?: string; tier?: 'starter' | 'builder' | 'scale' } = {};
+  let body: { name?: string; tier?: AgentTier } = {};
   try {
     body = await req.json();
   } catch {
@@ -84,15 +85,12 @@ export async function POST(req: NextRequest) {
   }
 
   const name = body.name || 'API Key';
-  const tier = body.tier || 'starter';
+  const tier: AgentTier = body.tier || 'developer';
 
-  // Set daily limit based on tier
-  const dailyLimits: Record<string, number> = {
-    starter: 10000,
-    builder: 100000,
-    scale: 1000000,
-  };
-  const dailyLimit = dailyLimits[tier] || 10000;
+  // Get limits from tier configuration
+  const limits = AGENT_LIMITS[tier] || AGENT_LIMITS.developer;
+  // Convert monthly limit to daily (approximate)
+  const dailyLimit = Math.ceil(limits.apiCallsPerMonth / 30);
 
   // Generate API key with prefix
   const apiKey = `nk_${nanoid(32)}`;

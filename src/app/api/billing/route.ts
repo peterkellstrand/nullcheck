@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
 
       projectedOverageRequests += projectedKeyOverage;
       if (limits.overageEnabled) {
-        projectedOverageCharge += (projectedKeyOverage / 1000) * limits.overagePricePerThousand;
+        projectedOverageCharge += (projectedKeyOverage / 100) * limits.overagePricePerHundred;
       }
     }
 
@@ -113,13 +113,13 @@ export async function GET(request: NextRequest) {
         overageRequests: key.overageRequests,
         overageCharge: key.overageCharge,
         overageEnabled: AGENT_LIMITS[key.tier as AgentTier].overageEnabled,
-        overageRate: AGENT_LIMITS[key.tier as AgentTier].overagePricePerThousand,
+        overageRate: AGENT_LIMITS[key.tier as AgentTier].overagePricePerHundred,
       })),
       pricing: {
-        note: 'Overage charges apply only to Builder and Scale tier API keys',
+        note: 'Overage charges apply only to Professional and Business tier API keys',
         rates: {
-          builder: `$${AGENT_LIMITS.builder.overagePricePerThousand} per 1,000 requests over daily limit`,
-          scale: `$${AGENT_LIMITS.scale.overagePricePerThousand} per 1,000 requests over daily limit`,
+          professional: `$${AGENT_LIMITS.professional.overagePricePerHundred} per 100 requests over monthly limit`,
+          business: `$${AGENT_LIMITS.business.overagePricePerHundred} per 100 requests over monthly limit`,
         },
       },
     };
