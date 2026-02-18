@@ -21,8 +21,6 @@ const CHAIN_ID_MAP: Record<ChainId, string> = {
   ethereum: '1',
   base: '8453',
   solana: 'solana',
-  arbitrum: '42161',
-  polygon: '137',
 };
 
 /**

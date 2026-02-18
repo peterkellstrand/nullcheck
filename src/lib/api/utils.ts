@@ -8,8 +8,6 @@ export const CACHE_MAX_AGE = 300; // 5 minutes
 export const ADDRESS_PATTERNS: Record<ChainId, RegExp> = {
   ethereum: /^0x[a-fA-F0-9]{40}$/,
   base: /^0x[a-fA-F0-9]{40}$/,
-  arbitrum: /^0x[a-fA-F0-9]{40}$/,
-  polygon: /^0x[a-fA-F0-9]{40}$/,
   solana: /^[1-9A-HJ-NP-Za-km-z]{32,44}$/,
 };
 

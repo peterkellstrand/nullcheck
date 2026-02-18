@@ -84,10 +84,6 @@ export function TopHoldersPanel({ chainId, tokenAddress }: TopHoldersPanelProps)
         return `https://solscan.io/account/${address}`;
       case 'base':
         return `https://basescan.org/address/${address}`;
-      case 'arbitrum':
-        return `https://arbiscan.io/address/${address}`;
-      case 'polygon':
-        return `https://polygonscan.com/address/${address}`;
       default:
         return `https://etherscan.io/address/${address}`;
     }

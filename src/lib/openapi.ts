@@ -40,7 +40,7 @@ export const openApiSpec = {
             description: 'Filter by blockchain',
             schema: {
               type: 'string',
-              enum: ['ethereum', 'base', 'solana', 'arbitrum', 'polygon', 'bsc', 'avalanche'],
+              enum: ['ethereum', 'base', 'solana'],
             },
           },
           {
@@ -89,7 +89,7 @@ export const openApiSpec = {
             description: 'Blockchain network',
             schema: {
               type: 'string',
-              enum: ['ethereum', 'base', 'solana', 'arbitrum', 'polygon', 'bsc', 'avalanche'],
+              enum: ['ethereum', 'base', 'solana'],
             },
           },
           {

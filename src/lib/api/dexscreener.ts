@@ -9,8 +9,6 @@ const CHAIN_MAP: Record<ChainId, string> = {
   ethereum: 'ethereum',
   base: 'base',
   solana: 'solana',
-  arbitrum: 'arbitrum',
-  polygon: 'polygon',
 };
 
 interface DexScreenerPair {
@@ -201,10 +199,6 @@ export async function getTrendingPairs(chainId: ChainId): Promise<DexScreenerPai
     ? ['SOL', 'BONK', 'WIF', 'JUP', 'PYTH', 'POPCAT', 'MEW', 'BOME', 'SLERF', 'PONKE', 'MYRO', 'WEN', 'SILLY', 'MOTHER', 'DADDY', 'GME', 'TRUMP', 'FWOG', 'GIGA', 'MICHI']
     : chainId === 'base'
     ? ['ETH', 'BRETT', 'DEGEN', 'TOSHI', 'AERO', 'WELL', 'USDbC', 'cbETH', 'MOCHI', 'BALD', 'NORMIE', 'DOGINME']
-    : chainId === 'arbitrum'
-    ? ['ETH', 'ARB', 'GMX', 'MAGIC', 'RDNT', 'GRAIL', 'DPX', 'JONES', 'GNS', 'VELA', 'Y2K', 'PENDLE', 'SUSHI', 'LINK', 'UNI', 'USDC']
-    : chainId === 'polygon'
-    ? ['MATIC', 'QUICK', 'AAVE', 'LINK', 'WETH', 'USDC', 'SAND', 'MANA', 'GRT', 'BAL', 'CRV', 'SUSHI', 'GHST', 'COMP', 'SNX', 'UNI']
     : ['ETH', 'PEPE', 'SHIB', 'FLOKI', 'WOJAK', 'TURBO', 'BOB', 'MEME', 'BONE', 'LEASH', 'APU', 'NEIRO', 'MOG', 'ANDY', 'BITCOIN', 'DOGE', 'SPX', 'LADYS'];
 
   const allPairs: DexScreenerPair[] = [];
@@ -283,8 +277,6 @@ function mapChainId(chain: string): ChainId {
     ethereum: 'ethereum',
     base: 'base',
     solana: 'solana',
-    arbitrum: 'arbitrum',
-    polygon: 'polygon',
   };
   return reverseMap[chain] || 'ethereum';
 }

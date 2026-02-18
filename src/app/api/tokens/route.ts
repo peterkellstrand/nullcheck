@@ -156,7 +156,7 @@ export async function GET(request: NextRequest) {
 
     // Cache miss or stale - fetch fresh data from GeckoTerminal trending
     if (!fromCache) {
-      const chains = chainId ? [chainId] : (['ethereum', 'base', 'solana', 'arbitrum', 'polygon'] as ChainId[]);
+      const chains = chainId ? [chainId] : (['ethereum', 'base', 'solana'] as ChainId[]);
       const tokensPerChain = Math.ceil((limit * 2) / chains.length);
 
       const trendingPromises = chains.map(async (chain) => {

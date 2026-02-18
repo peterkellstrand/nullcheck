@@ -21,8 +21,6 @@ const GECKO_NETWORK_MAP: Record<ChainId, string> = {
   ethereum: 'eth',
   base: 'base',
   solana: 'solana',
-  arbitrum: 'arbitrum',
-  polygon: 'polygon_pos',
 };
 
 // Map interval strings to GeckoTerminal timeframes
@@ -100,8 +98,6 @@ export async function GET(
       ethereum: 'ethereum',
       base: 'base',
       solana: 'solana',
-      arbitrum: 'arbitrum',
-      polygon: 'polygon',
     };
 
     let pools = dexData.pairs?.filter(
