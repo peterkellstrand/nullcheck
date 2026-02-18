@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { nanoid } from 'nanoid';
 import { getStripe, STRIPE_CONFIG } from '@/lib/stripe';
 import { upsertSubscription, downgradeToFree } from '@/lib/db/subscription';
+import { sendApiKeyEmail } from '@/lib/email';
 import type { SubscriptionStatus, AgentTier } from '@/types/subscription';
 import Stripe from 'stripe';
 
@@ -155,8 +156,20 @@ export async function POST(request: NextRequest) {
             } else {
               console.log(`Created API key for user ${finalUserId}`);
 
-              // TODO: Send email with API key to user
-              // The key is only available here - it won't be retrievable later
+              // Get user's email and send the API key
+              const customer = await stripe.customers.retrieve(customerId);
+              if (!customer.deleted && customer.email) {
+                const emailSent = await sendApiKeyEmail(
+                  customer.email,
+                  apiKey,
+                  agentTier || 'developer'
+                );
+                if (emailSent) {
+                  console.log(`Sent API key email to ${customer.email}`);
+                } else {
+                  console.warn(`Failed to send API key email to ${customer.email}`);
+                }
+              }
             }
           } else if (existingKey) {
             // Update existing key's tier if subscription changed
