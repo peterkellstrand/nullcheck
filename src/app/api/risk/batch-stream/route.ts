@@ -10,9 +10,9 @@ export const runtime = 'edge';
 
 // Tier-based batch limits
 const BATCH_LIMITS = {
-  starter: 10,
-  builder: 50,
-  scale: 100,
+  developer: 10,
+  professional: 50,
+  business: 100,
 } as const;
 
 const ANALYSIS_TIMEOUT = 20000; // 20 seconds per token
@@ -127,12 +127,12 @@ export async function POST(request: NextRequest) {
   );
 
   // Check batch limit
-  let maxBatchSize: number = BATCH_LIMITS.starter;
+  let maxBatchSize: number = BATCH_LIMITS.developer;
   if (access.type === 'agent') {
     const tier = access.tier as keyof typeof BATCH_LIMITS;
-    maxBatchSize = BATCH_LIMITS[tier] || BATCH_LIMITS.starter;
+    maxBatchSize = BATCH_LIMITS[tier] || BATCH_LIMITS.developer;
   } else if (access.type === 'human' && access.tier === 'pro') {
-    maxBatchSize = BATCH_LIMITS.builder;
+    maxBatchSize = BATCH_LIMITS.professional;
   }
 
   if (uniqueTokens.length > maxBatchSize) {

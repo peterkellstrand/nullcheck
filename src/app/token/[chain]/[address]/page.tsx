@@ -32,13 +32,14 @@ export default function TokenDetailPage() {
         const data = await response.json();
 
         if (data.success && data.data?.token) {
-          setToken(data.data.token);
+          const tokenData = data.data.token;
+          setToken(tokenData);
 
           // Fetch risk score
-          if (data.data.token.risk) {
-            setRisk(data.data.token.risk);
+          if (tokenData.risk) {
+            setRisk(tokenData.risk);
           } else {
-            fetchRiskScore();
+            fetchRiskScore(tokenData.metrics?.liquidity || 0);
           }
         } else {
           setError(data.error?.message || 'Token not found');
@@ -51,17 +52,19 @@ export default function TokenDetailPage() {
       }
     }
 
-    async function fetchRiskScore() {
+    async function fetchRiskScore(liquidity: number) {
       try {
         const response = await fetch('/api/risk/batch', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            tokens: [{ address, chainId: chain, liquidity: token?.metrics.liquidity || 0 }]
+            tokens: [{ address, chainId: chain, liquidity }]
           }),
         });
         const data = await response.json();
-        const key = `${chain}-${address.toLowerCase()}`;
+        // Solana addresses are case-sensitive, EVM addresses are lowercased
+        const normalizedAddress = chain === 'solana' ? address : address.toLowerCase();
+        const key = `${chain}-${normalizedAddress}`;
         if (data.success && data.data?.results?.[key]) {
           setRisk(data.data.results[key]);
         }

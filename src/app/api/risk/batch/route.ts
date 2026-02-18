@@ -19,9 +19,9 @@ export const OPTIONS = handleCorsOptions;
 
 // Tier-based batch limits
 const BATCH_LIMITS = {
-  starter: 10,
-  builder: 50,
-  scale: 100,
+  developer: 10,
+  professional: 50,
+  business: 100,
 } as const;
 
 const MAX_REQUEST_SIZE = 100 * 1024; // 100KB
@@ -155,13 +155,13 @@ export async function POST(request: NextRequest) {
   );
 
   // Determine batch limit based on access type
-  let maxBatchSize: number = BATCH_LIMITS.starter;
+  let maxBatchSize: number = BATCH_LIMITS.developer;
 
   if (access.type === 'agent') {
     const tier = access.tier as keyof typeof BATCH_LIMITS;
-    maxBatchSize = BATCH_LIMITS[tier] || BATCH_LIMITS.starter;
+    maxBatchSize = BATCH_LIMITS[tier] || BATCH_LIMITS.developer;
   } else if (access.type === 'human' && access.tier === 'pro') {
-    maxBatchSize = BATCH_LIMITS.builder; // PRO users get builder-level batch size
+    maxBatchSize = BATCH_LIMITS.professional; // PRO users get professional-level batch size
   }
 
   if (uniqueTokens.length > maxBatchSize) {
