@@ -107,15 +107,76 @@ export async function getTopHolders(
   limit: number = 20
 ): Promise<{ address: string; balance: number; percent: number }[]> {
   try {
-    const accounts = await getTokenAccounts(mintAddress, 1, limit);
-    const totalSupply = accounts.reduce((sum, acc) => sum + acc.amount, 0);
+    // Use standard Solana RPC method for largest token accounts
+    const result = await rpcCall<{
+      value: Array<{
+        address: string;
+        amount: string;
+        decimals: number;
+        uiAmount: number | null;
+        uiAmountString: string;
+      }>;
+    }>('getTokenLargestAccounts', [mintAddress]);
 
-    return accounts.map((acc) => ({
-      address: acc.owner,
-      balance: acc.amount,
-      percent: totalSupply > 0 ? (acc.amount / totalSupply) * 100 : 0,
-    }));
-  } catch {
+    if (!result?.value || result.value.length === 0) {
+      console.log('getTokenLargestAccounts returned no results for', mintAddress);
+      return [];
+    }
+
+    // Calculate total from largest accounts for percentage
+    const totalAmount = result.value.reduce(
+      (sum, acc) => sum + parseFloat(acc.amount),
+      0
+    );
+
+    // For each token account, we need to get the owner
+    // The address returned is the token account, not the wallet
+    const holdersWithOwners = await Promise.all(
+      result.value.slice(0, limit).map(async (acc) => {
+        try {
+          // Get account info to find the owner
+          const accountInfo = await rpcCall<{
+            value: {
+              data: {
+                parsed: {
+                  info: {
+                    owner: string;
+                    tokenAmount: {
+                      amount: string;
+                      decimals: number;
+                      uiAmount: number;
+                    };
+                  };
+                };
+              };
+            } | null;
+          }>('getAccountInfo', [
+            acc.address,
+            { encoding: 'jsonParsed' }
+          ]);
+
+          const owner = accountInfo?.value?.data?.parsed?.info?.owner || acc.address;
+          const balance = parseFloat(acc.amount);
+
+          return {
+            address: owner,
+            balance,
+            percent: totalAmount > 0 ? (balance / totalAmount) * 100 : 0,
+          };
+        } catch {
+          // If we can't get owner, use token account address
+          return {
+            address: acc.address,
+            balance: parseFloat(acc.amount),
+            percent: totalAmount > 0 ? (parseFloat(acc.amount) / totalAmount) * 100 : 0,
+          };
+        }
+      })
+    );
+
+    return holdersWithOwners;
+  } catch (error) {
+    console.error('Error fetching Solana top holders:', error);
     return [];
   }
 }
