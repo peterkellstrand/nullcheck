@@ -44,7 +44,7 @@ function PricingContent() {
       {/* Title */}
       <div className="mb-12 text-center">
         <h1 className="text-4xl font-bold text-[var(--text-primary)]">Pricing</h1>
-        <p className="mt-2 text-neutral-400">
+        <p className="mt-2 text-[var(--text-secondary)]">
           Free for humans. Premium for agents.
         </p>
       </div>
@@ -54,65 +54,65 @@ function PricingContent() {
       {/* =================== */}
       <div className="mb-16">
         <h2 className="mb-6 text-2xl font-semibold text-[var(--text-primary)]">For Humans</h2>
-        <p className="mb-8 text-neutral-400">
+        <p className="mb-8 text-[var(--text-secondary)]">
           Risk analysis should be free. These tiers are for traders using the web interface.
         </p>
 
         <div className="grid gap-6 md:grid-cols-2">
           {/* Free tier */}
-          <div className="flex flex-col border-2 border-neutral-700 bg-[var(--bg-secondary)] p-6">
+          <div className="flex flex-col border-2 border-[var(--border)] bg-[var(--bg-secondary)] p-6">
             <div className="mb-4">
               <h3 className="text-xl font-semibold text-[var(--text-primary)]">Free</h3>
               <div className="mt-2 text-3xl font-bold text-[var(--text-primary)]">$0</div>
-              <div className="text-sm text-neutral-500">forever</div>
+              <div className="text-sm text-[var(--text-muted)]">forever</div>
             </div>
 
             <ul className="mb-6 space-y-3 text-sm">
-              <li className="flex items-center gap-2 text-neutral-300">
+              <li className="flex items-center gap-2 text-[var(--text-primary)]">
                 <span className="text-emerald-500">[+]</span>
                 Full risk analysis
               </li>
-              <li className="flex items-center gap-2 text-neutral-300">
+              <li className="flex items-center gap-2 text-[var(--text-primary)]">
                 <span className="text-emerald-500">[+]</span>
                 Unlimited watchlist
               </li>
-              <li className="flex items-center gap-2 text-neutral-300">
+              <li className="flex items-center gap-2 text-[var(--text-primary)]">
                 <span className="text-emerald-500">[+]</span>
                 {TIER_LIMITS.free.chartSlots} chart slots
               </li>
-              <li className="flex items-center gap-2 text-neutral-300">
+              <li className="flex items-center gap-2 text-[var(--text-primary)]">
                 <span className="text-emerald-500">[+]</span>
                 {TIER_LIMITS.free.alerts} price alerts
               </li>
-              <li className="flex items-center gap-2 text-neutral-300">
+              <li className="flex items-center gap-2 text-[var(--text-primary)]">
                 <span className="text-emerald-500">[+]</span>
                 Trending tokens
               </li>
-              <li className="flex items-center gap-2 text-neutral-300">
+              <li className="flex items-center gap-2 text-[var(--text-primary)]">
                 <span className="text-emerald-500">[+]</span>
                 Token details & holder data
               </li>
-              <li className="flex items-center gap-2 text-neutral-300">
+              <li className="flex items-center gap-2 text-[var(--text-primary)]">
                 <span className="text-emerald-500">[+]</span>
                 Whale tracking
               </li>
-              <li className="flex items-center gap-2 text-neutral-300">
+              <li className="flex items-center gap-2 text-[var(--text-primary)]">
                 <span className="text-emerald-500">[+]</span>
                 {TIER_LIMITS.free.manualChecksPerDay} manual checks/day
               </li>
-              <li className="flex items-center gap-2 text-neutral-500">
-                <span className="text-neutral-600">[-]</span>
+              <li className="flex items-center gap-2 text-[var(--text-muted)]">
+                <span className="text-[var(--text-muted)]">[-]</span>
                 No API access
               </li>
-              <li className="flex items-center gap-2 text-neutral-500">
-                <span className="text-neutral-600">[-]</span>
+              <li className="flex items-center gap-2 text-[var(--text-muted)]">
+                <span className="text-[var(--text-muted)]">[-]</span>
                 No data export
               </li>
             </ul>
 
             <div className="mt-auto">
               {tier === 'free' && isAuthenticated && (
-                <div className="border border-neutral-700 bg-neutral-800 py-3 text-center text-sm text-neutral-400">
+                <div className="border border-[var(--border)] bg-[var(--bg-tertiary)] py-3 text-center text-sm text-[var(--text-secondary)]">
                   Current plan
                 </div>
               )}
@@ -137,7 +137,7 @@ function PricingContent() {
               </div>
               <div className="mt-2 flex items-baseline gap-2">
                 <span className="text-3xl font-bold text-[var(--text-primary)]">${HUMAN_PRICING.monthly.amount}</span>
-                <span className="text-neutral-500">/month</span>
+                <span className="text-[var(--text-muted)]">/month</span>
               </div>
               <div className="text-sm text-emerald-400">
                 or ${HUMAN_PRICING.yearly.amount}/year (save {HUMAN_PRICING.yearly.savings})
@@ -145,40 +145,40 @@ function PricingContent() {
             </div>
 
             <ul className="mb-6 space-y-3 text-sm">
-              <li className="flex items-center gap-2 text-neutral-300">
+              <li className="flex items-center gap-2 text-[var(--text-primary)]">
                 <span className="text-emerald-500">[+]</span>
                 Everything in Free
               </li>
-              <li className="flex items-center gap-2 text-neutral-300">
+              <li className="flex items-center gap-2 text-[var(--text-primary)]">
                 <span className="text-emerald-500">[+]</span>
                 {TIER_LIMITS.pro.chartSlots} chart slots
               </li>
-              <li className="flex items-center gap-2 text-neutral-300">
+              <li className="flex items-center gap-2 text-[var(--text-primary)]">
                 <span className="text-emerald-500">[+]</span>
                 Unlimited alerts
               </li>
-              <li className="flex items-center gap-2 text-neutral-300">
+              <li className="flex items-center gap-2 text-[var(--text-primary)]">
                 <span className="text-emerald-500">[+]</span>
                 {TIER_LIMITS.pro.manualChecksPerDay} manual checks/day
               </li>
-              <li className="flex items-center gap-2 text-neutral-300">
+              <li className="flex items-center gap-2 text-[var(--text-primary)]">
                 <span className="text-emerald-500">[+]</span>
                 Export watchlist (CSV/JSON)
               </li>
-              <li className="flex items-center gap-2 text-neutral-300">
+              <li className="flex items-center gap-2 text-[var(--text-primary)]">
                 <span className="text-emerald-500">[+]</span>
                 Historical risk data
               </li>
-              <li className="flex items-center gap-2 text-neutral-300">
+              <li className="flex items-center gap-2 text-[var(--text-primary)]">
                 <span className="text-emerald-500">[+]</span>
                 Advanced filters
               </li>
-              <li className="flex items-center gap-2 text-neutral-300">
+              <li className="flex items-center gap-2 text-[var(--text-primary)]">
                 <span className="text-emerald-500">[+]</span>
                 Priority email support
               </li>
-              <li className="flex items-center gap-2 text-neutral-500">
-                <span className="text-neutral-600">[-]</span>
+              <li className="flex items-center gap-2 text-[var(--text-muted)]">
+                <span className="text-[var(--text-muted)]">[-]</span>
                 No API access (see Agent tiers)
               </li>
             </ul>
@@ -235,38 +235,38 @@ function PricingContent() {
       {/* =================== */}
       <div className="mb-16">
         <h2 className="mb-6 text-2xl font-semibold text-[var(--text-primary)]">For Agents & Bots</h2>
-        <p className="mb-8 text-neutral-400">
+        <p className="mb-8 text-[var(--text-secondary)]">
           Programmatic API access for AI agents, trading bots, and custom integrations.
         </p>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {/* Developer tier */}
-          <div className="flex flex-col border-2 border-neutral-700 bg-[var(--bg-secondary)] p-5">
+          <div className="flex flex-col border-2 border-[var(--border)] bg-[var(--bg-secondary)] p-5">
             <div className="mb-4">
               <h3 className="text-lg font-semibold text-[var(--text-primary)]">Developer</h3>
               <div className="mt-2 text-2xl font-bold text-[var(--text-primary)]">${AGENT_PRICING.developer.amount}</div>
-              <div className="text-sm text-neutral-500">/month</div>
+              <div className="text-sm text-[var(--text-muted)]">/month</div>
             </div>
 
             <ul className="mb-6 space-y-2 text-xs">
-              <li className="flex items-center gap-2 text-neutral-300">
+              <li className="flex items-center gap-2 text-[var(--text-primary)]">
                 <span className="text-blue-500">[+]</span>
                 {AGENT_PRICING.developer.calls} API calls/month
               </li>
-              <li className="flex items-center gap-2 text-neutral-300">
+              <li className="flex items-center gap-2 text-[var(--text-primary)]">
                 <span className="text-blue-500">[+]</span>
                 {AGENT_LIMITS.developer.batchSize} tokens per batch
               </li>
-              <li className="flex items-center gap-2 text-neutral-300">
+              <li className="flex items-center gap-2 text-[var(--text-primary)]">
                 <span className="text-blue-500">[+]</span>
                 {AGENT_LIMITS.developer.webhooks} webhooks
               </li>
-              <li className="flex items-center gap-2 text-neutral-300">
+              <li className="flex items-center gap-2 text-[var(--text-primary)]">
                 <span className="text-blue-500">[+]</span>
                 {AGENT_LIMITS.developer.uptimeSla} uptime SLA
               </li>
-              <li className="flex items-center gap-2 text-neutral-400">
-                <span className="text-neutral-600">[~]</span>
+              <li className="flex items-center gap-2 text-[var(--text-secondary)]">
+                <span className="text-[var(--text-muted)]">[~]</span>
                 Overage: ${AGENT_LIMITS.developer.overagePricePerHundred}/100 calls
               </li>
             </ul>
@@ -290,32 +290,32 @@ function PricingContent() {
                 </span>
               </div>
               <div className="mt-2 text-2xl font-bold text-[var(--text-primary)]">${AGENT_PRICING.professional.amount}</div>
-              <div className="text-sm text-neutral-500">/month</div>
+              <div className="text-sm text-[var(--text-muted)]">/month</div>
             </div>
 
             <ul className="mb-6 space-y-2 text-xs">
-              <li className="flex items-center gap-2 text-neutral-300">
+              <li className="flex items-center gap-2 text-[var(--text-primary)]">
                 <span className="text-blue-500">[+]</span>
                 {AGENT_PRICING.professional.calls} API calls/month
               </li>
-              <li className="flex items-center gap-2 text-neutral-300">
+              <li className="flex items-center gap-2 text-[var(--text-primary)]">
                 <span className="text-blue-500">[+]</span>
                 {AGENT_LIMITS.professional.batchSize} tokens per batch
               </li>
-              <li className="flex items-center gap-2 text-neutral-300">
+              <li className="flex items-center gap-2 text-[var(--text-primary)]">
                 <span className="text-blue-500">[+]</span>
                 Unlimited webhooks
               </li>
-              <li className="flex items-center gap-2 text-neutral-300">
+              <li className="flex items-center gap-2 text-[var(--text-primary)]">
                 <span className="text-blue-500">[+]</span>
                 {AGENT_LIMITS.professional.uptimeSla} uptime SLA
               </li>
-              <li className="flex items-center gap-2 text-neutral-300">
+              <li className="flex items-center gap-2 text-[var(--text-primary)]">
                 <span className="text-blue-500">[+]</span>
                 Priority support
               </li>
-              <li className="flex items-center gap-2 text-neutral-400">
-                <span className="text-neutral-600">[~]</span>
+              <li className="flex items-center gap-2 text-[var(--text-secondary)]">
+                <span className="text-[var(--text-muted)]">[~]</span>
                 Overage: ${AGENT_LIMITS.professional.overagePricePerHundred}/100 calls
               </li>
             </ul>
@@ -330,40 +330,40 @@ function PricingContent() {
           </div>
 
           {/* Business tier */}
-          <div className="flex flex-col border-2 border-neutral-700 bg-[var(--bg-secondary)] p-5">
+          <div className="flex flex-col border-2 border-[var(--border)] bg-[var(--bg-secondary)] p-5">
             <div className="mb-4">
               <h3 className="text-lg font-semibold text-[var(--text-primary)]">Business</h3>
               <div className="mt-2 text-2xl font-bold text-[var(--text-primary)]">${AGENT_PRICING.business.amount}</div>
-              <div className="text-sm text-neutral-500">/month</div>
+              <div className="text-sm text-[var(--text-muted)]">/month</div>
             </div>
 
             <ul className="mb-6 space-y-2 text-xs">
-              <li className="flex items-center gap-2 text-neutral-300">
+              <li className="flex items-center gap-2 text-[var(--text-primary)]">
                 <span className="text-violet-500">[+]</span>
                 {AGENT_PRICING.business.calls} API calls/month
               </li>
-              <li className="flex items-center gap-2 text-neutral-300">
+              <li className="flex items-center gap-2 text-[var(--text-primary)]">
                 <span className="text-violet-500">[+]</span>
                 {AGENT_LIMITS.business.batchSize} tokens per batch
               </li>
-              <li className="flex items-center gap-2 text-neutral-300">
+              <li className="flex items-center gap-2 text-[var(--text-primary)]">
                 <span className="text-violet-500">[+]</span>
                 Unlimited webhooks
               </li>
-              <li className="flex items-center gap-2 text-neutral-300">
+              <li className="flex items-center gap-2 text-[var(--text-primary)]">
                 <span className="text-violet-500">[+]</span>
                 {AGENT_LIMITS.business.uptimeSla} uptime SLA
               </li>
-              <li className="flex items-center gap-2 text-neutral-300">
+              <li className="flex items-center gap-2 text-[var(--text-primary)]">
                 <span className="text-violet-500">[+]</span>
                 Dedicated support
               </li>
-              <li className="flex items-center gap-2 text-neutral-300">
+              <li className="flex items-center gap-2 text-[var(--text-primary)]">
                 <span className="text-violet-500">[+]</span>
                 Custom integrations
               </li>
-              <li className="flex items-center gap-2 text-neutral-400">
-                <span className="text-neutral-600">[~]</span>
+              <li className="flex items-center gap-2 text-[var(--text-secondary)]">
+                <span className="text-[var(--text-muted)]">[~]</span>
                 Overage: ${AGENT_LIMITS.business.overagePricePerHundred}/100 calls
               </li>
             </ul>
@@ -378,35 +378,35 @@ function PricingContent() {
           </div>
 
           {/* Enterprise tier */}
-          <div className="flex flex-col border-2 border-neutral-700 bg-[var(--bg-secondary)] p-5">
+          <div className="flex flex-col border-2 border-[var(--border)] bg-[var(--bg-secondary)] p-5">
             <div className="mb-4">
               <h3 className="text-lg font-semibold text-[var(--text-primary)]">Enterprise</h3>
               <div className="mt-2 text-2xl font-bold text-[var(--text-primary)]">Custom</div>
-              <div className="text-sm text-neutral-500">contact us</div>
+              <div className="text-sm text-[var(--text-muted)]">contact us</div>
             </div>
 
             <ul className="mb-6 space-y-2 text-xs">
-              <li className="flex items-center gap-2 text-neutral-300">
+              <li className="flex items-center gap-2 text-[var(--text-primary)]">
                 <span className="text-amber-500">[+]</span>
                 {AGENT_PRICING.enterprise.calls} API calls/month
               </li>
-              <li className="flex items-center gap-2 text-neutral-300">
+              <li className="flex items-center gap-2 text-[var(--text-primary)]">
                 <span className="text-amber-500">[+]</span>
                 White-label options
               </li>
-              <li className="flex items-center gap-2 text-neutral-300">
+              <li className="flex items-center gap-2 text-[var(--text-primary)]">
                 <span className="text-amber-500">[+]</span>
                 Dedicated infrastructure
               </li>
-              <li className="flex items-center gap-2 text-neutral-300">
+              <li className="flex items-center gap-2 text-[var(--text-primary)]">
                 <span className="text-amber-500">[+]</span>
                 Custom SLA
               </li>
-              <li className="flex items-center gap-2 text-neutral-300">
+              <li className="flex items-center gap-2 text-[var(--text-primary)]">
                 <span className="text-amber-500">[+]</span>
                 Account manager
               </li>
-              <li className="flex items-center gap-2 text-neutral-300">
+              <li className="flex items-center gap-2 text-[var(--text-primary)]">
                 <span className="text-amber-500">[+]</span>
                 {AGENT_LIMITS.enterprise.uptimeSla} uptime SLA
               </li>
@@ -432,72 +432,72 @@ function PricingContent() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-neutral-700">
-                <th className="py-3 text-left text-neutral-400 font-medium">Feature</th>
-                <th className="py-3 text-center text-neutral-400 font-medium">Free</th>
+              <tr className="border-b border-[var(--border)]">
+                <th className="py-3 text-left text-[var(--text-secondary)] font-medium">Feature</th>
+                <th className="py-3 text-center text-[var(--text-secondary)] font-medium">Free</th>
                 <th className="py-3 text-center text-emerald-400 font-medium">PRO</th>
                 <th className="py-3 text-center text-blue-400 font-medium">API Tiers</th>
               </tr>
             </thead>
-            <tbody className="text-neutral-300">
-              <tr className="border-b border-neutral-800">
+            <tbody className="text-[var(--text-primary)]">
+              <tr className="border-b border-[var(--border)]">
                 <td className="py-3">Risk Analysis</td>
                 <td className="py-3 text-center text-emerald-500">Full</td>
                 <td className="py-3 text-center text-emerald-500">Full</td>
                 <td className="py-3 text-center text-emerald-500">Full</td>
               </tr>
-              <tr className="border-b border-neutral-800">
+              <tr className="border-b border-[var(--border)]">
                 <td className="py-3">Watchlist</td>
                 <td className="py-3 text-center">Unlimited</td>
                 <td className="py-3 text-center">Unlimited</td>
-                <td className="py-3 text-center text-neutral-500">N/A</td>
+                <td className="py-3 text-center text-[var(--text-muted)]">N/A</td>
               </tr>
-              <tr className="border-b border-neutral-800">
+              <tr className="border-b border-[var(--border)]">
                 <td className="py-3">Chart Slots</td>
                 <td className="py-3 text-center">9</td>
                 <td className="py-3 text-center">16</td>
-                <td className="py-3 text-center text-neutral-500">N/A</td>
+                <td className="py-3 text-center text-[var(--text-muted)]">N/A</td>
               </tr>
-              <tr className="border-b border-neutral-800">
+              <tr className="border-b border-[var(--border)]">
                 <td className="py-3">Price Alerts</td>
                 <td className="py-3 text-center">10</td>
                 <td className="py-3 text-center">Unlimited</td>
-                <td className="py-3 text-center text-neutral-500">N/A</td>
+                <td className="py-3 text-center text-[var(--text-muted)]">N/A</td>
               </tr>
-              <tr className="border-b border-neutral-800">
+              <tr className="border-b border-[var(--border)]">
                 <td className="py-3">Manual Checks/Day</td>
                 <td className="py-3 text-center">50</td>
                 <td className="py-3 text-center">200</td>
-                <td className="py-3 text-center text-neutral-500">N/A</td>
+                <td className="py-3 text-center text-[var(--text-muted)]">N/A</td>
               </tr>
-              <tr className="border-b border-neutral-800">
+              <tr className="border-b border-[var(--border)]">
                 <td className="py-3">Data Export</td>
-                <td className="py-3 text-center text-neutral-500">No</td>
+                <td className="py-3 text-center text-[var(--text-muted)]">No</td>
                 <td className="py-3 text-center text-emerald-500">Yes</td>
                 <td className="py-3 text-center text-emerald-500">Yes</td>
               </tr>
-              <tr className="border-b border-neutral-800">
+              <tr className="border-b border-[var(--border)]">
                 <td className="py-3">Historical Data</td>
-                <td className="py-3 text-center text-neutral-500">No</td>
+                <td className="py-3 text-center text-[var(--text-muted)]">No</td>
                 <td className="py-3 text-center text-emerald-500">Yes</td>
                 <td className="py-3 text-center text-emerald-500">Yes</td>
               </tr>
-              <tr className="border-b border-neutral-800">
+              <tr className="border-b border-[var(--border)]">
                 <td className="py-3">API Access</td>
-                <td className="py-3 text-center text-neutral-500">No</td>
-                <td className="py-3 text-center text-neutral-500">No</td>
+                <td className="py-3 text-center text-[var(--text-muted)]">No</td>
+                <td className="py-3 text-center text-[var(--text-muted)]">No</td>
                 <td className="py-3 text-center text-emerald-500">Yes</td>
               </tr>
-              <tr className="border-b border-neutral-800">
+              <tr className="border-b border-[var(--border)]">
                 <td className="py-3">Webhooks</td>
-                <td className="py-3 text-center text-neutral-500">No</td>
-                <td className="py-3 text-center text-neutral-500">No</td>
+                <td className="py-3 text-center text-[var(--text-muted)]">No</td>
+                <td className="py-3 text-center text-[var(--text-muted)]">No</td>
                 <td className="py-3 text-center text-emerald-500">Yes</td>
               </tr>
-              <tr className="border-b border-neutral-800">
+              <tr className="border-b border-[var(--border)]">
                 <td className="py-3">Batch Operations</td>
-                <td className="py-3 text-center text-neutral-500">No</td>
-                <td className="py-3 text-center text-neutral-500">No</td>
+                <td className="py-3 text-center text-[var(--text-muted)]">No</td>
+                <td className="py-3 text-center text-[var(--text-muted)]">No</td>
                 <td className="py-3 text-center text-emerald-500">Yes</td>
               </tr>
             </tbody>
@@ -506,42 +506,42 @@ function PricingContent() {
       </div>
 
       {/* FAQ */}
-      <div className="border-t border-neutral-800 pt-12">
+      <div className="border-t border-[var(--border)] pt-12">
         <h2 className="mb-6 text-xl font-semibold text-[var(--text-primary)]">FAQ</h2>
         <div className="grid gap-6 md:grid-cols-2">
           <div>
             <h3 className="font-medium text-[var(--text-primary)]">Why is the free tier so generous?</h3>
-            <p className="mt-1 text-sm text-neutral-400">
+            <p className="mt-1 text-sm text-[var(--text-secondary)]">
               We believe risk analysis should be free for everyone. Human users sharing our data creates trust and awareness. Our revenue comes from agents and bots who need API access.
             </p>
           </div>
           <div>
             <h3 className="font-medium text-[var(--text-primary)]">Can I use the free tier for my trading bot?</h3>
-            <p className="mt-1 text-sm text-neutral-400">
+            <p className="mt-1 text-sm text-[var(--text-secondary)]">
               No. The free tier is for manual web UI usage only. Bots and scripts require an API subscription. We detect and block automated access on free accounts.
             </p>
           </div>
           <div>
             <h3 className="font-medium text-[var(--text-primary)]">What counts as an API call?</h3>
-            <p className="mt-1 text-sm text-neutral-400">
+            <p className="mt-1 text-sm text-[var(--text-secondary)]">
               Each request to any API endpoint counts as one call. Batch requests count as one call regardless of how many tokens are analyzed.
             </p>
           </div>
           <div>
             <h3 className="font-medium text-[var(--text-primary)]">What happens if I exceed my API limit?</h3>
-            <p className="mt-1 text-sm text-neutral-400">
+            <p className="mt-1 text-sm text-[var(--text-secondary)]">
               Overages are billed at the rate shown for your tier. You can set spending limits in your dashboard to avoid surprises.
             </p>
           </div>
           <div>
             <h3 className="font-medium text-[var(--text-primary)]">Can I cancel anytime?</h3>
-            <p className="mt-1 text-sm text-neutral-400">
+            <p className="mt-1 text-sm text-[var(--text-secondary)]">
               Yes. Cancel from the customer portal. You&apos;ll keep access until the end of your billing period.
             </p>
           </div>
           <div>
             <h3 className="font-medium text-[var(--text-primary)]">Will you ever promote tokens?</h3>
-            <p className="mt-1 text-sm text-neutral-400">
+            <p className="mt-1 text-sm text-[var(--text-secondary)]">
               Never. nullcheck will never accept payment from token projects. Our revenue comes from users, keeping our analysis unbiased.
             </p>
           </div>
@@ -557,13 +557,13 @@ export default function PricingPage() {
       <div className="mx-auto max-w-6xl">
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
-          <Link href="/" className="text-2xl font-bold text-[var(--text-primary)] hover:text-neutral-300">
+          <Link href="/" className="text-2xl font-bold text-[var(--text-primary)] hover:text-[var(--text-secondary)]">
             null//check
           </Link>
         </div>
 
         <Suspense fallback={
-          <div className="text-center text-neutral-500">Loading...</div>
+          <div className="text-center text-[var(--text-muted)]">Loading...</div>
         }>
           <PricingContent />
         </Suspense>
