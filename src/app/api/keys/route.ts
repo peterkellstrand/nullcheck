@@ -27,7 +27,7 @@ export async function GET() {
   const service = await getSupabaseServerWithServiceRole();
   const { data, error } = await service
     .from('api_keys')
-    .select('id, name, tier, daily_limit, created_at, last_used, is_revoked, key_prefix')
+    .select('id, name, tier, daily_limit, monthly_limit, created_at, last_used, is_revoked, key_prefix, stripe_subscription_id')
     .eq('user_id', user.id)
     .eq('is_revoked', false)
     .order('created_at', { ascending: false });
@@ -40,6 +40,7 @@ export async function GET() {
   const keys = data?.map(key => ({
     ...key,
     keyPreview: key.key_prefix || 'nk_****...', // Show prefix or placeholder
+    monthly_limit: key.monthly_limit || key.daily_limit * 30, // Fallback for old keys
   }));
 
   return NextResponse.json({ success: true, keys });
@@ -61,23 +62,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Check if user has PRO subscription
   const service = await getSupabaseServerWithServiceRole();
-  const { data: subscription } = await service
-    .from('user_subscriptions')
-    .select('tier, status')
-    .eq('user_id', user.id)
-    .single();
 
-  if (!subscription || subscription.tier !== 'pro' || subscription.status !== 'active') {
+  // Check if user has an agent subscription (existing key with stripe_subscription_id)
+  const { data: existingKeys } = await service
+    .from('api_keys')
+    .select('tier, stripe_subscription_id')
+    .eq('user_id', user.id)
+    .eq('is_revoked', false)
+    .not('stripe_subscription_id', 'is', null)
+    .limit(1);
+
+  const hasAgentSubscription = existingKeys && existingKeys.length > 0;
+  const subscriptionTier = hasAgentSubscription ? existingKeys[0].tier as AgentTier : null;
+
+  if (!hasAgentSubscription) {
     return NextResponse.json(
-      { error: 'PRO subscription required to create API keys' },
+      { error: 'API subscription required to create keys. Subscribe at /pricing' },
       { status: 403 }
     );
   }
 
   // Parse request body
-  let body: { name?: string; tier?: AgentTier } = {};
+  let body: { name?: string } = {};
   try {
     body = await req.json();
   } catch {
@@ -85,7 +92,8 @@ export async function POST(req: NextRequest) {
   }
 
   const name = body.name || 'API Key';
-  const tier: AgentTier = body.tier || 'developer';
+  // Use the tier from user's subscription
+  const tier: AgentTier = subscriptionTier || 'developer';
 
   // Get limits from tier configuration
   const limits = AGENT_LIMITS[tier] || AGENT_LIMITS.developer;

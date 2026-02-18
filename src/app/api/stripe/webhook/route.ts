@@ -1,9 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { getStripe } from '@/lib/stripe';
+import { nanoid } from 'nanoid';
+import { getStripe, STRIPE_CONFIG } from '@/lib/stripe';
 import { upsertSubscription, downgradeToFree } from '@/lib/db/subscription';
-import type { SubscriptionStatus } from '@/types/subscription';
+import type { SubscriptionStatus, AgentTier } from '@/types/subscription';
 import Stripe from 'stripe';
+
+// Hash API key using SHA-256
+async function hashApiKey(key: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(key);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Determine if a price ID is for an agent tier
+function getAgentTierFromPriceId(priceId: string): AgentTier | null {
+  if (priceId === STRIPE_CONFIG.prices.developer) return 'developer';
+  if (priceId === STRIPE_CONFIG.prices.professional) return 'professional';
+  if (priceId === STRIPE_CONFIG.prices.business) return 'business';
+  return null;
+}
 
 // Create a service role client for webhook (no cookies needed)
 function getServiceSupabase() {
@@ -68,6 +86,8 @@ export async function POST(request: NextRequest) {
         const subscription = event.data.object as Stripe.Subscription;
         const customerId = subscription.customer as string;
         const userId = subscription.metadata.supabase_user_id;
+        const subscriptionType = subscription.metadata.subscription_type; // 'agent' or 'human'
+        const tierFromMetadata = subscription.metadata.tier;
 
         if (!userId) {
           // Try to get user ID from customer metadata
@@ -98,17 +118,67 @@ export async function POST(request: NextRequest) {
         const currentPeriodStart = firstItem?.current_period_start ?? Math.floor(Date.now() / 1000);
         const currentPeriodEnd = firstItem?.current_period_end ?? Math.floor(Date.now() / 1000);
 
-        await upsertSubscription(supabase, {
-          userId: finalUserId,
-          stripeCustomerId: customerId,
-          stripeSubscriptionId: subscription.id,
-          stripePriceId: firstItem?.price.id || '',
-          tier: 'pro',
-          status: mapStripeStatus(subscription.status),
-          currentPeriodStart: new Date(currentPeriodStart * 1000),
-          currentPeriodEnd: new Date(currentPeriodEnd * 1000),
-          cancelAtPeriodEnd: subscription.cancel_at_period_end,
-        });
+        // Check if this is an agent tier subscription
+        const agentTier = getAgentTierFromPriceId(firstItem?.price.id || '') ||
+                          (tierFromMetadata as AgentTier | undefined);
+
+        if (subscriptionType === 'agent' || agentTier) {
+          // Agent subscription - create or update API key
+          console.log(`Processing agent subscription for user ${finalUserId}, tier: ${agentTier}`);
+
+          // Check if user already has a key for this subscription
+          const { data: existingKey } = await supabase
+            .from('api_keys')
+            .select('id')
+            .eq('stripe_subscription_id', subscription.id)
+            .single();
+
+          if (!existingKey && event.type === 'customer.subscription.created') {
+            // Create new API key for this subscription
+            const apiKey = `nk_${nanoid(32)}`;
+            const hashedKey = await hashApiKey(apiKey);
+            const keyPrefix = apiKey.substring(0, 12) + '...';
+
+            const { error: keyError } = await supabase
+              .from('api_keys')
+              .insert({
+                user_id: finalUserId,
+                hashed_key: hashedKey,
+                key_prefix: keyPrefix,
+                name: `${agentTier || 'API'} Key`,
+                tier: agentTier || 'developer',
+                stripe_subscription_id: subscription.id,
+              });
+
+            if (keyError) {
+              console.error('Failed to create API key:', keyError);
+            } else {
+              console.log(`Created API key for user ${finalUserId}`);
+
+              // TODO: Send email with API key to user
+              // The key is only available here - it won't be retrievable later
+            }
+          } else if (existingKey) {
+            // Update existing key's tier if subscription changed
+            await supabase
+              .from('api_keys')
+              .update({ tier: agentTier || 'developer' })
+              .eq('stripe_subscription_id', subscription.id);
+          }
+        } else {
+          // Human subscription (PRO)
+          await upsertSubscription(supabase, {
+            userId: finalUserId,
+            stripeCustomerId: customerId,
+            stripeSubscriptionId: subscription.id,
+            stripePriceId: firstItem?.price.id || '',
+            tier: 'pro',
+            status: mapStripeStatus(subscription.status),
+            currentPeriodStart: new Date(currentPeriodStart * 1000),
+            currentPeriodEnd: new Date(currentPeriodEnd * 1000),
+            cancelAtPeriodEnd: subscription.cancel_at_period_end,
+          });
+        }
         break;
       }
 
