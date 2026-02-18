@@ -6,7 +6,9 @@ import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
 import { Button } from '@/components/ui';
-import { HUMAN_PRICING, AGENT_PRICING, TIER_LIMITS, AGENT_LIMITS } from '@/types/subscription';
+import { HUMAN_PRICING, AGENT_PRICING, TIER_LIMITS, AGENT_LIMITS, PriceType } from '@/types/subscription';
+
+type LoadingState = PriceType | 'portal' | null;
 
 function PricingContent() {
   const searchParams = useSearchParams();
@@ -15,16 +17,18 @@ function PricingContent() {
 
   const { isAuthenticated } = useAuth();
   const { tier, isPro, openCheckout, openPortal, isLoading: subLoading } = useSubscription();
-  const [isLoading, setIsLoading] = useState<'monthly' | 'yearly' | 'portal' | null>(null);
+  const [isLoading, setIsLoading] = useState<LoadingState>(null);
 
-  const handleCheckout = async (priceType: 'monthly' | 'yearly') => {
+  const handleCheckout = async (priceType: PriceType) => {
     setIsLoading(priceType);
     await openCheckout(priceType);
+    setIsLoading(null);
   };
 
   const handlePortal = async () => {
     setIsLoading('portal');
     await openPortal();
+    setIsLoading(null);
   };
 
   return (
@@ -272,11 +276,22 @@ function PricingContent() {
             </ul>
 
             <div className="mt-auto">
-              <a href="mailto:support@nullcheck.io?subject=Developer%20API%20Access">
-                <Button variant="secondary" className="w-full py-2 text-sm">
-                  Contact sales
+              {isAuthenticated ? (
+                <Button
+                  onClick={() => handleCheckout('developer')}
+                  disabled={isLoading !== null || subLoading}
+                  variant="secondary"
+                  className="w-full py-2 text-sm"
+                >
+                  {isLoading === 'developer' ? 'Loading...' : 'Subscribe'}
                 </Button>
-              </a>
+              ) : (
+                <Link href="/">
+                  <Button variant="secondary" className="w-full py-2 text-sm">
+                    Sign in to subscribe
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
 
@@ -321,11 +336,21 @@ function PricingContent() {
             </ul>
 
             <div className="mt-auto">
-              <a href="mailto:support@nullcheck.io?subject=Professional%20API%20Access">
-                <Button className="w-full border-2 border-blue-500 bg-blue-500/20 py-2 text-sm text-blue-400 hover:bg-blue-500/30">
-                  Contact sales
+              {isAuthenticated ? (
+                <Button
+                  onClick={() => handleCheckout('professional')}
+                  disabled={isLoading !== null || subLoading}
+                  className="w-full border-2 border-blue-500 bg-blue-500/20 py-2 text-sm text-blue-400 hover:bg-blue-500/30"
+                >
+                  {isLoading === 'professional' ? 'Loading...' : 'Subscribe'}
                 </Button>
-              </a>
+              ) : (
+                <Link href="/">
+                  <Button className="w-full border-2 border-blue-500 bg-blue-500/20 py-2 text-sm text-blue-400 hover:bg-blue-500/30">
+                    Sign in to subscribe
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
 
@@ -369,11 +394,22 @@ function PricingContent() {
             </ul>
 
             <div className="mt-auto">
-              <a href="mailto:support@nullcheck.io?subject=Business%20API%20Access">
-                <Button variant="secondary" className="w-full py-2 text-sm">
-                  Contact sales
+              {isAuthenticated ? (
+                <Button
+                  onClick={() => handleCheckout('business')}
+                  disabled={isLoading !== null || subLoading}
+                  variant="secondary"
+                  className="w-full py-2 text-sm"
+                >
+                  {isLoading === 'business' ? 'Loading...' : 'Subscribe'}
                 </Button>
-              </a>
+              ) : (
+                <Link href="/">
+                  <Button variant="secondary" className="w-full py-2 text-sm">
+                    Sign in to subscribe
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
 

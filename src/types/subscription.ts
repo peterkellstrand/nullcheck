@@ -157,7 +157,7 @@ export interface UserSubscription {
 // Pricing Constants
 // ===================
 
-export type PriceType = 'monthly' | 'yearly';
+export type PriceType = 'monthly' | 'yearly' | 'developer' | 'professional' | 'business';
 
 // Human PRO pricing
 export const HUMAN_PRICING = {

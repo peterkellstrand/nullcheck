@@ -1,2 +1,2 @@
 export { getStripe } from './client';
-export { STRIPE_CONFIG, getPriceId } from './config';
+export { STRIPE_CONFIG, getPriceId, isAgentTier } from './config';
