@@ -22,6 +22,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [riskStatus, setRiskStatus] = useState<string>('');
   const [selectedChain, setSelectedChain] = useState<ChainId | undefined>(undefined);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   // Connect to SSE price stream
   usePriceStream({ enabled: tokens.length > 0 });
@@ -82,7 +83,9 @@ export default function Home() {
       try {
         setIsLoading(true);
         const chainParam = selectedChain ? `&chain=${selectedChain}` : '';
-        const response = await fetch(`/api/tokens?limit=50${chainParam}`);
+        // Force refresh when chain changes (not on initial load) to get fresh data
+        const refreshParam = !isInitialLoad ? '&refresh=true' : '';
+        const response = await fetch(`/api/tokens?limit=50${chainParam}${refreshParam}`);
 
         if (!response.ok) {
           throw new Error(`API error: ${response.status}`);
@@ -106,11 +109,12 @@ export default function Home() {
         console.error('Fetch error:', err);
       } finally {
         setIsLoading(false);
+        setIsInitialLoad(false);
       }
     }
 
     fetchTokens();
-  }, [fetchRiskScores, setTokens, selectedChain]);
+  }, [fetchRiskScores, setTokens, selectedChain, isInitialLoad]);
 
   const handleTokenClick = (token: TokenWithMetrics) => {
     router.push(`/token/${token.chainId}/${token.address}`);

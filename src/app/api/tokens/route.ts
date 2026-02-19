@@ -106,6 +106,7 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const chainId = searchParams.get('chain') as ChainId | null;
   const limit = Math.min(parseInt(searchParams.get('limit') || '50', 10), 100);
+  const forceRefresh = searchParams.get('refresh') === 'true';
 
   // Validate chain if provided
   if (chainId && !(chainId in CHAINS)) {
@@ -122,52 +123,55 @@ export async function GET(request: NextRequest) {
     let fromCache = false;
     let fromMaterializedView = false;
 
-    // Try materialized view first (fastest - pre-computed data)
-    const trendingTokens = await db.getTrendingTokens(chainId || undefined, limit);
+    // Skip cache if refresh=true
+    if (!forceRefresh) {
+      // Try materialized view first (fastest - pre-computed data)
+      const trendingTokens = await db.getTrendingTokens(chainId || undefined, limit);
 
-    if (trendingTokens && trendingTokens.length > 0) {
-      // Filter out tokens with invalid addresses (e.g., lowercased Solana addresses)
-      const validTokens = trendingTokens.filter(
-        t => validateAddress(t.chainId, t.address)
-      );
+      if (trendingTokens && trendingTokens.length > 0) {
+        // Filter out tokens with invalid addresses (e.g., lowercased Solana addresses)
+        const validTokens = trendingTokens.filter(
+          t => validateAddress(t.chainId, t.address)
+        );
 
-      if (validTokens.length > 0) {
-        // Materialized view available and has valid data
-        tokens = validTokens.map(mapTrendingToTokenWithMetrics);
-        fromCache = true;
-        fromMaterializedView = true;
-      }
-    }
-
-    // Fallback: Try regular cached tokens from Supabase
-    if (!fromMaterializedView) {
-      const cachedTokens = await db.getTopTokens(chainId || undefined, 'volume_24h', limit);
-
-      // Filter out tokens with invalid addresses
-      const validCachedTokens = cachedTokens.filter(
-        t => validateAddress(t.chainId, t.address)
-      );
-
-      // Check if cache is fresh (updated within last 30 seconds)
-      if (validCachedTokens.length > 0) {
-        const newestUpdate = validCachedTokens.reduce((latest, t) => {
-          const updatedAt = new Date(t.metrics.updatedAt || 0).getTime();
-          return updatedAt > latest ? updatedAt : latest;
-        }, 0);
-
-        const cacheAge = Date.now() - newestUpdate;
-        if (cacheAge < CACHE_TTL_MS) {
-          // Cache is fresh, use it
-          tokens = validCachedTokens.map((t) => ({
-            ...t,
-            risk: undefined, // Risk scores fetched separately
-          }));
+        if (validTokens.length > 0) {
+          // Materialized view available and has valid data
+          tokens = validTokens.map(mapTrendingToTokenWithMetrics);
           fromCache = true;
+          fromMaterializedView = true;
+        }
+      }
+
+      // Fallback: Try regular cached tokens from Supabase
+      if (!fromMaterializedView) {
+        const cachedTokens = await db.getTopTokens(chainId || undefined, 'volume_24h', limit);
+
+        // Filter out tokens with invalid addresses
+        const validCachedTokens = cachedTokens.filter(
+          t => validateAddress(t.chainId, t.address)
+        );
+
+        // Check if cache is fresh (updated within last 30 seconds)
+        if (validCachedTokens.length > 0) {
+          const newestUpdate = validCachedTokens.reduce((latest, t) => {
+            const updatedAt = new Date(t.metrics.updatedAt || 0).getTime();
+            return updatedAt > latest ? updatedAt : latest;
+          }, 0);
+
+          const cacheAge = Date.now() - newestUpdate;
+          if (cacheAge < CACHE_TTL_MS) {
+            // Cache is fresh, use it
+            tokens = validCachedTokens.map((t) => ({
+              ...t,
+              risk: undefined, // Risk scores fetched separately
+            }));
+            fromCache = true;
+          }
         }
       }
     }
 
-    // Cache miss or stale - fetch fresh data from GeckoTerminal trending
+    // Cache miss, stale, or force refresh - fetch fresh data from GeckoTerminal trending
     if (!fromCache) {
       const chains = chainId ? [chainId] : (['ethereum', 'base', 'solana'] as ChainId[]);
       const tokensPerChain = Math.ceil((limit * 2) / chains.length);
