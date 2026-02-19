@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { createChart, ColorType, IChartApi, ISeriesApi, CandlestickData, Time, CandlestickSeries, HistogramSeries, LineSeries } from 'lightweight-charts';
 import { ChainId } from '@/types/chain';
 import { OHLCV } from '@/types/token';
@@ -170,6 +170,13 @@ export function PriceChart({
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<ChartStats | null>(null);
   const [ohlcvData, setOhlcvData] = useState<OHLCV[]>([]);
+
+  // Memoize indicator calculations
+  const ema9Data = useMemo(() => calculateEMA(ohlcvData, 9), [ohlcvData]);
+  const ema20Data = useMemo(() => calculateEMA(ohlcvData, 20), [ohlcvData]);
+  const ema50Data = useMemo(() => calculateEMA(ohlcvData, 50), [ohlcvData]);
+  const vwapData = useMemo(() => calculateVWAP(ohlcvData), [ohlcvData]);
+  const srLevels = useMemo(() => calculateSupportResistance(ohlcvData), [ohlcvData]);
 
   // Initialize chart
   useEffect(() => {
@@ -349,46 +356,7 @@ export function PriceChart({
             volumeSeriesRef.current.setData(volumeData);
           }
 
-          // EMA lines
-          if (showMA && ema9SeriesRef.current && ema20SeriesRef.current && ema50SeriesRef.current) {
-            ema9SeriesRef.current.setData(calculateEMA(ohlcv, 9));
-            ema20SeriesRef.current.setData(calculateEMA(ohlcv, 20));
-            ema50SeriesRef.current.setData(calculateEMA(ohlcv, 50));
-          } else if (ema9SeriesRef.current && ema20SeriesRef.current && ema50SeriesRef.current) {
-            ema9SeriesRef.current.setData([]);
-            ema20SeriesRef.current.setData([]);
-            ema50SeriesRef.current.setData([]);
-          }
-
-          // VWAP line
-          if (showMA && vwapSeriesRef.current) {
-            vwapSeriesRef.current.setData(calculateVWAP(ohlcv));
-          } else if (vwapSeriesRef.current) {
-            vwapSeriesRef.current.setData([]);
-          }
-
-          // Support/Resistance lines
-          if (showMA && supportLineRef.current && resistanceLineRef.current && ohlcv.length >= 10) {
-            const { support, resistance } = calculateSupportResistance(ohlcv);
-            const firstTime = (ohlcv[0].timestamp / 1000) as Time;
-            const lastTime = (ohlcv[ohlcv.length - 1].timestamp / 1000) as Time;
-
-            if (support > 0) {
-              supportLineRef.current.setData([
-                { time: firstTime, value: support },
-                { time: lastTime, value: support },
-              ]);
-            }
-            if (resistance > 0) {
-              resistanceLineRef.current.setData([
-                { time: firstTime, value: resistance },
-                { time: lastTime, value: resistance },
-              ]);
-            }
-          } else if (supportLineRef.current && resistanceLineRef.current) {
-            supportLineRef.current.setData([]);
-            resistanceLineRef.current.setData([]);
-          }
+          // Indicators are set in a separate effect using memoized data
 
           // Calculate stats
           const first = ohlcv[0];
@@ -422,7 +390,45 @@ export function PriceChart({
     }
 
     fetchOHLCV();
-  }, [chainId, tokenAddress, timeframe, showVolume, showMA]);
+  }, [chainId, tokenAddress, timeframe, showVolume]);
+
+  // Update indicator lines when memoized data changes
+  useEffect(() => {
+    if (!ema9SeriesRef.current || !ema20SeriesRef.current || !ema50SeriesRef.current) return;
+    if (!vwapSeriesRef.current || !supportLineRef.current || !resistanceLineRef.current) return;
+
+    if (showMA) {
+      ema9SeriesRef.current.setData(ema9Data);
+      ema20SeriesRef.current.setData(ema20Data);
+      ema50SeriesRef.current.setData(ema50Data);
+      vwapSeriesRef.current.setData(vwapData);
+
+      if (ohlcvData.length >= 10) {
+        const firstTime = (ohlcvData[0].timestamp / 1000) as Time;
+        const lastTime = (ohlcvData[ohlcvData.length - 1].timestamp / 1000) as Time;
+
+        if (srLevels.support > 0) {
+          supportLineRef.current.setData([
+            { time: firstTime, value: srLevels.support },
+            { time: lastTime, value: srLevels.support },
+          ]);
+        }
+        if (srLevels.resistance > 0) {
+          resistanceLineRef.current.setData([
+            { time: firstTime, value: srLevels.resistance },
+            { time: lastTime, value: srLevels.resistance },
+          ]);
+        }
+      }
+    } else {
+      ema9SeriesRef.current.setData([]);
+      ema20SeriesRef.current.setData([]);
+      ema50SeriesRef.current.setData([]);
+      vwapSeriesRef.current.setData([]);
+      supportLineRef.current.setData([]);
+      resistanceLineRef.current.setData([]);
+    }
+  }, [showMA, ema9Data, ema20Data, ema50Data, vwapData, srLevels, ohlcvData]);
 
   return (
     <div>

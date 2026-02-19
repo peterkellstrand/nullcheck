@@ -313,9 +313,6 @@ function generatePlaceholderRiskScore(token: TokenWithMetrics) {
   const vlRatio = volume / (liquidity || 1);
   if (vlRatio > 10) score += 10;
 
-  // Random component for demo variety
-  score += Math.floor(Math.random() * 15);
-
   score = Math.min(score, 100);
   const level = getRiskLevel(score);
 
