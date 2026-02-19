@@ -17,6 +17,7 @@ export function Tooltip({
   className,
 }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
+  const [isPositioned, setIsPositioned] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const triggerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
@@ -53,6 +54,9 @@ export function Tooltip({
       y = Math.max(8, Math.min(y, window.innerHeight - tooltipRect.height - 8));
 
       setPosition({ x, y });
+      setIsPositioned(true);
+    } else {
+      setIsPositioned(false);
     }
   }, [isVisible, side]);
 
@@ -72,7 +76,8 @@ export function Tooltip({
           className={cn(
             'fixed z-50 px-2 py-1 text-xs font-mono',
             'bg-neutral-800 text-neutral-200 border border-neutral-700',
-            'shadow-lg',
+            'shadow-lg pointer-events-none',
+            !isPositioned && 'opacity-0',
             className
           )}
           style={{

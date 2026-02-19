@@ -45,8 +45,6 @@ async function analyzeSolanaHolders(tokenAddress: string): Promise<HolderRisk> {
 
   try {
     const topHolders = await helius.getTopHolders(tokenAddress, 20);
-    const holderCount = await helius.getTokenHolderCount(tokenAddress);
-
     const analysis = helius.analyzeHolderDistribution(topHolders);
     warnings.push(...analysis.warnings);
 
@@ -61,26 +59,9 @@ async function analyzeSolanaHolders(tokenAddress: string): Promise<HolderRisk> {
       score += 5;
     }
 
-    // Low holder count penalty
-    if (holderCount < 50) {
-      score += 10;
-      warnings.push({
-        code: 'FEW_HOLDERS',
-        severity: 'high',
-        message: `Only ${holderCount} holders`,
-      });
-    } else if (holderCount < 200) {
-      score += 5;
-      warnings.push({
-        code: 'LOW_HOLDERS',
-        severity: 'medium',
-        message: `${holderCount} holders`,
-      });
-    }
-
     return {
       score: Math.min(score, 25),
-      totalHolders: holderCount,
+      totalHolders: topHolders.length,
       top10Percent: analysis.top10Percent,
       top20Percent: analysis.top20Percent,
       creatorHoldingPercent: topHolders[0]?.percent || 0,

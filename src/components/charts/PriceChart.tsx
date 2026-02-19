@@ -52,19 +52,94 @@ function formatVolume(vol: number): string {
   return vol.toFixed(0);
 }
 
-function calculateMA(data: OHLCV[], period: number): { time: Time; value: number }[] {
+function calculateEMA(data: OHLCV[], period: number): { time: Time; value: number }[] {
   const result: { time: Time; value: number }[] = [];
-  for (let i = period - 1; i < data.length; i++) {
-    let sum = 0;
-    for (let j = 0; j < period; j++) {
-      sum += data[i - j].close;
-    }
+  if (data.length < period) return result;
+
+  const multiplier = 2 / (period + 1);
+
+  // Start with SMA for first EMA value
+  let sum = 0;
+  for (let i = 0; i < period; i++) {
+    sum += data[i].close;
+  }
+  let ema = sum / period;
+  result.push({
+    time: (data[period - 1].timestamp / 1000) as Time,
+    value: ema,
+  });
+
+  // Calculate EMA for remaining data
+  for (let i = period; i < data.length; i++) {
+    ema = (data[i].close - ema) * multiplier + ema;
     result.push({
       time: (data[i].timestamp / 1000) as Time,
-      value: sum / period,
+      value: ema,
     });
   }
   return result;
+}
+
+function calculateVWAP(data: OHLCV[]): { time: Time; value: number }[] {
+  const result: { time: Time; value: number }[] = [];
+  let cumulativePV = 0;
+  let cumulativeVolume = 0;
+
+  for (let i = 0; i < data.length; i++) {
+    // Typical price = (high + low + close) / 3
+    const typicalPrice = (data[i].high + data[i].low + data[i].close) / 3;
+    cumulativePV += typicalPrice * data[i].volume;
+    cumulativeVolume += data[i].volume;
+
+    if (cumulativeVolume > 0) {
+      result.push({
+        time: (data[i].timestamp / 1000) as Time,
+        value: cumulativePV / cumulativeVolume,
+      });
+    }
+  }
+  return result;
+}
+
+function calculateSupportResistance(data: OHLCV[]): { support: number; resistance: number } {
+  if (data.length < 10) {
+    return { support: 0, resistance: 0 };
+  }
+
+  // Find local minima and maxima using pivot points
+  const pivotHighs: number[] = [];
+  const pivotLows: number[] = [];
+  const lookback = 5;
+
+  for (let i = lookback; i < data.length - lookback; i++) {
+    let isHigh = true;
+    let isLow = true;
+
+    for (let j = 1; j <= lookback; j++) {
+      if (data[i].high <= data[i - j].high || data[i].high <= data[i + j].high) {
+        isHigh = false;
+      }
+      if (data[i].low >= data[i - j].low || data[i].low >= data[i + j].low) {
+        isLow = false;
+      }
+    }
+
+    if (isHigh) pivotHighs.push(data[i].high);
+    if (isLow) pivotLows.push(data[i].low);
+  }
+
+  // Use recent pivot points weighted by recency
+  const currentPrice = data[data.length - 1].close;
+
+  // Find nearest resistance (above current price)
+  const resistanceLevels = pivotHighs.filter(p => p > currentPrice).sort((a, b) => a - b);
+  const resistance = resistanceLevels.length > 0 ? resistanceLevels[0] : Math.max(...data.map(d => d.high));
+
+  // Find nearest support (below current price)
+  const supportLevels = pivotLows.filter(p => p < currentPrice).sort((a, b) => b - a);
+  const support = supportLevels.length > 0 ? supportLevels[0] : Math.min(...data.map(d => d.low));
+
+  return { support, resistance };
 }
 
 export function PriceChart({
@@ -81,8 +156,12 @@ export function PriceChart({
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
   const volumeSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null);
-  const ma7SeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
-  const ma25SeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
+  const ema9SeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
+  const ema20SeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
+  const ema50SeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
+  const vwapSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
+  const supportLineRef = useRef<ISeriesApi<'Line'> | null>(null);
+  const resistanceLineRef = useRef<ISeriesApi<'Line'> | null>(null);
 
   const [internalTimeframe, setInternalTimeframe] = useState<TimeframeKey>('1d');
   const timeframe = externalTimeframe ?? internalTimeframe;
@@ -157,17 +236,49 @@ export function PriceChart({
       borderVisible: false,
     });
 
-    // Add MA lines if enabled
-    const ma7Series = chart.addSeries(LineSeries, {
-      color: '#f59e0b',
+    // Add EMA lines
+    const ema9Series = chart.addSeries(LineSeries, {
+      color: '#22d3ee', // cyan
       lineWidth: 1,
       priceLineVisible: false,
       lastValueVisible: false,
     });
 
-    const ma25Series = chart.addSeries(LineSeries, {
-      color: '#8b5cf6',
+    const ema20Series = chart.addSeries(LineSeries, {
+      color: '#f59e0b', // amber
       lineWidth: 1,
+      priceLineVisible: false,
+      lastValueVisible: false,
+    });
+
+    const ema50Series = chart.addSeries(LineSeries, {
+      color: '#8b5cf6', // violet
+      lineWidth: 1,
+      priceLineVisible: false,
+      lastValueVisible: false,
+    });
+
+    // Add VWAP line
+    const vwapSeries = chart.addSeries(LineSeries, {
+      color: '#ec4899', // pink
+      lineWidth: 2,
+      priceLineVisible: false,
+      lastValueVisible: false,
+    });
+
+    // Add support/resistance lines
+    const supportLine = chart.addSeries(LineSeries, {
+      color: '#22c55e', // green
+      lineWidth: 1,
+      lineStyle: 2, // dashed
+      priceLineVisible: false,
+      lastValueVisible: false,
+    });
+
+    const resistanceLine = chart.addSeries(LineSeries, {
+      color: '#ef4444', // red
+      lineWidth: 1,
+      lineStyle: 2, // dashed
       priceLineVisible: false,
       lastValueVisible: false,
     });
@@ -175,8 +286,12 @@ export function PriceChart({
     chartRef.current = chart;
     seriesRef.current = candlestickSeries;
     volumeSeriesRef.current = volumeSeries;
-    ma7SeriesRef.current = ma7Series;
-    ma25SeriesRef.current = ma25Series;
+    ema9SeriesRef.current = ema9Series;
+    ema20SeriesRef.current = ema20Series;
+    ema50SeriesRef.current = ema50Series;
+    vwapSeriesRef.current = vwapSeries;
+    supportLineRef.current = supportLine;
+    resistanceLineRef.current = resistanceLine;
 
     // Handle resize
     const handleResize = () => {
@@ -234,13 +349,45 @@ export function PriceChart({
             volumeSeriesRef.current.setData(volumeData);
           }
 
-          // MA lines
-          if (showMA && ma7SeriesRef.current && ma25SeriesRef.current) {
-            ma7SeriesRef.current.setData(calculateMA(ohlcv, 7));
-            ma25SeriesRef.current.setData(calculateMA(ohlcv, 25));
-          } else if (ma7SeriesRef.current && ma25SeriesRef.current) {
-            ma7SeriesRef.current.setData([]);
-            ma25SeriesRef.current.setData([]);
+          // EMA lines
+          if (showMA && ema9SeriesRef.current && ema20SeriesRef.current && ema50SeriesRef.current) {
+            ema9SeriesRef.current.setData(calculateEMA(ohlcv, 9));
+            ema20SeriesRef.current.setData(calculateEMA(ohlcv, 20));
+            ema50SeriesRef.current.setData(calculateEMA(ohlcv, 50));
+          } else if (ema9SeriesRef.current && ema20SeriesRef.current && ema50SeriesRef.current) {
+            ema9SeriesRef.current.setData([]);
+            ema20SeriesRef.current.setData([]);
+            ema50SeriesRef.current.setData([]);
+          }
+
+          // VWAP line
+          if (showMA && vwapSeriesRef.current) {
+            vwapSeriesRef.current.setData(calculateVWAP(ohlcv));
+          } else if (vwapSeriesRef.current) {
+            vwapSeriesRef.current.setData([]);
+          }
+
+          // Support/Resistance lines
+          if (showMA && supportLineRef.current && resistanceLineRef.current && ohlcv.length >= 10) {
+            const { support, resistance } = calculateSupportResistance(ohlcv);
+            const firstTime = (ohlcv[0].timestamp / 1000) as Time;
+            const lastTime = (ohlcv[ohlcv.length - 1].timestamp / 1000) as Time;
+
+            if (support > 0) {
+              supportLineRef.current.setData([
+                { time: firstTime, value: support },
+                { time: lastTime, value: support },
+              ]);
+            }
+            if (resistance > 0) {
+              resistanceLineRef.current.setData([
+                { time: firstTime, value: resistance },
+                { time: lastTime, value: resistance },
+              ]);
+            }
+          } else if (supportLineRef.current && resistanceLineRef.current) {
+            supportLineRef.current.setData([]);
+            resistanceLineRef.current.setData([]);
           }
 
           // Calculate stats
@@ -286,9 +433,17 @@ export function PriceChart({
             price chart
             {showMA && (
               <span className="ml-3">
-                <span className="text-amber-500">MA7</span>
+                <span className="text-cyan-400">EMA9</span>
                 <span className="mx-1">/</span>
-                <span className="text-violet-500">MA25</span>
+                <span className="text-amber-500">EMA20</span>
+                <span className="mx-1">/</span>
+                <span className="text-violet-500">EMA50</span>
+                <span className="mx-2">|</span>
+                <span className="text-pink-500">VWAP</span>
+                <span className="mx-2">|</span>
+                <span className="text-green-500">S</span>
+                <span className="mx-1">/</span>
+                <span className="text-red-500">R</span>
               </span>
             )}
           </div>

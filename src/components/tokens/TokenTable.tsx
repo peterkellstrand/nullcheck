@@ -12,6 +12,8 @@ interface TokenTableProps {
   isLoading?: boolean;
   onTokenClick?: (token: TokenWithMetrics) => void;
   showStars?: boolean;
+  selectedChain?: ChainId;
+  onChainChange?: (chain: ChainId | undefined) => void;
 }
 
 type SortConfig = {
@@ -42,8 +44,14 @@ export function TokenTable({
   isLoading = false,
   onTokenClick,
   showStars = true,
+  selectedChain: externalSelectedChain,
+  onChainChange,
 }: TokenTableProps) {
-  const [selectedChain, setSelectedChain] = useState<ChainId | undefined>();
+  const [internalSelectedChain, setInternalSelectedChain] = useState<ChainId | undefined>();
+
+  // Use external state if provided, otherwise use internal state
+  const selectedChain = onChainChange ? externalSelectedChain : internalSelectedChain;
+  const setSelectedChain = onChainChange || setInternalSelectedChain;
   const [searchQuery, setSearchQuery] = useState('');
   const [sortConfig, setSortConfig] = useState<SortConfig>({
     field: 'volume24h',
@@ -70,8 +78,8 @@ export function TokenTable({
       );
     }
 
-    // Filter by chain
-    if (selectedChain) {
+    // Filter by chain (only if using internal state - external control means API already filtered)
+    if (selectedChain && !onChainChange) {
       result = result.filter((t) => t.chainId === selectedChain);
     }
 
@@ -127,7 +135,7 @@ export function TokenTable({
     });
 
     return result;
-  }, [tokens, searchQuery, selectedChain, sortConfig]);
+  }, [tokens, searchQuery, selectedChain, sortConfig, onChainChange]);
 
   const totalColumns = COLUMNS.length + 2 + (showStars ? 1 : 0); // +2 for rank and token, +1 for star
 

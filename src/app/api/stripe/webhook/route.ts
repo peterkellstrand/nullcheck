@@ -125,7 +125,6 @@ export async function POST(request: NextRequest) {
 
         if (subscriptionType === 'agent' || agentTier) {
           // Agent subscription - create or update API key
-          console.log(`Processing agent subscription for user ${finalUserId}, tier: ${agentTier}`);
 
           // Check if user already has a key for this subscription
           const { data: existingKey } = await supabase
@@ -154,21 +153,14 @@ export async function POST(request: NextRequest) {
             if (keyError) {
               console.error('Failed to create API key:', keyError);
             } else {
-              console.log(`Created API key for user ${finalUserId}`);
-
               // Get user's email and send the API key
               const customer = await stripe.customers.retrieve(customerId);
               if (!customer.deleted && customer.email) {
-                const emailSent = await sendApiKeyEmail(
+                await sendApiKeyEmail(
                   customer.email,
                   apiKey,
                   agentTier || 'developer'
                 );
-                if (emailSent) {
-                  console.log(`Sent API key email to ${customer.email}`);
-                } else {
-                  console.warn(`Failed to send API key email to ${customer.email}`);
-                }
               }
             }
           } else if (existingKey) {

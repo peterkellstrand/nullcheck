@@ -6,6 +6,7 @@ import { ChainId, CHAINS } from '@/types/chain';
 import { TokenWithMetrics } from '@/types/token';
 import { RiskScore } from '@/types/risk';
 import { RiskPanel } from '@/components/risk/RiskPanel';
+import { Tooltip } from '@/components/ui/Tooltip';
 import { PriceChart } from '@/components/charts/PriceChart';
 import { TopHoldersPanel, WhaleActivityFeed } from '@/components/whale';
 import { formatPrice, formatNumber, formatPercent } from '@/lib/utils/format';
@@ -163,17 +164,42 @@ export default function TokenDetailPage() {
               </div>
             </div>
             {risk && (
-              <div className="text-right">
-                <div className="text-xs text-neutral-500 mb-1">risk score</div>
-                <div className={`text-2xl tabular-nums ${
-                  risk.level === 'low' ? 'text-green-500' :
-                  risk.level === 'medium' ? 'text-yellow-500' :
-                  risk.level === 'high' ? 'text-orange-500' :
-                  'text-red-500'
-                }`}>
-                  {risk.totalScore}
+              <Tooltip
+                content={
+                  <div className="text-xs space-y-2 w-48">
+                    <div className="font-medium text-neutral-200 mb-2">Risk Score Guide</div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-green-500 font-medium">0-14</span>
+                      <span className="text-neutral-400">Low risk, generally safe</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-yellow-500 font-medium">15-29</span>
+                      <span className="text-neutral-400">Medium, some concerns</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-orange-500 font-medium">30-49</span>
+                      <span className="text-neutral-400">High, significant red flags</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-red-500 font-medium">50-100</span>
+                      <span className="text-neutral-400">Critical, likely scam</span>
+                    </div>
+                  </div>
+                }
+                side="left"
+              >
+                <div className="text-right">
+                  <div className="text-xs text-neutral-500 mb-1">risk score</div>
+                  <div className={`text-2xl tabular-nums ${
+                    risk.level === 'low' ? 'text-green-500' :
+                    risk.level === 'medium' ? 'text-yellow-500' :
+                    risk.level === 'high' ? 'text-orange-500' :
+                    'text-red-500'
+                  }`}>
+                    {risk.totalScore}
+                  </div>
                 </div>
-              </div>
+              </Tooltip>
             )}
           </div>
         </div>

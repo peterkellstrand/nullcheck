@@ -52,12 +52,7 @@ export async function triggerRiskWebhooks(
   // Dispatch all applicable events
   for (const eventType of eventsToTrigger) {
     try {
-      const result = await dispatchWebhookEvent(eventType, eventData, context);
-      if (result.dispatched > 0) {
-        console.log(
-          `Webhook ${eventType}: dispatched to ${result.dispatched}, successful: ${result.successful}`
-        );
-      }
+      await dispatchWebhookEvent(eventType, eventData, context);
     } catch (error) {
       console.error(`Failed to dispatch webhook ${eventType}:`, error);
     }
@@ -100,12 +95,7 @@ export async function triggerWhaleWebhook(
   const eventType: WebhookEventType = action === 'buy' ? 'whale.buy' : 'whale.sell';
 
   try {
-    const result = await dispatchWebhookEvent(eventType, eventData, context);
-    if (result.dispatched > 0) {
-      console.log(
-        `Webhook ${eventType}: dispatched to ${result.dispatched}, successful: ${result.successful}`
-      );
-    }
+    await dispatchWebhookEvent(eventType, eventData, context);
   } catch (error) {
     console.error(`Failed to dispatch webhook ${eventType}:`, error);
   }
@@ -147,12 +137,7 @@ export async function triggerPriceWebhook(
     direction === 'up' ? 'price.increase' : 'price.decrease';
 
   try {
-    const result = await dispatchWebhookEvent(eventType, eventData, context);
-    if (result.dispatched > 0) {
-      console.log(
-        `Webhook ${eventType}: dispatched to ${result.dispatched}, successful: ${result.successful}`
-      );
-    }
+    await dispatchWebhookEvent(eventType, eventData, context);
   } catch (error) {
     console.error(`Failed to dispatch webhook ${eventType}:`, error);
   }

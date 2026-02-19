@@ -152,32 +152,6 @@ export async function getOwner(
   }
 }
 
-export async function getTotalSupply(
-  chainId: Exclude<ChainId, 'solana'>,
-  contractAddress: string
-): Promise<bigint | null> {
-  try {
-    // totalSupply() function selector
-    const totalSupplySelector = '0x18160ddd';
-
-    const result = await rpcCall<string>(chainId, 'eth_call', [
-      {
-        to: contractAddress,
-        data: totalSupplySelector,
-      },
-      'latest',
-    ]);
-
-    if (result === '0x') {
-      return null;
-    }
-
-    return BigInt(result);
-  } catch {
-    return null;
-  }
-}
-
 export async function getTokenInfo(
   chainId: Exclude<ChainId, 'solana'>,
   tokenAddress: string
@@ -199,15 +173,3 @@ export async function getTokenInfo(
   }
 }
 
-export async function getHolderCount(
-  chainId: Exclude<ChainId, 'solana'>,
-  tokenAddress: string
-): Promise<number> {
-  // Alchemy doesn't directly provide holder count
-  // You'd need to use their Transfers API or a third-party service
-  // This is a placeholder - in production, consider using:
-  // - Etherscan API
-  // - Covalent API
-  // - Custom indexer
-  return 0;
-}

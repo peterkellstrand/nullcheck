@@ -44,6 +44,16 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  if (query.length > 100) {
+    return createErrorResponse(
+      'VALIDATION_ERROR',
+      'Query must not exceed 100 characters',
+      400,
+      requestId,
+      { maxLength: 100 }
+    );
+  }
+
   try {
     const response = await fetch(
       `${BASE_URL}/dex/search?q=${encodeURIComponent(query)}`,

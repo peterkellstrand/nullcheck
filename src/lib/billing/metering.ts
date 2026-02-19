@@ -210,7 +210,6 @@ export async function recordOverageRequest(
 ): Promise<void> {
   // Usage is already tracked in api_usage table by verify-api-access
   // This function can be used for additional overage-specific tracking if needed
-  console.log(`Overage recorded: ${count} requests for key ${apiKeyId}`);
 }
 
 /**

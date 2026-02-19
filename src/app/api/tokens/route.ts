@@ -12,6 +12,7 @@ import {
   getCorsHeaders,
   createErrorResponse,
   handleCorsOptions,
+  validateAddress,
   API_VERSION,
 } from '@/lib/api/utils';
 
@@ -125,19 +126,31 @@ export async function GET(request: NextRequest) {
     const trendingTokens = await db.getTrendingTokens(chainId || undefined, limit);
 
     if (trendingTokens && trendingTokens.length > 0) {
-      // Materialized view available and has data
-      tokens = trendingTokens.map(mapTrendingToTokenWithMetrics);
-      fromCache = true;
-      fromMaterializedView = true;
+      // Filter out tokens with invalid addresses (e.g., lowercased Solana addresses)
+      const validTokens = trendingTokens.filter(
+        t => validateAddress(t.chainId, t.address)
+      );
+
+      if (validTokens.length > 0) {
+        // Materialized view available and has valid data
+        tokens = validTokens.map(mapTrendingToTokenWithMetrics);
+        fromCache = true;
+        fromMaterializedView = true;
+      }
     }
 
     // Fallback: Try regular cached tokens from Supabase
     if (!fromMaterializedView) {
       const cachedTokens = await db.getTopTokens(chainId || undefined, 'volume_24h', limit);
 
+      // Filter out tokens with invalid addresses
+      const validCachedTokens = cachedTokens.filter(
+        t => validateAddress(t.chainId, t.address)
+      );
+
       // Check if cache is fresh (updated within last 30 seconds)
-      if (cachedTokens.length > 0) {
-        const newestUpdate = cachedTokens.reduce((latest, t) => {
+      if (validCachedTokens.length > 0) {
+        const newestUpdate = validCachedTokens.reduce((latest, t) => {
           const updatedAt = new Date(t.metrics.updatedAt || 0).getTime();
           return updatedAt > latest ? updatedAt : latest;
         }, 0);
@@ -145,7 +158,7 @@ export async function GET(request: NextRequest) {
         const cacheAge = Date.now() - newestUpdate;
         if (cacheAge < CACHE_TTL_MS) {
           // Cache is fresh, use it
-          tokens = cachedTokens.map((t) => ({
+          tokens = validCachedTokens.map((t) => ({
             ...t,
             risk: undefined, // Risk scores fetched separately
           }));

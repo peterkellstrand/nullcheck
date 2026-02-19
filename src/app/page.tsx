@@ -11,6 +11,7 @@ import { useThemeStore } from '@/stores/theme';
 import { usePriceStream } from '@/hooks/usePriceStream';
 import { AuthButton } from '@/components/auth/AuthButton';
 import { useSubscription } from '@/hooks/useSubscription';
+import { ChainId } from '@/types/chain';
 
 export default function Home() {
   const router = useRouter();
@@ -20,6 +21,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [riskStatus, setRiskStatus] = useState<string>('');
+  const [selectedChain, setSelectedChain] = useState<ChainId | undefined>(undefined);
 
   // Connect to SSE price stream
   usePriceStream({ enabled: tokens.length > 0 });
@@ -79,7 +81,8 @@ export default function Home() {
     async function fetchTokens() {
       try {
         setIsLoading(true);
-        const response = await fetch('/api/tokens?limit=50');
+        const chainParam = selectedChain ? `&chain=${selectedChain}` : '';
+        const response = await fetch(`/api/tokens?limit=50${chainParam}`);
 
         if (!response.ok) {
           throw new Error(`API error: ${response.status}`);
@@ -107,8 +110,7 @@ export default function Home() {
     }
 
     fetchTokens();
-    // Initial fetch only - SSE handles updates
-  }, [fetchRiskScores, setTokens]);
+  }, [fetchRiskScores, setTokens, selectedChain]);
 
   const handleTokenClick = (token: TokenWithMetrics) => {
     router.push(`/token/${token.chainId}/${token.address}`);
@@ -233,6 +235,8 @@ export default function Home() {
             tokens={tokens}
             isLoading={isLoading}
             onTokenClick={handleTokenClick}
+            selectedChain={selectedChain}
+            onChainChange={setSelectedChain}
           />
         </div>
       </div>

@@ -56,10 +56,6 @@ async function analyzeEvmContract(
     owner === '0x0000000000000000000000000000000000000000' ||
     owner === '0x000000000000000000000000000000000000dead';
 
-  if (!isRenounced && !baseAnalysis.renounced) {
-    // Already accounted for in GoPlus analysis
-  }
-
   return {
     ...baseAnalysis,
     verified: isVerified || baseAnalysis.verified,

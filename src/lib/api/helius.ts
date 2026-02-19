@@ -90,18 +90,6 @@ export async function getTokenAccounts(
   }
 }
 
-export async function getTokenHolderCount(mintAddress: string): Promise<number> {
-  try {
-    // Use DAS API to get approximate holder count
-    const accounts = await getTokenAccounts(mintAddress, 1, 1);
-    // This is a rough estimate - for accurate count we'd need to paginate through all
-    // In production, you'd want to use a dedicated holder count API
-    return accounts.length > 0 ? 100 : 0; // Placeholder
-  } catch {
-    return 0;
-  }
-}
-
 export async function getTopHolders(
   mintAddress: string,
   limit: number = 20
@@ -119,7 +107,6 @@ export async function getTopHolders(
     }>('getTokenLargestAccounts', [mintAddress]);
 
     if (!result?.value || result.value.length === 0) {
-      console.log('getTokenLargestAccounts returned no results for', mintAddress);
       return [];
     }
 

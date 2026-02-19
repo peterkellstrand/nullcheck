@@ -117,7 +117,18 @@ export function handleCorsOptions(): NextResponse {
 
 // Validate address format for a given chain
 export function validateAddress(chainId: ChainId, address: string): boolean {
-  return ADDRESS_PATTERNS[chainId]?.test(address) ?? false;
+  const pattern = ADDRESS_PATTERNS[chainId];
+  if (!pattern?.test(address)) return false;
+
+  // For Solana, also check that address has mixed case
+  // Real base58 addresses almost always have uppercase letters
+  // All-lowercase addresses are likely incorrectly normalized
+  if (chainId === 'solana' && address.length > 10) {
+    const hasUppercase = /[A-Z]/.test(address);
+    if (!hasUppercase) return false;
+  }
+
+  return true;
 }
 
 // Standard error codes
