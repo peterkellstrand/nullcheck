@@ -14,6 +14,8 @@ interface PriceChartProps {
   compact?: boolean;
   showVolume?: boolean;
   showMA?: boolean;
+  showRSI?: boolean;
+  showMACD?: boolean;
 }
 
 type TimeframeKey = '5m' | '15m' | '1h' | '4h' | '1d' | '1w';
@@ -142,6 +144,124 @@ function calculateSupportResistance(data: OHLCV[]): { support: number; resistanc
   return { support, resistance };
 }
 
+/**
+ * Calculate RSI (Relative Strength Index)
+ * RSI = 100 - (100 / (1 + RS))
+ * RS = Average Gain / Average Loss over period
+ */
+function calculateRSI(data: OHLCV[], period: number = 14): { time: Time; value: number }[] {
+  const result: { time: Time; value: number }[] = [];
+  if (data.length < period + 1) return result;
+
+  const gains: number[] = [];
+  const losses: number[] = [];
+
+  // Calculate price changes
+  for (let i = 1; i < data.length; i++) {
+    const change = data[i].close - data[i - 1].close;
+    gains.push(change > 0 ? change : 0);
+    losses.push(change < 0 ? Math.abs(change) : 0);
+  }
+
+  // First RSI value using SMA
+  let avgGain = gains.slice(0, period).reduce((a, b) => a + b, 0) / period;
+  let avgLoss = losses.slice(0, period).reduce((a, b) => a + b, 0) / period;
+
+  for (let i = period; i < data.length; i++) {
+    if (i > period) {
+      // Smoothed averages (Wilder's smoothing)
+      avgGain = (avgGain * (period - 1) + gains[i - 1]) / period;
+      avgLoss = (avgLoss * (period - 1) + losses[i - 1]) / period;
+    }
+
+    const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+    const rsi = 100 - (100 / (1 + rs));
+
+    result.push({
+      time: (data[i].timestamp / 1000) as Time,
+      value: rsi,
+    });
+  }
+
+  return result;
+}
+
+/**
+ * Calculate MACD (Moving Average Convergence Divergence)
+ * MACD Line = EMA(12) - EMA(26)
+ * Signal Line = EMA(9) of MACD Line
+ * Histogram = MACD Line - Signal Line
+ */
+function calculateMACD(
+  data: OHLCV[],
+  fastPeriod: number = 12,
+  slowPeriod: number = 26,
+  signalPeriod: number = 9
+): {
+  macd: { time: Time; value: number }[];
+  signal: { time: Time; value: number }[];
+  histogram: { time: Time; value: number; color: string }[];
+} {
+  const macd: { time: Time; value: number }[] = [];
+  const signal: { time: Time; value: number }[] = [];
+  const histogram: { time: Time; value: number; color: string }[] = [];
+
+  if (data.length < slowPeriod) return { macd, signal, histogram };
+
+  // Calculate EMAs
+  const fastMultiplier = 2 / (fastPeriod + 1);
+  const slowMultiplier = 2 / (slowPeriod + 1);
+  const signalMultiplier = 2 / (signalPeriod + 1);
+
+  // Initialize EMAs with SMA
+  let fastEma = data.slice(0, fastPeriod).reduce((a, b) => a + b.close, 0) / fastPeriod;
+  let slowEma = data.slice(0, slowPeriod).reduce((a, b) => a + b.close, 0) / slowPeriod;
+
+  const macdValues: number[] = [];
+
+  // Calculate MACD line
+  for (let i = slowPeriod - 1; i < data.length; i++) {
+    if (i >= fastPeriod) {
+      fastEma = (data[i].close - fastEma) * fastMultiplier + fastEma;
+    }
+    slowEma = (data[i].close - slowEma) * slowMultiplier + slowEma;
+
+    const macdValue = fastEma - slowEma;
+    macdValues.push(macdValue);
+
+    macd.push({
+      time: (data[i].timestamp / 1000) as Time,
+      value: macdValue,
+    });
+  }
+
+  // Calculate Signal line (EMA of MACD)
+  if (macdValues.length >= signalPeriod) {
+    let signalEma = macdValues.slice(0, signalPeriod).reduce((a, b) => a + b, 0) / signalPeriod;
+
+    for (let i = signalPeriod - 1; i < macdValues.length; i++) {
+      if (i > signalPeriod - 1) {
+        signalEma = (macdValues[i] - signalEma) * signalMultiplier + signalEma;
+      }
+
+      const histValue = macdValues[i] - signalEma;
+
+      signal.push({
+        time: macd[i].time,
+        value: signalEma,
+      });
+
+      histogram.push({
+        time: macd[i].time,
+        value: histValue,
+        color: histValue >= 0 ? 'rgba(34, 197, 94, 0.5)' : 'rgba(239, 68, 68, 0.5)',
+      });
+    }
+  }
+
+  return { macd, signal, histogram };
+}
+
 export function PriceChart({
   chainId,
   tokenAddress,
@@ -151,12 +271,26 @@ export function PriceChart({
   compact = false,
   showVolume = true,
   showMA = false,
+  showRSI = false,
+  showMACD = false,
 }: PriceChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
   const volumeSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null);
   const ema9SeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
+
+  // RSI chart refs
+  const rsiContainerRef = useRef<HTMLDivElement>(null);
+  const rsiChartRef = useRef<IChartApi | null>(null);
+  const rsiSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
+
+  // MACD chart refs
+  const macdContainerRef = useRef<HTMLDivElement>(null);
+  const macdChartRef = useRef<IChartApi | null>(null);
+  const macdLineRef = useRef<ISeriesApi<'Line'> | null>(null);
+  const macdSignalRef = useRef<ISeriesApi<'Line'> | null>(null);
+  const macdHistogramRef = useRef<ISeriesApi<'Histogram'> | null>(null);
   const ema20SeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
   const ema50SeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
   const vwapSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
@@ -177,6 +311,8 @@ export function PriceChart({
   const ema50Data = useMemo(() => calculateEMA(ohlcvData, 50), [ohlcvData]);
   const vwapData = useMemo(() => calculateVWAP(ohlcvData), [ohlcvData]);
   const srLevels = useMemo(() => calculateSupportResistance(ohlcvData), [ohlcvData]);
+  const rsiData = useMemo(() => calculateRSI(ohlcvData, 14), [ohlcvData]);
+  const macdData = useMemo(() => calculateMACD(ohlcvData), [ohlcvData]);
 
   // Initialize chart
   useEffect(() => {
@@ -430,6 +566,162 @@ export function PriceChart({
     }
   }, [showMA, ema9Data, ema20Data, ema50Data, vwapData, srLevels, ohlcvData]);
 
+  // Initialize RSI chart
+  useEffect(() => {
+    if (!showRSI || !rsiContainerRef.current) return;
+
+    const chart = createChart(rsiContainerRef.current, {
+      layout: {
+        background: { type: ColorType.Solid, color: 'transparent' },
+        textColor: '#666666',
+        fontFamily: 'SF Mono, ui-monospace, monospace',
+        fontSize: 10,
+      },
+      grid: {
+        vertLines: { color: '#1a1a1a' },
+        horzLines: { color: '#1a1a1a' },
+      },
+      rightPriceScale: {
+        borderColor: '#333333',
+        scaleMargins: { top: 0.1, bottom: 0.1 },
+      },
+      timeScale: {
+        borderColor: '#333333',
+        visible: false,
+      },
+      crosshair: { mode: 0 },
+      width: rsiContainerRef.current.clientWidth,
+      height: 80,
+    });
+
+    const rsiSeries = chart.addSeries(LineSeries, {
+      color: '#a855f7', // purple
+      lineWidth: 2,
+      priceLineVisible: false,
+      lastValueVisible: true,
+    });
+
+    // Add overbought/oversold lines
+    const overbought = chart.addSeries(LineSeries, {
+      color: '#ef4444',
+      lineWidth: 1,
+      lineStyle: 2,
+      priceLineVisible: false,
+      lastValueVisible: false,
+    });
+    const oversold = chart.addSeries(LineSeries, {
+      color: '#22c55e',
+      lineWidth: 1,
+      lineStyle: 2,
+      priceLineVisible: false,
+      lastValueVisible: false,
+    });
+
+    rsiChartRef.current = chart;
+    rsiSeriesRef.current = rsiSeries;
+
+    // Set reference lines
+    if (rsiData.length > 0) {
+      const firstTime = rsiData[0].time;
+      const lastTime = rsiData[rsiData.length - 1].time;
+      overbought.setData([{ time: firstTime, value: 70 }, { time: lastTime, value: 70 }]);
+      oversold.setData([{ time: firstTime, value: 30 }, { time: lastTime, value: 30 }]);
+    }
+
+    const handleResize = () => {
+      if (rsiContainerRef.current && rsiChartRef.current) {
+        rsiChartRef.current.applyOptions({ width: rsiContainerRef.current.clientWidth });
+      }
+    };
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      chart.remove();
+      rsiChartRef.current = null;
+    };
+  }, [showRSI, rsiData]);
+
+  // Update RSI data
+  useEffect(() => {
+    if (!showRSI || !rsiSeriesRef.current) return;
+    rsiSeriesRef.current.setData(rsiData);
+  }, [showRSI, rsiData]);
+
+  // Initialize MACD chart
+  useEffect(() => {
+    if (!showMACD || !macdContainerRef.current) return;
+
+    const chart = createChart(macdContainerRef.current, {
+      layout: {
+        background: { type: ColorType.Solid, color: 'transparent' },
+        textColor: '#666666',
+        fontFamily: 'SF Mono, ui-monospace, monospace',
+        fontSize: 10,
+      },
+      grid: {
+        vertLines: { color: '#1a1a1a' },
+        horzLines: { color: '#1a1a1a' },
+      },
+      rightPriceScale: {
+        borderColor: '#333333',
+        scaleMargins: { top: 0.1, bottom: 0.1 },
+      },
+      timeScale: {
+        borderColor: '#333333',
+        visible: false,
+      },
+      crosshair: { mode: 0 },
+      width: macdContainerRef.current.clientWidth,
+      height: 80,
+    });
+
+    const histogramSeries = chart.addSeries(HistogramSeries, {
+      priceLineVisible: false,
+      lastValueVisible: false,
+    });
+
+    const macdLine = chart.addSeries(LineSeries, {
+      color: '#3b82f6', // blue
+      lineWidth: 2,
+      priceLineVisible: false,
+      lastValueVisible: false,
+    });
+
+    const signalLine = chart.addSeries(LineSeries, {
+      color: '#f97316', // orange
+      lineWidth: 2,
+      priceLineVisible: false,
+      lastValueVisible: false,
+    });
+
+    macdChartRef.current = chart;
+    macdHistogramRef.current = histogramSeries;
+    macdLineRef.current = macdLine;
+    macdSignalRef.current = signalLine;
+
+    const handleResize = () => {
+      if (macdContainerRef.current && macdChartRef.current) {
+        macdChartRef.current.applyOptions({ width: macdContainerRef.current.clientWidth });
+      }
+    };
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      chart.remove();
+      macdChartRef.current = null;
+    };
+  }, [showMACD]);
+
+  // Update MACD data
+  useEffect(() => {
+    if (!showMACD) return;
+    if (macdLineRef.current) macdLineRef.current.setData(macdData.macd);
+    if (macdSignalRef.current) macdSignalRef.current.setData(macdData.signal);
+    if (macdHistogramRef.current) macdHistogramRef.current.setData(macdData.histogram);
+  }, [showMACD, macdData]);
+
   return (
     <div>
       {/* Timeframe Selector */}
@@ -520,6 +812,36 @@ export function PriceChart({
           </div>
         )}
       </div>
+
+      {/* RSI Chart */}
+      {showRSI && (
+        <div className="mt-2">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[10px] text-neutral-500">
+              RSI(14) <span className="text-purple-400">{rsiData.length > 0 ? rsiData[rsiData.length - 1].value.toFixed(1) : '-'}</span>
+            </span>
+            <span className="text-[10px] text-neutral-600">
+              <span className="text-red-400">70</span> / <span className="text-green-400">30</span>
+            </span>
+          </div>
+          <div ref={rsiContainerRef} className="w-full" style={{ height: 80 }} />
+        </div>
+      )}
+
+      {/* MACD Chart */}
+      {showMACD && (
+        <div className="mt-2">
+          <div className="flex items-center gap-3 mb-1">
+            <span className="text-[10px] text-neutral-500">MACD(12,26,9)</span>
+            <span className="text-[10px]">
+              <span className="text-blue-400">MACD</span>
+              <span className="mx-1 text-neutral-600">/</span>
+              <span className="text-orange-400">Signal</span>
+            </span>
+          </div>
+          <div ref={macdContainerRef} className="w-full" style={{ height: 80 }} />
+        </div>
+      )}
     </div>
   );
 }

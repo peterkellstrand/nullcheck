@@ -7,6 +7,7 @@ import { getSupabaseBrowser } from '@/lib/db/supabase-browser';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { SubscriptionProvider } from '@/components/subscription/SubscriptionProvider';
+import { initAnalytics, identifyUser, resetUser } from '@/lib/analytics';
 
 interface AuthContextType {
   user: User | null;
@@ -22,6 +23,11 @@ function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Initialize analytics once on mount
+  useEffect(() => {
+    initAnalytics();
+  }, []);
+
   useEffect(() => {
     const supabase = getSupabaseBrowser();
 
@@ -29,14 +35,29 @@ function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getUser().then(({ data: { user } }: { data: { user: User | null } }) => {
       setUser(user);
       setIsLoading(false);
+      // Identify user for analytics
+      if (user && user.email) {
+        identifyUser(user.id, { email: user.email });
+      } else if (user) {
+        identifyUser(user.id);
+      }
     });
 
     // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
-      setUser(session?.user ?? null);
+      const newUser = session?.user ?? null;
+      setUser(newUser);
       setIsLoading(false);
+      // Track auth changes for analytics
+      if (newUser && newUser.email) {
+        identifyUser(newUser.id, { email: newUser.email });
+      } else if (newUser) {
+        identifyUser(newUser.id);
+      } else {
+        resetUser();
+      }
     });
 
     return () => subscription.unsubscribe();

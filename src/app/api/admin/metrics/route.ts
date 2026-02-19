@@ -5,6 +5,7 @@ import {
   createErrorResponse,
   createSuccessResponse,
 } from '@/lib/api/utils';
+import { rateLimiter } from '@/lib/api/rate-limiter';
 
 export const runtime = 'nodejs';
 
@@ -165,6 +166,10 @@ export async function GET(request: NextRequest) {
       database: {
         tokensIndexed: tokensResult.count || 0,
         riskScoresToday: riskScoresResult.count || 0,
+      },
+      rateLimits: {
+        current: rateLimiter.getAllStats(),
+        aggregate: rateLimiter.getAggregateStats(),
       },
     };
 

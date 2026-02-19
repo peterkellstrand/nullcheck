@@ -21,6 +21,8 @@ type SortConfig = {
   direction: SortDirection;
 };
 
+type AgeFilter = 'all' | '24h' | '7d';
+
 // Column definitions with widths
 const COLUMNS: {
   field: SortField;
@@ -53,6 +55,7 @@ export function TokenTable({
   const selectedChain = onChainChange ? externalSelectedChain : internalSelectedChain;
   const setSelectedChain = onChainChange || setInternalSelectedChain;
   const [searchQuery, setSearchQuery] = useState('');
+  const [ageFilter, setAgeFilter] = useState<AgeFilter>('all');
   const [sortConfig, setSortConfig] = useState<SortConfig>({
     field: 'volume24h',
     direction: 'desc',
@@ -81,6 +84,17 @@ export function TokenTable({
     // Filter by chain (only if using internal state - external control means API already filtered)
     if (selectedChain && !onChainChange) {
       result = result.filter((t) => t.chainId === selectedChain);
+    }
+
+    // Filter by age (new tokens)
+    if (ageFilter !== 'all') {
+      const now = Date.now();
+      const cutoff = ageFilter === '24h' ? now - 24 * 60 * 60 * 1000 : now - 7 * 24 * 60 * 60 * 1000;
+      result = result.filter((t) => {
+        if (!t.createdAt) return false;
+        const createdAt = new Date(t.createdAt).getTime();
+        return createdAt >= cutoff;
+      });
     }
 
     // Sort
@@ -135,7 +149,7 @@ export function TokenTable({
     });
 
     return result;
-  }, [tokens, searchQuery, selectedChain, sortConfig, onChainChange]);
+  }, [tokens, searchQuery, selectedChain, ageFilter, sortConfig, onChainChange]);
 
   const totalColumns = COLUMNS.length + 2 + (showStars ? 1 : 0); // +2 for rank and token, +1 for star
 
@@ -146,30 +160,65 @@ export function TokenTable({
         {/* Header Controls */}
         <div className="px-4 sm:px-7 py-2.5">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4">
-            {/* Chain Filter */}
-            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2.5 text-sm sm:text-base">
-              <span className="text-[var(--text-muted)]">chain:</span>
-              <button
-                onClick={() => setSelectedChain(undefined)}
-                className={cn(
-                  'hover:text-[var(--text-primary)] transition-colors',
-                  !selectedChain ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'
-                )}
-              >
-                all
-              </button>
-              {Object.values(CHAINS).map((chain) => (
+            {/* Filters Row */}
+            <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-sm sm:text-base">
+              {/* Chain Filter */}
+              <div className="flex items-center gap-1.5 sm:gap-2.5">
+                <span className="text-[var(--text-muted)]">chain:</span>
                 <button
-                  key={chain.id}
-                  onClick={() => setSelectedChain(chain.id)}
+                  onClick={() => setSelectedChain(undefined)}
                   className={cn(
                     'hover:text-[var(--text-primary)] transition-colors',
-                    selectedChain === chain.id ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'
+                    !selectedChain ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'
                   )}
                 >
-                  {chain.id}
+                  all
                 </button>
-              ))}
+                {Object.values(CHAINS).map((chain) => (
+                  <button
+                    key={chain.id}
+                    onClick={() => setSelectedChain(chain.id)}
+                    className={cn(
+                      'hover:text-[var(--text-primary)] transition-colors',
+                      selectedChain === chain.id ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'
+                    )}
+                  >
+                    {chain.id}
+                  </button>
+                ))}
+              </div>
+
+              {/* Age Filter */}
+              <div className="flex items-center gap-1.5 sm:gap-2.5">
+                <span className="text-[var(--text-muted)]">age:</span>
+                <button
+                  onClick={() => setAgeFilter('all')}
+                  className={cn(
+                    'hover:text-[var(--text-primary)] transition-colors',
+                    ageFilter === 'all' ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'
+                  )}
+                >
+                  all
+                </button>
+                <button
+                  onClick={() => setAgeFilter('24h')}
+                  className={cn(
+                    'hover:text-[var(--text-primary)] transition-colors',
+                    ageFilter === '24h' ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'
+                  )}
+                >
+                  &lt;24h
+                </button>
+                <button
+                  onClick={() => setAgeFilter('7d')}
+                  className={cn(
+                    'hover:text-[var(--text-primary)] transition-colors',
+                    ageFilter === '7d' ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'
+                  )}
+                >
+                  &lt;7d
+                </button>
+              </div>
             </div>
 
             {/* Search */}

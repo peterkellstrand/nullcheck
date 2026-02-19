@@ -9,6 +9,7 @@ import { RiskPanel } from '@/components/risk/RiskPanel';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { PriceChart } from '@/components/charts/PriceChart';
 import { TopHoldersPanel, WhaleActivityFeed } from '@/components/whale';
+import { SentimentVote } from '@/components/tokens/SentimentVote';
 import { formatPrice, formatNumber, formatPercent } from '@/lib/utils/format';
 
 export default function TokenDetailPage() {
@@ -202,6 +203,12 @@ export default function TokenDetailPage() {
               </Tooltip>
             )}
           </div>
+
+          {/* Community Sentiment */}
+          <div className="mt-4 pt-4 border-t border-[var(--border)]">
+            <div className="text-xs text-neutral-500 mb-2">community sentiment</div>
+            <SentimentVote chainId={chain} tokenAddress={address} />
+          </div>
         </div>
 
         {/* Chart */}
@@ -212,6 +219,8 @@ export default function TokenDetailPage() {
             height={400}
             showVolume={true}
             showMA={true}
+            showRSI={true}
+            showMACD={true}
           />
         </div>
 

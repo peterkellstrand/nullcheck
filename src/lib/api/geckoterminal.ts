@@ -144,6 +144,7 @@ export async function getTrendingTokens(
       name: baseToken?.attributes.name || attrs.name || 'Unknown Token',
       decimals: baseToken?.attributes.decimals || 18,
       logoUrl: baseToken?.attributes.image_url,
+      createdAt: attrs.pool_created_at,
       metrics: {
         tokenAddress: baseToken?.attributes.address || attrs.address,
         chainId,

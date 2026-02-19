@@ -298,3 +298,58 @@ export async function generatePrivacyFingerprintId(fingerprint: ClientFingerprin
   const hash = await sha256(data);
   return hash.slice(0, 16);
 }
+
+/**
+ * Client-side fingerprint for browser environment
+ * Uses available browser APIs to create a unique identifier
+ */
+export async function getFingerprint(): Promise<string> {
+  if (typeof window === 'undefined') {
+    return 'server';
+  }
+
+  const components = [
+    navigator.userAgent,
+    navigator.language,
+    new Date().getTimezoneOffset().toString(),
+    screen.width.toString(),
+    screen.height.toString(),
+    screen.colorDepth.toString(),
+    navigator.hardwareConcurrency?.toString() || '',
+    // Canvas fingerprint
+    await getCanvasFingerprint(),
+  ];
+
+  const data = components.join('|');
+  const encoder = new TextEncoder();
+  const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(data));
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 32);
+}
+
+/**
+ * Generate canvas fingerprint
+ */
+async function getCanvasFingerprint(): Promise<string> {
+  try {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return '';
+
+    canvas.width = 200;
+    canvas.height = 50;
+
+    ctx.textBaseline = 'top';
+    ctx.font = '14px Arial';
+    ctx.fillStyle = '#f60';
+    ctx.fillRect(125, 1, 62, 20);
+    ctx.fillStyle = '#069';
+    ctx.fillText('nullcheck', 2, 15);
+    ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
+    ctx.fillText('nullcheck', 4, 17);
+
+    return canvas.toDataURL().slice(-50);
+  } catch {
+    return '';
+  }
+}

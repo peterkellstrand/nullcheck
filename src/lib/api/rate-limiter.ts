@@ -6,10 +6,23 @@
 interface RateLimitEntry {
   count: number;
   resetAt: number;
+  queue: Array<{
+    resolve: () => void;
+    reject: (err: Error) => void;
+  }>;
+}
+
+interface RateLimitStats {
+  service: string;
+  count: number;
+  limit: number;
+  resetAt: number;
+  queueLength: number;
 }
 
 class RateLimiter {
   private limits: Map<string, RateLimitEntry> = new Map();
+  private stats: Map<string, { total: number; rejected: number; queued: number }> = new Map();
 
   async checkLimit(
     service: string,
@@ -17,11 +30,18 @@ class RateLimiter {
   ): Promise<{ allowed: boolean; retryAfter?: number; remaining: number }> {
     const key = service;
     const now = Date.now();
-    const limit = this.limits.get(key);
+    let limit = this.limits.get(key);
+
+    // Initialize stats tracking
+    if (!this.stats.has(key)) {
+      this.stats.set(key, { total: 0, rejected: 0, queued: 0 });
+    }
+    const stat = this.stats.get(key)!;
+    stat.total++;
 
     // Reset if past the minute window
     if (!limit || now > limit.resetAt) {
-      this.limits.set(key, { count: 1, resetAt: now + 60000 });
+      this.limits.set(key, { count: 1, resetAt: now + 60000, queue: [] });
       return { allowed: true, remaining: maxPerMinute - 1 };
     }
 
@@ -32,13 +52,64 @@ class RateLimiter {
     }
 
     // Rate limited
+    stat.rejected++;
     const retryAfter = Math.ceil((limit.resetAt - now) / 1000);
     return { allowed: false, retryAfter, remaining: 0 };
   }
 
+  /**
+   * Wait for rate limit slot (queued execution)
+   * Use this when you'd rather wait than fail
+   */
+  async waitForSlot(service: string, maxPerMinute: number, timeoutMs = 30000): Promise<void> {
+    const check = await this.checkLimit(service, maxPerMinute);
+    if (check.allowed) return;
+
+    const stat = this.stats.get(service);
+    if (stat) stat.queued++;
+
+    const limit = this.limits.get(service);
+    if (!limit) return;
+
+    // Wait for next window
+    const waitTime = limit.resetAt - Date.now();
+    if (waitTime > timeoutMs) {
+      throw new RateLimitError(
+        `${service} rate limit exceeded. Wait time ${waitTime}ms exceeds timeout.`,
+        service,
+        Math.ceil(waitTime / 1000)
+      );
+    }
+
+    await new Promise<void>((resolve) => setTimeout(resolve, waitTime + 10));
+    // Retry after waiting
+    await this.checkLimit(service, maxPerMinute);
+  }
+
   // Get current usage for a service
   getUsage(service: string): { count: number; resetAt: number } | null {
-    return this.limits.get(service) || null;
+    const limit = this.limits.get(service);
+    return limit ? { count: limit.count, resetAt: limit.resetAt } : null;
+  }
+
+  // Get all stats for monitoring
+  getAllStats(): RateLimitStats[] {
+    const result: RateLimitStats[] = [];
+    for (const [service, entry] of this.limits.entries()) {
+      result.push({
+        service,
+        count: entry.count,
+        limit: API_LIMITS[service as ApiService] || 0,
+        resetAt: entry.resetAt,
+        queueLength: entry.queue.length,
+      });
+    }
+    return result;
+  }
+
+  // Get aggregate stats for monitoring dashboard
+  getAggregateStats(): Record<string, { total: number; rejected: number; queued: number }> {
+    return Object.fromEntries(this.stats);
   }
 
   // Reset a specific service's counter
