@@ -78,43 +78,62 @@ export default function Home() {
     }
   }, [setTokens]);
 
-  useEffect(() => {
-    async function fetchTokens() {
-      try {
-        setIsLoading(true);
-        const chainParam = selectedChain ? `&chain=${selectedChain}` : '';
-        // Force refresh when chain changes (not on initial load) to get fresh data
-        const refreshParam = !isInitialLoad ? '&refresh=true' : '';
-        const response = await fetch(`/api/tokens?limit=50${chainParam}${refreshParam}`);
+  // Fetch tokens function (extracted for reuse in polling)
+  const fetchTokens = useCallback(async (isPolling = false) => {
+    try {
+      if (!isPolling) setIsLoading(true);
+      const chainParam = selectedChain ? `&chain=${selectedChain}` : '';
+      // Force refresh when chain changes (not on initial load) to get fresh data
+      const refreshParam = !isInitialLoad || isPolling ? '&refresh=true' : '';
+      const response = await fetch(`/api/tokens?limit=50${chainParam}${refreshParam}`);
 
-        if (!response.ok) {
-          throw new Error(`API error: ${response.status}`);
-        }
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
 
-        const data = await response.json();
+      const data = await response.json();
 
-        if (data.success && data.data?.tokens) {
-          setTokens(data.data.tokens);
-          setError(null);
+      if (data.success && data.data?.tokens) {
+        setTokens(data.data.tokens);
+        setError(null);
 
-          // Fetch real risk scores after a short delay
+        // Fetch real risk scores after a short delay (only on initial load)
+        if (!isPolling) {
           setTimeout(() => {
             fetchRiskScores(data.data.tokens);
           }, 500);
-        } else {
-          setError(data.error?.message || 'Failed to fetch tokens');
         }
-      } catch (err) {
+      } else {
+        setError(data.error?.message || 'Failed to fetch tokens');
+      }
+    } catch (err) {
+      if (!isPolling) {
         setError('Failed to connect to API');
-        console.error('Fetch error:', err);
-      } finally {
+      }
+      console.error('Fetch error:', err);
+    } finally {
+      if (!isPolling) {
         setIsLoading(false);
         setIsInitialLoad(false);
       }
     }
+  }, [selectedChain, isInitialLoad, setTokens, fetchRiskScores]);
 
-    fetchTokens();
-  }, [fetchRiskScores, setTokens, selectedChain, isInitialLoad]);
+  // Initial fetch
+  useEffect(() => {
+    fetchTokens(false);
+  }, [fetchTokens]);
+
+  // Polling for price updates every 12 seconds
+  useEffect(() => {
+    if (isInitialLoad) return;
+
+    const pollInterval = setInterval(() => {
+      fetchTokens(true);
+    }, 12000);
+
+    return () => clearInterval(pollInterval);
+  }, [fetchTokens, isInitialLoad]);
 
   const handleTokenClick = (token: TokenWithMetrics) => {
     router.push(`/token/${token.chainId}/${token.address}`);
@@ -145,22 +164,22 @@ export default function Home() {
 
   return (
     <>
-      <div className="w-full max-w-[1030px] relative">
+      <div className="w-full max-w-6xl relative">
       {/* Title Row */}
-      <div className="flex items-center justify-between mb-5">
-        <h1 className="text-3xl sm:text-4xl text-[var(--text-primary)] ml-1">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-4xl sm:text-5xl text-[var(--text-primary)] ml-1">
           null//check
         </h1>
-        <div className="flex items-center gap-3 mr-1">
+        <div className="flex items-center gap-4 mr-1">
           {/* Menu Button */}
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-[var(--border)] hover:border-[var(--border-light)] transition-colors"
+              className="flex items-center gap-2 px-4 py-2 text-base text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-[var(--border)] hover:border-[var(--border-light)] transition-colors"
               aria-label="Menu"
             >
               <svg
-                className={`w-4 h-4 transition-transform ${menuOpen ? 'rotate-90' : ''}`}
+                className={`w-5 h-5 transition-transform ${menuOpen ? 'rotate-90' : ''}`}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -171,38 +190,45 @@ export default function Home() {
             </button>
             {/* Dropdown */}
             {menuOpen && (
-              <div className="absolute right-0 top-full mt-1 min-w-[160px] border border-[var(--border)] bg-[var(--bg-primary)] shadow-lg z-50">
+              <div className="absolute right-0 top-full mt-1 min-w-[200px] border border-[var(--border)] bg-[var(--bg-primary)] shadow-lg z-50">
                 <Link
                   href="/charts"
-                  className="block px-4 py-2 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors"
+                  className="block px-5 py-3 text-base text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors"
                   onClick={() => setMenuOpen(false)}
                 >
                   charts
                 </Link>
                 <Link
                   href="/watchlist"
-                  className="block px-4 py-2 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors"
+                  className="block px-5 py-3 text-base text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors"
                   onClick={() => setMenuOpen(false)}
                 >
                   watchlist
                 </Link>
                 <Link
                   href="/keys"
-                  className="block px-4 py-2 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors"
+                  className="block px-5 py-3 text-base text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors"
                   onClick={() => setMenuOpen(false)}
                 >
                   api
                 </Link>
                 <Link
                   href="/docs"
-                  className="block px-4 py-2 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors"
+                  className="block px-5 py-3 text-base text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors"
                   onClick={() => setMenuOpen(false)}
                 >
                   docs
                 </Link>
                 <Link
+                  href="/methodology"
+                  className="block px-5 py-3 text-base text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  risk methodology
+                </Link>
+                <Link
                   href="/pricing"
-                  className={`block px-4 py-2 text-sm transition-colors hover:bg-[var(--bg-secondary)] ${
+                  className={`block px-5 py-3 text-base transition-colors hover:bg-[var(--bg-secondary)] ${
                     isPro
                       ? 'text-emerald-500'
                       : 'text-[var(--text-muted)] hover:text-emerald-400'
@@ -211,7 +237,7 @@ export default function Home() {
                 >
                   {isPro ? 'PRO' : 'pricing'}
                 </Link>
-                <div className="border-t border-[var(--border)] px-4 py-2">
+                <div className="border-t border-[var(--border)] px-5 py-3">
                   <AuthButton />
                 </div>
               </div>
@@ -224,7 +250,7 @@ export default function Home() {
       <div className="border-2 border-[var(--border)] bg-[var(--bg-primary)]">
         {/* Status bar */}
         {(statusMessage || error) && (
-          <div className="px-5 py-2.5 border-b border-[var(--border)] text-sm text-[var(--text-muted)]">
+          <div className="px-6 py-3 border-b border-[var(--border)] text-base text-[var(--text-muted)]">
             {error ? (
               <span className="text-red-500">{error}</span>
             ) : (
@@ -246,20 +272,20 @@ export default function Home() {
       </div>
 
       {/* Theme Toggle */}
-      <div className="mt-3 ml-1 flex items-center gap-2">
-        <span className="text-xs text-[var(--text-muted)]">dark</span>
+      <div className="mt-4 ml-1 flex items-center gap-3">
+        <span className="text-sm text-[var(--text-muted)]">dark</span>
         <button
           onClick={toggleTheme}
-          className="relative w-10 h-5 rounded-full border border-[var(--border-light)] transition-colors"
+          className="relative w-12 h-6 rounded-full border border-[var(--border-light)] transition-colors"
           style={{ backgroundColor: theme === 'light' ? 'var(--text-secondary)' : 'transparent' }}
           title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
         >
           <span
-            className="absolute top-0.5 w-4 h-4 rounded-full bg-[var(--text-muted)] transition-all"
-            style={{ left: theme === 'dark' ? '2px' : '22px' }}
+            className="absolute top-0.5 w-5 h-5 rounded-full bg-[var(--text-muted)] transition-all"
+            style={{ left: theme === 'dark' ? '2px' : '26px' }}
           />
         </button>
-        <span className="text-xs text-[var(--text-muted)]">light</span>
+        <span className="text-sm text-[var(--text-muted)]">light</span>
       </div>
       </div>
     </>

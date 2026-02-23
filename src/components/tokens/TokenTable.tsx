@@ -30,15 +30,15 @@ const COLUMNS: {
   width: string;
   hideOnMobile?: boolean;
 }[] = [
-  { field: 'trending', label: 'Hot', width: 'w-12' },
+  { field: 'risk', label: 'Risk', width: 'w-14' },
+  { field: 'trending', label: 'Hot', width: 'w-12', hideOnMobile: true },
   { field: 'price', label: 'Price', width: 'w-20' },
   { field: 'priceChange1h', label: '1h', width: 'w-14', hideOnMobile: true },
   { field: 'priceChange24h', label: '24h', width: 'w-14' },
-  { field: 'priceChange7d', label: '7d', width: 'w-14', hideOnMobile: true },
+  { field: 'marketCap', label: 'MCap', width: 'w-16', hideOnMobile: true },
   { field: 'volume24h', label: 'Vol', width: 'w-16', hideOnMobile: true },
-  { field: 'liquidity', label: 'Liq', width: 'w-16' },
+  { field: 'liquidity', label: 'Liq', width: 'w-16', hideOnMobile: true },
   { field: 'whales', label: 'Whales', width: 'w-14', hideOnMobile: true },
-  { field: 'risk', label: 'Risk', width: 'w-14' },
 ];
 
 export function TokenTable({
@@ -119,9 +119,9 @@ export function TokenTable({
           aValue = a.metrics.priceChange24h;
           bValue = b.metrics.priceChange24h;
           break;
-        case 'priceChange7d':
-          aValue = a.metrics.priceChange7d;
-          bValue = b.metrics.priceChange7d;
+        case 'marketCap':
+          aValue = a.metrics.marketCap ?? 0;
+          bValue = b.metrics.marketCap ?? 0;
           break;
         case 'volume24h':
           aValue = a.metrics.volume24h;
@@ -158,12 +158,12 @@ export function TokenTable({
       {/* Sticky Header - Controls + Table Header */}
       <div className="sticky top-0 z-20 bg-[var(--bg-primary)]">
         {/* Header Controls */}
-        <div className="px-4 sm:px-7 py-2.5">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4">
+        <div className="px-5 sm:px-8 py-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-5">
             {/* Filters Row */}
-            <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-sm sm:text-base">
+            <div className="flex flex-wrap items-center gap-5 sm:gap-7 text-base sm:text-lg">
               {/* Chain Filter */}
-              <div className="flex items-center gap-1.5 sm:gap-2.5">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <span className="text-[var(--text-muted)]">chain:</span>
                 <button
                   onClick={() => setSelectedChain(undefined)}
@@ -189,7 +189,7 @@ export function TokenTable({
               </div>
 
               {/* Age Filter */}
-              <div className="flex items-center gap-1.5 sm:gap-2.5">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <span className="text-[var(--text-muted)]">age:</span>
                 <button
                   onClick={() => setAgeFilter('all')}
@@ -227,15 +227,15 @@ export function TokenTable({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="search"
-              className="bg-transparent border-none outline-none text-[var(--text-primary)] text-sm sm:text-base w-24 sm:w-36 placeholder:text-[var(--text-muted)] focus:placeholder:text-transparent caret-transparent p-0"
+              className="bg-transparent border-none outline-none text-[var(--text-primary)] text-base sm:text-lg w-28 sm:w-40 placeholder:text-[var(--text-muted)] focus:placeholder:text-transparent caret-transparent p-0"
             />
           </div>
         </div>
 
         {/* Table Header */}
-        <div className="flex items-center px-4 py-2.5 text-[var(--text-muted)] text-xs">
-          {showStars && <div className="w-6 flex-shrink-0"></div>}
-          <div className="w-6 flex-shrink-0 text-left">#</div>
+        <div className="flex items-center px-5 py-3 text-[var(--text-muted)] text-sm">
+          {showStars && <div className="w-8 flex-shrink-0"></div>}
+          <div className="w-8 flex-shrink-0 text-left">#</div>
           <div className="flex-[2] min-w-0 text-left">Token</div>
           {COLUMNS.map((col) => (
             <div
@@ -262,7 +262,7 @@ export function TokenTable({
 
       {/* Table */}
       <div className="flex-1 overflow-y-auto">
-        <table className="w-full text-xs">
+        <table className="w-full text-sm">
           <thead className="sr-only">
             <tr>
               {showStars && <th>Watch</th>}

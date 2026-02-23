@@ -22,7 +22,7 @@ async function fetchApi<T>(endpoint: string): Promise<T> {
     headers: {
       Accept: 'application/json',
     },
-    next: { revalidate: 60 },
+    next: { revalidate: 15 },
   });
 
   if (!response.ok) {

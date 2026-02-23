@@ -49,8 +49,8 @@ export function WhaleActivityFeed({ chainId, tokenAddress }: WhaleActivityFeedPr
 
   if (isLoading) {
     return (
-      <div className="border border-neutral-800 bg-neutral-900 p-4">
-        <h3 className="text-sm font-medium text-neutral-300 mb-3">
+      <div className="border border-neutral-300 dark:border-neutral-700 p-4">
+        <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3">
           Whale Activity (24h)
         </h3>
         <Skeleton className="h-20 w-full" />
@@ -60,8 +60,8 @@ export function WhaleActivityFeed({ chainId, tokenAddress }: WhaleActivityFeedPr
 
   if (error || !activity) {
     return (
-      <div className="border border-neutral-800 bg-neutral-900 p-4">
-        <h3 className="text-sm font-medium text-neutral-300 mb-3">
+      <div className="border border-neutral-300 dark:border-neutral-700 p-4">
+        <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3">
           Whale Activity (24h)
         </h3>
         <p className="text-neutral-500 text-sm">
@@ -75,9 +75,9 @@ export function WhaleActivityFeed({ chainId, tokenAddress }: WhaleActivityFeedPr
   const sentiment = netFlow24h > 0 ? 'bullish' : netFlow24h < 0 ? 'bearish' : 'neutral';
 
   return (
-    <div className="border border-neutral-800 bg-neutral-900 p-4">
+    <div className="border border-neutral-300 dark:border-neutral-700 p-4">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-medium text-neutral-300">
+        <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
           Whale Activity (24h)
         </h3>
         <span
@@ -96,7 +96,7 @@ export function WhaleActivityFeed({ chainId, tokenAddress }: WhaleActivityFeedPr
       <div className="grid grid-cols-3 gap-4">
         {/* Total Activity */}
         <div>
-          <div className="text-2xl font-bold text-neutral-200 tabular-nums">
+          <div className="text-2xl font-bold text-neutral-800 dark:text-neutral-200 tabular-nums">
             {count24h}
           </div>
           <div className="text-xs text-neutral-500">Large Txns</div>
@@ -122,7 +122,7 @@ export function WhaleActivityFeed({ chainId, tokenAddress }: WhaleActivityFeedPr
       {/* Buy/Sell Ratio Bar */}
       {count24h > 0 && (
         <div className="mt-4">
-          <div className="flex h-2 rounded-full overflow-hidden bg-neutral-800">
+          <div className="flex h-2 rounded-full overflow-hidden bg-neutral-200 dark:bg-neutral-800">
             <div
               className="bg-green-500 transition-all"
               style={{

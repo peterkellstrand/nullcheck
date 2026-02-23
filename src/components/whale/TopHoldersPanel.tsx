@@ -49,8 +49,8 @@ export function TopHoldersPanel({ chainId, tokenAddress }: TopHoldersPanelProps)
 
   if (isLoading) {
     return (
-      <div className="border border-neutral-800 bg-neutral-900 p-4">
-        <h3 className="text-sm font-medium text-neutral-300 mb-3">Top Holders</h3>
+      <div className="border border-neutral-300 dark:border-neutral-700 p-4">
+        <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3">Top Holders</h3>
         <div className="space-y-2">
           {[...Array(5)].map((_, i) => (
             <Skeleton key={i} className="h-6 w-full" />
@@ -62,8 +62,8 @@ export function TopHoldersPanel({ chainId, tokenAddress }: TopHoldersPanelProps)
 
   if (error) {
     return (
-      <div className="border border-neutral-800 bg-neutral-900 p-4">
-        <h3 className="text-sm font-medium text-neutral-300 mb-3">Top Holders</h3>
+      <div className="border border-neutral-300 dark:border-neutral-700 p-4">
+        <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3">Top Holders</h3>
         <p className="text-neutral-500 text-sm">{error}</p>
       </div>
     );
@@ -71,8 +71,8 @@ export function TopHoldersPanel({ chainId, tokenAddress }: TopHoldersPanelProps)
 
   if (holders.length === 0) {
     return (
-      <div className="border border-neutral-800 bg-neutral-900 p-4">
-        <h3 className="text-sm font-medium text-neutral-300 mb-3">Top Holders</h3>
+      <div className="border border-neutral-300 dark:border-neutral-700 p-4">
+        <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3">Top Holders</h3>
         <p className="text-neutral-500 text-sm">No holder data available</p>
       </div>
     );
@@ -90,9 +90,9 @@ export function TopHoldersPanel({ chainId, tokenAddress }: TopHoldersPanelProps)
   };
 
   return (
-    <div className="border border-neutral-800 bg-neutral-900 p-4">
+    <div className="border border-neutral-300 dark:border-neutral-700 p-4">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-medium text-neutral-300">Top Holders</h3>
+        <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Top Holders</h3>
         <span className="text-xs text-neutral-500">
           {holders.length} shown
         </span>
@@ -112,20 +112,20 @@ export function TopHoldersPanel({ chainId, tokenAddress }: TopHoldersPanelProps)
               href={getExplorerUrl(holder.address)}
               target="_blank"
               rel="noopener noreferrer"
-              className="font-mono text-neutral-400 hover:text-neutral-200 transition-colors"
+              className="font-mono text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 transition-colors"
             >
               {truncateAddress(holder.address)}
             </a>
 
             {/* Percentage bar */}
-            <div className="flex-1 h-1.5 bg-neutral-800 rounded-full overflow-hidden">
+            <div className="flex-1 h-1.5 bg-neutral-200 dark:bg-neutral-800 rounded-full overflow-hidden">
               <div
-                className="h-full bg-neutral-600"
+                className="h-full bg-neutral-400 dark:bg-neutral-600"
                 style={{ width: `${Math.min(holder.percent, 100)}%` }}
               />
             </div>
 
-            <span className="text-neutral-300 tabular-nums w-14 text-right">
+            <span className="text-neutral-700 dark:text-neutral-300 tabular-nums w-14 text-right">
               {holder.percent.toFixed(1)}%
             </span>
 
@@ -153,7 +153,7 @@ export function TopHoldersPanel({ chainId, tokenAddress }: TopHoldersPanelProps)
 
       {/* Upgrade prompt */}
       {!isPro && holders.length >= limit && (
-        <div className="mt-4 pt-3 border-t border-neutral-800">
+        <div className="mt-4 pt-3 border-t border-neutral-200 dark:border-neutral-800">
           <Link
             href="/pricing"
             className="text-xs text-emerald-500 hover:text-emerald-400 transition-colors"

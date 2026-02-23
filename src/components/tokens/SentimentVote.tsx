@@ -69,8 +69,8 @@ export function SentimentVote({ chainId, tokenAddress }: SentimentVoteProps) {
   if (isLoading) {
     return (
       <div className="flex items-center gap-2">
-        <div className="h-8 w-24 bg-neutral-800 animate-pulse rounded" />
-        <div className="h-8 w-24 bg-neutral-800 animate-pulse rounded" />
+        <div className="h-8 w-24 bg-neutral-200 dark:bg-neutral-800 animate-pulse rounded" />
+        <div className="h-8 w-24 bg-neutral-200 dark:bg-neutral-800 animate-pulse rounded" />
       </div>
     );
   }
@@ -89,8 +89,8 @@ export function SentimentVote({ chainId, tokenAddress }: SentimentVoteProps) {
           disabled={isVoting}
           className={`flex items-center gap-1.5 px-3 py-1.5 text-sm transition-colors rounded ${
             userVote === 'bullish'
-              ? 'bg-green-500/20 text-green-400 border border-green-500/50'
-              : 'bg-neutral-800 text-neutral-400 hover:text-green-400 hover:bg-green-500/10 border border-transparent'
+              ? 'bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/50'
+              : 'bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-500/10 border border-neutral-300 dark:border-transparent'
           }`}
         >
           <span>🟢</span>
@@ -103,8 +103,8 @@ export function SentimentVote({ chainId, tokenAddress }: SentimentVoteProps) {
           disabled={isVoting}
           className={`flex items-center gap-1.5 px-3 py-1.5 text-sm transition-colors rounded ${
             userVote === 'bearish'
-              ? 'bg-red-500/20 text-red-400 border border-red-500/50'
-              : 'bg-neutral-800 text-neutral-400 hover:text-red-400 hover:bg-red-500/10 border border-transparent'
+              ? 'bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/50'
+              : 'bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10 border border-neutral-300 dark:border-transparent'
           }`}
         >
           <span>🔴</span>
@@ -122,13 +122,13 @@ export function SentimentVote({ chainId, tokenAddress }: SentimentVoteProps) {
       {/* Sentiment Bar */}
       {totalVotes > 0 && (
         <div className="flex items-center gap-2">
-          <div className="flex-1 h-2 bg-neutral-800 rounded-full overflow-hidden">
+          <div className="flex-1 h-2 bg-neutral-200 dark:bg-neutral-800 rounded-full overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-green-500 to-green-400 transition-all"
               style={{ width: `${bullishPercent}%` }}
             />
           </div>
-          <span className="text-xs text-neutral-400 w-12 text-right">
+          <span className="text-xs text-neutral-600 dark:text-neutral-400 w-12 text-right">
             {bullishPercent.toFixed(0)}%
           </span>
         </div>

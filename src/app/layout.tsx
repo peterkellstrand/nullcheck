@@ -35,6 +35,7 @@ const sfMono = localFont({
   fallback: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'monospace'],
 });
 
+
 export const metadata: Metadata = {
   title: 'null//check | Risk-First DEX Screener',
   description:

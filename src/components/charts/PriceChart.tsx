@@ -18,7 +18,7 @@ interface PriceChartProps {
   showMACD?: boolean;
 }
 
-type TimeframeKey = '5m' | '15m' | '1h' | '4h' | '1d' | '1w';
+type TimeframeKey = '5m' | '15m' | '1h' | '4h' | '1d' | '3d' | '1w' | '1m';
 
 interface ChartStats {
   open: number;
@@ -36,7 +36,9 @@ const TIMEFRAMES: { key: TimeframeKey; label: string; interval: string; limit: n
   { key: '1h', label: '1H', interval: '5m', limit: 60 },
   { key: '4h', label: '4H', interval: '15m', limit: 64 },
   { key: '1d', label: '1D', interval: '1h', limit: 96 },
+  { key: '3d', label: '3D', interval: '4h', limit: 72 },
   { key: '1w', label: '1W', interval: '4h', limit: 84 },
+  { key: '1m', label: '1M', interval: '1d', limit: 30 },
 ];
 
 function formatChartPrice(price: number): string {
@@ -469,7 +471,16 @@ export function PriceChart({
         const data = await response.json();
 
         if (data.success && data.data?.ohlcv && data.data.ohlcv.length > 0) {
-          const ohlcv: OHLCV[] = data.data.ohlcv;
+          // Sort by timestamp and deduplicate (lightweight-charts requires unique, ascending timestamps)
+          const sortedData = [...data.data.ohlcv].sort((a: OHLCV, b: OHLCV) => a.timestamp - b.timestamp);
+          const seenTimestamps = new Set<number>();
+          const ohlcv: OHLCV[] = sortedData.filter((candle: OHLCV) => {
+            if (seenTimestamps.has(candle.timestamp)) {
+              return false;
+            }
+            seenTimestamps.add(candle.timestamp);
+            return true;
+          });
           setOhlcvData(ohlcv);
 
           // Candlestick data
@@ -501,7 +512,7 @@ export function PriceChart({
           const periodLow = Math.min(...ohlcv.map(c => c.low));
           const totalVolume = ohlcv.reduce((sum, c) => sum + c.volume, 0);
           const change = last.close - first.open;
-          const changePercent = (change / first.open) * 100;
+          const changePercent = first.open !== 0 ? (change / first.open) * 100 : 0;
 
           setStats({
             open: first.open,

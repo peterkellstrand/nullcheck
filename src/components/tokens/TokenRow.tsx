@@ -37,24 +37,24 @@ export function TokenRow({ token, rank, onTokenClick, showStar = true }: TokenRo
         className="border-b border-neutral-900 hover:bg-neutral-900/50 transition-colors cursor-pointer"
         onClick={() => onTokenClick?.(token)}
       >
-        <td className="py-3 px-4">
+        <td className="py-4 px-5">
           <div className="flex items-center">
             {/* Star */}
             {showStar && (
-              <div className="w-6 flex-shrink-0">
+              <div className="w-8 flex-shrink-0">
                 <StarButton chainId={token.chainId} address={token.address} />
               </div>
             )}
 
             {/* Rank */}
-            <div className="w-6 flex-shrink-0 text-neutral-600 text-xs">
+            <div className="w-8 flex-shrink-0 text-neutral-600 text-sm">
               {rank}
             </div>
 
             {/* Token Info */}
-            <div className="flex-[2] min-w-0 flex items-center gap-2">
+            <div className="flex-[2] min-w-0 flex items-center gap-3">
               {/* Logo */}
-              <div className="w-6 h-6 bg-neutral-900 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
+              <div className="w-8 h-8 bg-neutral-900 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
                 {token.logoUrl && !imgError ? (
                   <img
                     src={token.logoUrl}
@@ -64,28 +64,39 @@ export function TokenRow({ token, rank, onTokenClick, showStar = true }: TokenRo
                     loading="lazy"
                   />
                 ) : (
-                  <span className="text-[9px] text-neutral-600">
+                  <span className="text-[11px] text-neutral-600">
                     {token.symbol.slice(0, 2).toUpperCase()}
                   </span>
                 )}
               </div>
 
               {/* Symbol & Chain */}
-              <div className="min-w-0 flex items-center gap-1.5">
-                <span className="text-[var(--text-primary)] text-sm truncate">
+              <div className="min-w-0 flex items-center gap-2">
+                <span className="text-[var(--text-primary)] text-base truncate">
                   {token.symbol}
                 </span>
-                <span className="text-[9px] text-[var(--text-muted)] flex-shrink-0">
+                <span className="text-[11px] text-[var(--text-muted)] flex-shrink-0">
                   {chain.symbol.toLowerCase()}
                 </span>
               </div>
             </div>
 
-            {/* Hot/Trending Score */}
+            {/* Risk */}
             <div className="flex-1 text-right">
+              <RiskBadge
+                risk={token.risk}
+                onClick={(e) => {
+                  e?.stopPropagation?.();
+                  setShowRiskPanel(!showRiskPanel);
+                }}
+              />
+            </div>
+
+            {/* Hot/Trending Score */}
+            <div className="flex-1 text-right hidden sm:block">
               <span
                 className={cn(
-                  'tabular-nums text-xs',
+                  'tabular-nums text-sm',
                   (token.metrics.trendingScore ?? 0) >= 80
                     ? 'text-green-400'
                     : (token.metrics.trendingScore ?? 0) >= 60
@@ -99,46 +110,42 @@ export function TokenRow({ token, rank, onTokenClick, showStar = true }: TokenRo
 
             {/* Price */}
             <div className="flex-1 text-right">
-              <span className="text-[var(--text-primary)] tabular-nums text-xs">
+              <span className="text-[var(--text-primary)] tabular-nums text-sm">
                 {formatPrice(token.metrics.price)}
               </span>
             </div>
 
             {/* 1h Change */}
             <div className="flex-1 text-right hidden sm:block">
-              <span className={cn('tabular-nums text-xs', priceChangeColor(token.metrics.priceChange1h))}>
+              <span className={cn('tabular-nums text-sm', priceChangeColor(token.metrics.priceChange1h))}>
                 {formatPercent(token.metrics.priceChange1h)}
               </span>
             </div>
 
             {/* 24h Change */}
             <div className="flex-1 text-right">
-              <span className={cn('tabular-nums text-xs', priceChangeColor(token.metrics.priceChange24h))}>
+              <span className={cn('tabular-nums text-sm', priceChangeColor(token.metrics.priceChange24h))}>
                 {formatPercent(token.metrics.priceChange24h)}
               </span>
             </div>
 
-            {/* 7d Change */}
+            {/* Market Cap */}
             <div className="flex-1 text-right hidden sm:block">
-              {token.metrics.priceChange7d !== 0 ? (
-                <span className={cn('tabular-nums text-xs', priceChangeColor(token.metrics.priceChange7d))}>
-                  {formatPercent(token.metrics.priceChange7d)}
-                </span>
-              ) : (
-                <span className="text-neutral-700 text-xs">-</span>
-              )}
+              <span className="text-[var(--text-secondary)] tabular-nums text-sm">
+                {token.metrics.marketCap ? formatVolume(token.metrics.marketCap) : '-'}
+              </span>
             </div>
 
             {/* Volume */}
             <div className="flex-1 text-right hidden sm:block">
-              <span className="text-[var(--text-secondary)] tabular-nums text-xs">
+              <span className="text-[var(--text-secondary)] tabular-nums text-sm">
                 {formatVolume(token.metrics.volume24h)}
               </span>
             </div>
 
             {/* Liquidity */}
-            <div className="flex-1 text-right">
-              <span className="text-[var(--text-secondary)] tabular-nums text-xs">
+            <div className="flex-1 text-right hidden sm:block">
+              <span className="text-[var(--text-secondary)] tabular-nums text-sm">
                 {formatLiquidity(token.metrics.liquidity)}
               </span>
             </div>
@@ -148,17 +155,6 @@ export function TokenRow({ token, rank, onTokenClick, showStar = true }: TokenRo
               <WhaleActivityBadge
                 buyCount={Math.floor((token.metrics.buys24h || 0) * 0.1)}
                 sellCount={Math.floor((token.metrics.sells24h || 0) * 0.1)}
-              />
-            </div>
-
-            {/* Risk */}
-            <div className="flex-1 text-right">
-              <RiskBadge
-                risk={token.risk}
-                onClick={(e) => {
-                  e?.stopPropagation?.();
-                  setShowRiskPanel(!showRiskPanel);
-                }}
               />
             </div>
           </div>
