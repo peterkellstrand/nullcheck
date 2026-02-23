@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { TokenTable } from '@/components/tokens/TokenTable';
 import { TokenWithMetrics } from '@/types/token';
 import { AuthModal } from '@/components/auth/AuthModal';
+import { ExportButton } from '@/components/export/ExportButton';
 
 export default function WatchlistPage() {
   const router = useRouter();
@@ -75,6 +76,9 @@ export default function WatchlistPage() {
             watchlist
           </h1>
         </div>
+        {isAuthenticated && tokens.length > 0 && (
+          <ExportButton type="watchlist" />
+        )}
       </div>
 
       {/* Main Terminal Window */}

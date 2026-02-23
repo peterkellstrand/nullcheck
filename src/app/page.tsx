@@ -12,6 +12,7 @@ import { usePriceStream } from '@/hooks/usePriceStream';
 import { AuthButton } from '@/components/auth/AuthButton';
 import { useSubscription } from '@/hooks/useSubscription';
 import { ChainId } from '@/types/chain';
+import { ExportButton } from '@/components/export/ExportButton';
 
 export default function Home() {
   const router = useRouter();
@@ -278,21 +279,27 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Theme Toggle */}
-      <div className="mt-4 ml-1 flex items-center gap-3">
-        <span className="text-sm text-[var(--text-muted)]">dark</span>
-        <button
-          onClick={toggleTheme}
-          className="relative w-12 h-6 rounded-full border border-[var(--border-light)] transition-colors"
-          style={{ backgroundColor: theme === 'light' ? 'var(--text-secondary)' : 'transparent' }}
-          title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-        >
-          <span
-            className="absolute top-0.5 w-5 h-5 rounded-full bg-[var(--text-muted)] transition-all"
-            style={{ left: theme === 'dark' ? '2px' : '26px' }}
-          />
-        </button>
-        <span className="text-sm text-[var(--text-muted)]">light</span>
+      {/* Footer Controls */}
+      <div className="mt-4 ml-1 flex items-center justify-between">
+        {/* Theme Toggle */}
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-[var(--text-muted)]">dark</span>
+          <button
+            onClick={toggleTheme}
+            className="relative w-12 h-6 rounded-full border border-[var(--border-light)] transition-colors"
+            style={{ backgroundColor: theme === 'light' ? 'var(--text-secondary)' : 'transparent' }}
+            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            <span
+              className="absolute top-0.5 w-5 h-5 rounded-full bg-[var(--text-muted)] transition-all"
+              style={{ left: theme === 'dark' ? '2px' : '26px' }}
+            />
+          </button>
+          <span className="text-sm text-[var(--text-muted)]">light</span>
+        </div>
+
+        {/* Export Button */}
+        <ExportButton type="tokens" />
       </div>
       </div>
     </>
