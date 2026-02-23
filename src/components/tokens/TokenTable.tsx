@@ -6,6 +6,8 @@ import { ChainId, CHAINS } from '@/types/chain';
 import { TokenRow } from './TokenRow';
 import { TableSkeleton } from '@/components/ui/Skeleton';
 import { cn } from '@/lib/utils/format';
+import { useSubscription } from '@/hooks/useSubscription';
+import Link from 'next/link';
 
 interface TokenTableProps {
   tokens: TokenWithMetrics[];
@@ -22,6 +24,33 @@ type SortConfig = {
 };
 
 type AgeFilter = 'all' | '24h' | '7d';
+
+interface AdvancedFilters {
+  maxRiskScore?: number;
+  maxTop10Percent?: number;
+  minLpLockPercent?: number;
+}
+
+const RISK_FILTER_OPTIONS = [
+  { label: 'All', value: undefined },
+  { label: '<15 (Low)', value: 15 },
+  { label: '<30 (Med)', value: 30 },
+  { label: '<50 (High)', value: 50 },
+];
+
+const HOLDER_FILTER_OPTIONS = [
+  { label: 'All', value: undefined },
+  { label: '<50%', value: 50 },
+  { label: '<70%', value: 70 },
+  { label: '<90%', value: 90 },
+];
+
+const LP_LOCK_FILTER_OPTIONS = [
+  { label: 'All', value: undefined },
+  { label: '>50%', value: 50 },
+  { label: '>80%', value: 80 },
+  { label: '100%', value: 100 },
+];
 
 // Column definitions with widths
 const COLUMNS: {
@@ -50,12 +79,16 @@ export function TokenTable({
   onChainChange,
 }: TokenTableProps) {
   const [internalSelectedChain, setInternalSelectedChain] = useState<ChainId | undefined>();
+  const { limits } = useSubscription();
+  const hasAdvancedFilters = limits.hasAdvancedFilters;
 
   // Use external state if provided, otherwise use internal state
   const selectedChain = onChainChange ? externalSelectedChain : internalSelectedChain;
   const setSelectedChain = onChainChange || setInternalSelectedChain;
   const [searchQuery, setSearchQuery] = useState('');
   const [ageFilter, setAgeFilter] = useState<AgeFilter>('all');
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>({});
   const [sortConfig, setSortConfig] = useState<SortConfig>({
     field: 'volume24h',
     direction: 'desc',
@@ -95,6 +128,33 @@ export function TokenTable({
         const createdAt = new Date(t.createdAt).getTime();
         return createdAt >= cutoff;
       });
+    }
+
+    // Advanced filters (PRO only)
+    if (hasAdvancedFilters) {
+      // Filter by max risk score
+      if (advancedFilters.maxRiskScore !== undefined) {
+        result = result.filter((t) => {
+          const score = t.risk?.totalScore;
+          return score !== undefined && score < advancedFilters.maxRiskScore!;
+        });
+      }
+
+      // Filter by max top 10% holder concentration
+      if (advancedFilters.maxTop10Percent !== undefined) {
+        result = result.filter((t) => {
+          const top10 = t.risk?.holders?.top10Percent;
+          return top10 !== undefined && top10 < advancedFilters.maxTop10Percent!;
+        });
+      }
+
+      // Filter by min LP lock percent
+      if (advancedFilters.minLpLockPercent !== undefined) {
+        result = result.filter((t) => {
+          const lpLock = t.risk?.liquidity?.lpLockedPercent;
+          return lpLock !== undefined && lpLock >= advancedFilters.minLpLockPercent!;
+        });
+      }
     }
 
     // Sort
@@ -149,7 +209,7 @@ export function TokenTable({
     });
 
     return result;
-  }, [tokens, searchQuery, selectedChain, ageFilter, sortConfig, onChainChange]);
+  }, [tokens, searchQuery, selectedChain, ageFilter, sortConfig, onChainChange, hasAdvancedFilters, advancedFilters]);
 
   const totalColumns = COLUMNS.length + 2 + (showStars ? 1 : 0); // +2 for rank and token, +1 for star
 
@@ -219,6 +279,21 @@ export function TokenTable({
                   &lt;7d
                 </button>
               </div>
+
+              {/* Advanced Toggle */}
+              <button
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                className={cn(
+                  'flex items-center gap-1 transition-colors',
+                  showAdvanced ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+                )}
+              >
+                <span>filters</span>
+                <span className="text-xs">{showAdvanced ? '▲' : '▼'}</span>
+                {!hasAdvancedFilters && (
+                  <span className="text-[10px] px-1 py-0.5 bg-emerald-500/20 text-emerald-500 ml-1">PRO</span>
+                )}
+              </button>
             </div>
 
             {/* Search */}
@@ -230,6 +305,96 @@ export function TokenTable({
               className="bg-transparent border-none outline-none text-[var(--text-primary)] text-base sm:text-lg w-28 sm:w-40 placeholder:text-[var(--text-muted)] focus:placeholder:text-transparent caret-transparent p-0"
             />
           </div>
+
+          {/* Advanced Filters Panel */}
+          {showAdvanced && (
+            <div className="px-5 sm:px-8 py-3 border-t border-[var(--border)] bg-[var(--bg-secondary)]/30">
+              {hasAdvancedFilters ? (
+                <div className="flex flex-wrap items-center gap-5 sm:gap-7 text-sm">
+                  {/* Risk Score Filter */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-[var(--text-muted)]">risk:</span>
+                    {RISK_FILTER_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.label}
+                        onClick={() => setAdvancedFilters((prev) => ({ ...prev, maxRiskScore: opt.value }))}
+                        className={cn(
+                          'hover:text-[var(--text-primary)] transition-colors text-sm',
+                          advancedFilters.maxRiskScore === opt.value
+                            ? 'text-[var(--text-primary)]'
+                            : 'text-[var(--text-muted)]'
+                        )}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Holder Concentration Filter */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-[var(--text-muted)]">top10%:</span>
+                    {HOLDER_FILTER_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.label}
+                        onClick={() => setAdvancedFilters((prev) => ({ ...prev, maxTop10Percent: opt.value }))}
+                        className={cn(
+                          'hover:text-[var(--text-primary)] transition-colors text-sm',
+                          advancedFilters.maxTop10Percent === opt.value
+                            ? 'text-[var(--text-primary)]'
+                            : 'text-[var(--text-muted)]'
+                        )}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* LP Lock Filter */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-[var(--text-muted)]">LP lock:</span>
+                    {LP_LOCK_FILTER_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.label}
+                        onClick={() => setAdvancedFilters((prev) => ({ ...prev, minLpLockPercent: opt.value }))}
+                        className={cn(
+                          'hover:text-[var(--text-primary)] transition-colors text-sm',
+                          advancedFilters.minLpLockPercent === opt.value
+                            ? 'text-[var(--text-primary)]'
+                            : 'text-[var(--text-muted)]'
+                        )}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Clear Filters */}
+                  {(advancedFilters.maxRiskScore !== undefined ||
+                    advancedFilters.maxTop10Percent !== undefined ||
+                    advancedFilters.minLpLockPercent !== undefined) && (
+                    <button
+                      onClick={() => setAdvancedFilters({})}
+                      className="text-sm text-neutral-500 hover:text-red-400 transition-colors"
+                    >
+                      clear
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-neutral-500">
+                    Advanced filters (risk score, holder concentration, LP lock) require PRO
+                  </span>
+                  <Link
+                    href="/pricing"
+                    className="text-emerald-500 hover:text-emerald-400 transition-colors"
+                  >
+                    Upgrade →
+                  </Link>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Table Header */}
