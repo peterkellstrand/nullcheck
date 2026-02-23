@@ -74,7 +74,7 @@ export function UpgradePrompt({
           <ul className="space-y-2 text-sm text-neutral-300">
             <li>+ Unlimited watchlist tokens</li>
             <li>+ 16 chart slots</li>
-            <li>+ Unlimited alerts (coming soon)</li>
+            <li>+ Unlimited price alerts</li>
           </ul>
         </div>
 

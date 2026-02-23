@@ -10,6 +10,7 @@ import { Tooltip } from '@/components/ui/Tooltip';
 import { PriceChart } from '@/components/charts/PriceChart';
 import { TopHoldersPanel, WhaleActivityFeed } from '@/components/whale';
 import { SentimentVote } from '@/components/tokens/SentimentVote';
+import { AlertButton } from '@/components/alerts/AlertButton';
 import { formatPrice, formatNumber, formatPercent } from '@/lib/utils/format';
 
 export default function TokenDetailPage() {
@@ -244,8 +245,15 @@ export default function TokenDetailPage() {
                   </div>
                 </Tooltip>
               )}
-              <div className="mt-4">
+              <div className="mt-4 flex flex-col gap-3 items-end">
                 <SentimentVote chainId={chain} tokenAddress={address} />
+                <AlertButton
+                  chainId={chain}
+                  tokenAddress={address}
+                  tokenSymbol={token.symbol}
+                  tokenName={token.name}
+                  currentPrice={token.metrics?.price ?? 0}
+                />
               </div>
             </div>
           </div>

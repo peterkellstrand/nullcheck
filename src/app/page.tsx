@@ -206,6 +206,13 @@ export default function Home() {
                   watchlist
                 </Link>
                 <Link
+                  href="/alerts"
+                  className="block px-5 py-3 text-base text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  alerts
+                </Link>
+                <Link
                   href="/keys"
                   className="block px-5 py-3 text-base text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors"
                   onClick={() => setMenuOpen(false)}

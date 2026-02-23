@@ -27,6 +27,7 @@ import { cleanupIdempotentRequests } from './cleanup';
 import { cleanupExpiredRiskScores } from './cleanup';
 import { refreshTrendingTokens } from './refresh';
 import { reportDailyUsageToStripe } from './billing';
+import { checkPriceAlerts, cleanupOldAlerts } from './alerts';
 
 /**
  * All registered background jobs
@@ -61,6 +62,18 @@ export const JOBS: Record<string, JobDefinition> = {
     description: 'Report daily API usage to Stripe for metered billing',
     schedule: '0 0 * * *', // Daily at midnight UTC
     handler: reportDailyUsageToStripe,
+  },
+  'check-alerts': {
+    name: 'check-alerts',
+    description: 'Check price alerts and send email notifications',
+    schedule: '*/5 * * * *', // Every 5 minutes
+    handler: checkPriceAlerts,
+  },
+  'cleanup-alerts': {
+    name: 'cleanup-alerts',
+    description: 'Delete triggered alerts older than 30 days',
+    schedule: '0 6 * * *', // Daily at 6 AM UTC
+    handler: cleanupOldAlerts,
   },
 };
 

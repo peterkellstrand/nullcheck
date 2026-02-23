@@ -26,6 +26,7 @@ interface SubscriptionContextValue {
   isLoading: boolean;
   canAddToWatchlist: (currentCount: number) => boolean;
   canAddChart: (currentCount: number) => boolean;
+  canAddAlert: (currentCount: number) => boolean;
   openCheckout: (priceType: PriceType) => Promise<void>;
   openPortal: () => Promise<void>;
   refetch: () => Promise<void>;
@@ -79,6 +80,11 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     [limits.chartSlots]
   );
 
+  const canAddAlert = useCallback(
+    (currentCount: number) => currentCount < limits.alerts,
+    [limits.alerts]
+  );
+
   const openCheckout = useCallback(async (priceType: PriceType) => {
     try {
       const response = await fetch('/api/stripe/checkout', {
@@ -126,6 +132,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         isLoading,
         canAddToWatchlist,
         canAddChart,
+        canAddAlert,
         openCheckout,
         openPortal,
         refetch: fetchSubscription,
