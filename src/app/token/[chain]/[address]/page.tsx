@@ -6,6 +6,7 @@ import { ChainId, CHAINS } from '@/types/chain';
 import { TokenWithMetrics } from '@/types/token';
 import { RiskScore } from '@/types/risk';
 import { RiskPanel } from '@/components/risk/RiskPanel';
+import { RiskHistoryChart } from '@/components/risk/RiskHistoryChart';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { PriceChart } from '@/components/charts/PriceChart';
 import { TopHoldersPanel, WhaleActivityFeed } from '@/components/whale';
@@ -325,7 +326,7 @@ export default function TokenDetailPage() {
         )}
 
         {/* Whale Data + Risk Analysis */}
-        <div className="p-6">
+        <div className="p-6 border-b border-[var(--border)]">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
               <div className="text-base text-neutral-500 mb-4">top holders</div>
@@ -342,6 +343,11 @@ export default function TokenDetailPage() {
               )}
             </div>
           </div>
+        </div>
+
+        {/* Risk History Chart (PRO only) */}
+        <div className="p-6">
+          <RiskHistoryChart chainId={chain} tokenAddress={address} height={200} />
         </div>
       </div>
 

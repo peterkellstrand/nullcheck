@@ -278,6 +278,86 @@ export async function upsertRiskScore(risk: RiskScore): Promise<void> {
 }
 
 /**
+ * Record risk score history (for historical tracking)
+ * Uses database function with deduplication (only records if score changed or >1hr since last)
+ */
+export async function recordRiskHistory(risk: RiskScore): Promise<boolean> {
+  const db = createServerClient();
+  if (!db) return false;
+
+  try {
+    const { data, error } = await db.rpc('record_risk_history', {
+      p_token_address: normalizeAddress(risk.tokenAddress, risk.chainId),
+      p_chain_id: risk.chainId,
+      p_total_score: risk.totalScore,
+      p_risk_level: risk.level,
+      p_honeypot_score: risk.honeypot.score,
+      p_contract_score: risk.contract.score,
+      p_holders_score: risk.holders.score,
+      p_liquidity_score: risk.liquidity.score,
+    });
+
+    if (error) {
+      console.error('Error recording risk history:', error);
+      return false;
+    }
+
+    return data === true;
+  } catch (error) {
+    console.error('Failed to record risk history:', error);
+    return false;
+  }
+}
+
+/**
+ * Get risk score history for a token
+ */
+export async function getRiskHistory(
+  chainId: ChainId,
+  address: string,
+  days: number = 30
+): Promise<RiskHistoryEntry[]> {
+  const supabase = getSupabase();
+  if (!supabase) return [];
+
+  const normalizedAddr = normalizeAddress(address, chainId);
+  const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+
+  const { data, error } = await supabase
+    .from('risk_score_history')
+    .select('*')
+    .eq('chain_id', chainId)
+    .eq('token_address', normalizedAddr)
+    .gte('recorded_at', cutoffDate)
+    .order('recorded_at', { ascending: true });
+
+  if (error || !data) {
+    console.error('Error fetching risk history:', error);
+    return [];
+  }
+
+  return data.map((row: Record<string, unknown>) => ({
+    totalScore: row.total_score as number,
+    riskLevel: row.risk_level as RiskLevel,
+    honeypotScore: row.honeypot_score as number | null,
+    contractScore: row.contract_score as number | null,
+    holdersScore: row.holders_score as number | null,
+    liquidityScore: row.liquidity_score as number | null,
+    recordedAt: row.recorded_at as string,
+  }));
+}
+
+export interface RiskHistoryEntry {
+  totalScore: number;
+  riskLevel: RiskLevel;
+  honeypotScore: number | null;
+  contractScore: number | null;
+  holdersScore: number | null;
+  liquidityScore: number | null;
+  recordedAt: string;
+}
+
+/**
  * Batch upsert risk scores - single DB call for multiple tokens
  */
 export async function upsertRiskScoreBatch(risks: RiskScore[]): Promise<void> {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ChainId, CHAINS } from '@/types/chain';
 import { analyzeToken } from '@/lib/risk/analyzer';
-import { getRiskScore, upsertRiskScore } from '@/lib/db/supabase';
+import { getRiskScore, upsertRiskScore, recordRiskHistory } from '@/lib/db/supabase';
 import { verifyApiAccess, createRateLimitHeaders } from '@/lib/auth/verify-api-access';
 import {
   generateRequestId,
@@ -198,6 +198,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     // Cache the result (ignore errors)
     upsertRiskScore(riskScore).catch(console.error);
+
+    // Record history for tracking (fire-and-forget)
+    recordRiskHistory(riskScore).catch(console.error);
 
     // Trigger webhooks for high/critical risk (fire-and-forget, don't block response)
     if (shouldTriggerRiskWebhook(riskScore)) {
