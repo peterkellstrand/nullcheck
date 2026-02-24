@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useMemo } from 'react';
 import { createChart, ColorType, IChartApi, ISeriesApi, CandlestickData, Time, CandlestickSeries, HistogramSeries, LineSeries } from 'lightweight-charts';
 import { ChainId } from '@/types/chain';
 import { OHLCV } from '@/types/token';
+import { DrawingToolbar, useDrawingTools } from './DrawingTools';
 
 interface PriceChartProps {
   chainId: ChainId;
@@ -19,6 +20,7 @@ interface PriceChartProps {
 }
 
 type TimeframeKey = '5m' | '15m' | '1h' | '4h' | '1d' | '3d' | '1w' | '1m';
+type ChartType = 'candles' | 'heikin-ashi';
 
 interface ChartStats {
   open: number;
@@ -54,6 +56,48 @@ function formatVolume(vol: number): string {
   if (vol >= 1e6) return `${(vol / 1e6).toFixed(1)}M`;
   if (vol >= 1e3) return `${(vol / 1e3).toFixed(1)}K`;
   return vol.toFixed(0);
+}
+
+/**
+ * Calculate Heikin Ashi candles from OHLCV data
+ * HA Close = (Open + High + Low + Close) / 4
+ * HA Open = (Previous HA Open + Previous HA Close) / 2
+ * HA High = Max(High, HA Open, HA Close)
+ * HA Low = Min(Low, HA Open, HA Close)
+ */
+function calculateHeikinAshi(data: OHLCV[]): OHLCV[] {
+  if (data.length === 0) return [];
+
+  const result: OHLCV[] = [];
+
+  for (let i = 0; i < data.length; i++) {
+    const current = data[i];
+    const haClose = (current.open + current.high + current.low + current.close) / 4;
+
+    let haOpen: number;
+    if (i === 0) {
+      // First candle: HA Open = (Open + Close) / 2
+      haOpen = (current.open + current.close) / 2;
+    } else {
+      // Subsequent candles: HA Open = (Previous HA Open + Previous HA Close) / 2
+      const prev = result[i - 1];
+      haOpen = (prev.open + prev.close) / 2;
+    }
+
+    const haHigh = Math.max(current.high, haOpen, haClose);
+    const haLow = Math.min(current.low, haOpen, haClose);
+
+    result.push({
+      timestamp: current.timestamp,
+      open: haOpen,
+      high: haHigh,
+      low: haLow,
+      close: haClose,
+      volume: current.volume,
+    });
+  }
+
+  return result;
 }
 
 function calculateEMA(data: OHLCV[], period: number): { time: Time; value: number }[] {
@@ -302,10 +346,19 @@ export function PriceChart({
   const [internalTimeframe, setInternalTimeframe] = useState<TimeframeKey>('1d');
   const timeframe = externalTimeframe ?? internalTimeframe;
   const setTimeframe = setInternalTimeframe;
+  const [chartType, setChartType] = useState<ChartType>('candles');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<ChartStats | null>(null);
   const [ohlcvData, setOhlcvData] = useState<OHLCV[]>([]);
+
+  // Memoize Heikin Ashi transformation
+  const displayData = useMemo(() => {
+    if (chartType === 'heikin-ashi') {
+      return calculateHeikinAshi(ohlcvData);
+    }
+    return ohlcvData;
+  }, [ohlcvData, chartType]);
 
   // Memoize indicator calculations
   const ema9Data = useMemo(() => calculateEMA(ohlcvData, 9), [ohlcvData]);
@@ -315,6 +368,13 @@ export function PriceChart({
   const srLevels = useMemo(() => calculateSupportResistance(ohlcvData), [ohlcvData]);
   const rsiData = useMemo(() => calculateRSI(ohlcvData, 14), [ohlcvData]);
   const macdData = useMemo(() => calculateMACD(ohlcvData), [ohlcvData]);
+
+  // Drawing tools
+  const {
+    activeTool,
+    setActiveTool,
+    clearDrawings,
+  } = useDrawingTools(chartRef.current, seriesRef.current, chartContainerRef);
 
   // Initialize chart
   useEffect(() => {
@@ -577,6 +637,30 @@ export function PriceChart({
     }
   }, [showMA, ema9Data, ema20Data, ema50Data, vwapData, srLevels, ohlcvData]);
 
+  // Update candlestick data when chart type changes (Heikin Ashi toggle)
+  useEffect(() => {
+    if (!seriesRef.current || displayData.length === 0) return;
+
+    const chartData: CandlestickData<Time>[] = displayData.map((candle: OHLCV) => ({
+      time: (candle.timestamp / 1000) as Time,
+      open: candle.open,
+      high: candle.high,
+      low: candle.low,
+      close: candle.close,
+    }));
+    seriesRef.current.setData(chartData);
+
+    // Update volume colors based on display data
+    if (showVolume && volumeSeriesRef.current) {
+      const volumeData = displayData.map((candle: OHLCV) => ({
+        time: (candle.timestamp / 1000) as Time,
+        value: candle.volume,
+        color: candle.close >= candle.open ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)',
+      }));
+      volumeSeriesRef.current.setData(volumeData);
+    }
+  }, [displayData, showVolume]);
+
   // Initialize RSI chart
   useEffect(() => {
     if (!showRSI || !rsiContainerRef.current) return;
@@ -756,20 +840,56 @@ export function PriceChart({
               </span>
             )}
           </div>
-          <div className="flex gap-1">
-            {TIMEFRAMES.map((tf) => (
+          <div className="flex items-center gap-3">
+            {/* Drawing Tools */}
+            <DrawingToolbar
+              activeTool={activeTool}
+              onToolChange={setActiveTool}
+              onClear={clearDrawings}
+            />
+
+            {/* Chart Type Toggle */}
+            <div className="flex border border-neutral-700">
               <button
-                key={tf.key}
-                onClick={() => setTimeframe(tf.key)}
+                onClick={() => setChartType('candles')}
                 className={`px-2 py-1 ${compact ? 'text-[10px]' : 'text-xs'} transition-colors ${
-                  timeframe === tf.key
+                  chartType === 'candles'
                     ? 'text-[#ffffff] bg-neutral-800'
                     : 'text-neutral-500 hover:text-neutral-300'
                 }`}
+                title="Candlestick"
               >
-                {tf.label}
+                candles
               </button>
-            ))}
+              <button
+                onClick={() => setChartType('heikin-ashi')}
+                className={`px-2 py-1 ${compact ? 'text-[10px]' : 'text-xs'} transition-colors ${
+                  chartType === 'heikin-ashi'
+                    ? 'text-[#ffffff] bg-neutral-800'
+                    : 'text-neutral-500 hover:text-neutral-300'
+                }`}
+                title="Heikin Ashi - smooths price action to show trends"
+              >
+                HA
+              </button>
+            </div>
+
+            {/* Timeframe Selector */}
+            <div className="flex gap-1">
+              {TIMEFRAMES.map((tf) => (
+                <button
+                  key={tf.key}
+                  onClick={() => setTimeframe(tf.key)}
+                  className={`px-2 py-1 ${compact ? 'text-[10px]' : 'text-xs'} transition-colors ${
+                    timeframe === tf.key
+                      ? 'text-[#ffffff] bg-neutral-800'
+                      : 'text-neutral-500 hover:text-neutral-300'
+                  }`}
+                >
+                  {tf.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}
