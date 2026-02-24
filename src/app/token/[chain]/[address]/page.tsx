@@ -9,6 +9,7 @@ import { RiskPanel } from '@/components/risk/RiskPanel';
 import { RiskHistoryChart } from '@/components/risk/RiskHistoryChart';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { PriceChart } from '@/components/charts/PriceChart';
+import { CompareChart } from '@/components/charts/CompareChart';
 import { TopHoldersPanel, WhaleActivityFeed } from '@/components/whale';
 import { SentimentVote } from '@/components/tokens/SentimentVote';
 import { AlertButton } from '@/components/alerts/AlertButton';
@@ -294,6 +295,14 @@ export default function TokenDetailPage() {
             <MetricCard label="fdv" value={token.metrics?.fdv ? formatNumber(token.metrics.fdv) : '—'} prefix={token.metrics?.fdv ? '$' : ''} />
             <MetricCard label="txns 24h" value={token.metrics?.txns24h?.toLocaleString() || '—'} />
           </div>
+        </div>
+
+        {/* Compare Chart */}
+        <div className="p-6 border-b border-[var(--border)]">
+          <CompareChart
+            baseToken={{ chainId: chain, address, symbol: token.symbol }}
+            height={250}
+          />
         </div>
 
         {/* Transaction Stats */}

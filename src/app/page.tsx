@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { TokenTable } from '@/components/tokens/TokenTable';
+import { TokenHeatmap } from '@/components/tokens/TokenHeatmap';
 import { TokenWithMetrics } from '@/types/token';
 import { RiskScore } from '@/types/risk';
 import { useTokensStore } from '@/stores/tokens';
@@ -24,6 +25,7 @@ export default function Home() {
   const [riskStatus, setRiskStatus] = useState<string>('');
   const [selectedChain, setSelectedChain] = useState<ChainId | undefined>(undefined);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [viewMode, setViewMode] = useState<'table' | 'heatmap'>('table');
 
   // Connect to SSE price stream
   usePriceStream({ enabled: tokens.length > 0 });
@@ -256,26 +258,63 @@ export default function Home() {
 
       {/* Main Terminal Window */}
       <div className="border-2 border-[var(--border)] bg-[var(--bg-primary)]">
-        {/* Status bar */}
-        {(statusMessage || error) && (
-          <div className="px-6 py-3 border-b border-[var(--border)] text-base text-[var(--text-muted)]">
-            {error ? (
-              <span className="text-red-500">{error}</span>
-            ) : (
-              statusMessage
+        {/* View Toggle + Status bar */}
+        <div className="px-6 py-3 border-b border-[var(--border)] flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            {/* View Mode Toggle */}
+            <div className="flex border border-[var(--border)]">
+              <button
+                onClick={() => setViewMode('table')}
+                className={`px-3 py-1 text-sm transition-colors ${
+                  viewMode === 'table'
+                    ? 'text-[var(--text-primary)] bg-[var(--bg-secondary)]'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+                }`}
+              >
+                table
+              </button>
+              <button
+                onClick={() => setViewMode('heatmap')}
+                className={`px-3 py-1 text-sm transition-colors ${
+                  viewMode === 'heatmap'
+                    ? 'text-[var(--text-primary)] bg-[var(--bg-secondary)]'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+                }`}
+              >
+                heatmap
+              </button>
+            </div>
+            {/* Status message */}
+            {(statusMessage || error) && (
+              <span className="text-base text-[var(--text-muted)]">
+                {error ? (
+                  <span className="text-red-500">{error}</span>
+                ) : (
+                  statusMessage
+                )}
+              </span>
             )}
           </div>
-        )}
+        </div>
 
-        {/* Token Table */}
+        {/* Token View (Table or Heatmap) */}
         <div className="h-[80vh] overflow-auto">
-          <TokenTable
-            tokens={tokens}
-            isLoading={isLoading}
-            onTokenClick={handleTokenClick}
-            selectedChain={selectedChain}
-            onChainChange={setSelectedChain}
-          />
+          {viewMode === 'table' ? (
+            <TokenTable
+              tokens={tokens}
+              isLoading={isLoading}
+              onTokenClick={handleTokenClick}
+              selectedChain={selectedChain}
+              onChainChange={setSelectedChain}
+            />
+          ) : (
+            <div className="p-6">
+              <TokenHeatmap
+                tokens={tokens}
+                onTokenClick={handleTokenClick}
+              />
+            </div>
+          )}
         </div>
       </div>
 
