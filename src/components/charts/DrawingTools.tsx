@@ -40,12 +40,12 @@ export function DrawingToolbar({
   const tools = Object.keys(TOOL_CONFIG) as ActiveDrawingTool[];
 
   return (
-    <div className="flex items-center gap-1 border border-neutral-700 p-1">
+    <div className="flex items-center gap-1 border border-neutral-700 p-1.5">
       {tools.map((tool) => (
         <button
           key={tool}
           onClick={() => onToolChange(activeTool === tool ? 'none' : tool)}
-          className={`px-2 py-1 text-xs transition-colors ${
+          className={`px-4 py-2 text-base transition-colors ${
             activeTool === tool
               ? 'text-[#ffffff] bg-neutral-700'
               : 'text-neutral-500 hover:text-neutral-300'
@@ -55,10 +55,10 @@ export function DrawingToolbar({
           {TOOL_CONFIG[tool].icon}
         </button>
       ))}
-      <div className="w-px h-4 bg-neutral-700 mx-1" />
+      <div className="w-px h-6 bg-neutral-700 mx-1" />
       <button
         onClick={onClear}
-        className="px-2 py-1 text-xs text-neutral-500 hover:text-red-400 transition-colors"
+        className="px-4 py-2 text-base text-neutral-500 hover:text-red-400 transition-colors"
         title="Clear all drawings"
       >
         x

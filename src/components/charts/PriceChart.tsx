@@ -822,7 +822,7 @@ export function PriceChart({
       {/* Timeframe Selector */}
       {showTimeframeSelector && (
         <div className={`flex items-center justify-between ${compact ? 'mb-2' : 'mb-4'}`}>
-          <div className={`${compact ? 'text-[10px]' : 'text-xs'} text-neutral-500`}>
+          <div className={`${compact ? 'text-sm' : 'text-base'} text-neutral-500`}>
             price chart
             {showMA && (
               <span className="ml-3">
@@ -852,7 +852,7 @@ export function PriceChart({
             <div className="flex border border-neutral-700">
               <button
                 onClick={() => setChartType('candles')}
-                className={`px-2 py-1 ${compact ? 'text-[10px]' : 'text-xs'} transition-colors ${
+                className={`px-4 py-2 ${compact ? 'text-sm' : 'text-base'} transition-colors ${
                   chartType === 'candles'
                     ? 'text-[#ffffff] bg-neutral-800'
                     : 'text-neutral-500 hover:text-neutral-300'
@@ -863,7 +863,7 @@ export function PriceChart({
               </button>
               <button
                 onClick={() => setChartType('heikin-ashi')}
-                className={`px-2 py-1 ${compact ? 'text-[10px]' : 'text-xs'} transition-colors ${
+                className={`px-4 py-2 ${compact ? 'text-sm' : 'text-base'} transition-colors ${
                   chartType === 'heikin-ashi'
                     ? 'text-[#ffffff] bg-neutral-800'
                     : 'text-neutral-500 hover:text-neutral-300'
@@ -880,7 +880,7 @@ export function PriceChart({
                 <button
                   key={tf.key}
                   onClick={() => setTimeframe(tf.key)}
-                  className={`px-2 py-1 ${compact ? 'text-[10px]' : 'text-xs'} transition-colors ${
+                  className={`px-3 py-2 ${compact ? 'text-sm' : 'text-base'} transition-colors ${
                     timeframe === tf.key
                       ? 'text-[#ffffff] bg-neutral-800'
                       : 'text-neutral-500 hover:text-neutral-300'
