@@ -3,7 +3,7 @@
 **Risk-first DEX screener. Agent-first API platform.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-emerald.svg)](LICENSE)
-[![Next.js](https://img.shields.io/badge/Next.js-15-black)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
 
 ---
@@ -50,26 +50,56 @@ nullcheck analyzes token risk before you trade. We detect honeypots, rug pulls, 
 
 ## Features
 
-### Token Table
+### Token Table & Heatmap
 
-Real-time trending tokens with:
+Two view modes for trending tokens:
+
+**Table View** - Sortable columns with:
 - Price and 1h/24h/7d change
 - Volume, liquidity, market cap
 - Holder count and transaction activity
 - Risk score badge
 - Whale activity indicator
 
+**Heatmap View** - Visual grid colored by:
+- 24h price change (green/red)
+- Volume (blue intensity)
+- Risk score (green → red)
+
 Filter by chain, sort by any column, search by name/symbol/address.
+
+### Advanced Filters (PRO)
+
+Filter tokens by:
+- Risk score range (0-100)
+- Top 10 holder concentration
+- LP lock percentage
 
 ### Token Detail Pages
 
 `/token/{chain}/{address}` shows:
-- Interactive price chart (1m to 1d timeframes)
+- Interactive price chart with multiple timeframes
+- **Heikin Ashi** chart type toggle (smooths price action)
+- **Drawing tools** - Trend lines, horizontal lines, Fibonacci retracements
+- **Chart comparison** - Overlay up to 5 tokens (% change)
 - Full metrics breakdown
-- Risk analysis panel
+- Risk analysis panel with warnings
+- **Risk score history** (PRO) - Track how risk changes over time
 - Top holders list
 - Whale transaction feed
 - DEX pool information
+
+### Price Alerts
+
+Set alerts for price targets:
+- Alert when price goes above or below target
+- Email notifications when triggered
+- Manage at `/alerts`
+
+| Tier | Alert Limit |
+|------|-------------|
+| Free | 10 |
+| PRO | Unlimited |
 
 ### Multi-Chart Grid
 
@@ -80,13 +110,19 @@ View up to 16 charts simultaneously at `/charts`.
 | Free | 9 |
 | PRO | 16 |
 
+### Data Export (PRO)
+
+Export your data as CSV or JSON:
+- Watchlist tokens with metrics
+- Trending tokens snapshot
+
 ### Watchlist
 
 Save tokens at `/watchlist`. Synced across devices.
 
 ### Dark/Light Theme
 
-Toggle in header. Persists to localStorage.
+Toggle in footer. Persists to localStorage.
 
 ---
 
@@ -145,6 +181,13 @@ totalScore = (
 )
 ```
 
+### Risk Score History (PRO)
+
+Track how a token's risk score changes over time:
+- Detect rug pull setups (risk starts low, spikes later)
+- Monitor improvements (LP locked, ownership renounced)
+- 7 / 30 / 90 day history
+
 ---
 
 ## Whale Tracking
@@ -188,8 +231,8 @@ WHALE_THRESHOLDS = {
 | Chart Slots | 9 | 16 |
 | Price Alerts | 10 | Unlimited |
 | Manual Checks/Day | 50 | 200 |
-| Data Export | No | Yes |
-| Historical Data | No | Yes |
+| Data Export | No | CSV & JSON |
+| Risk History | No | 90 days |
 | Advanced Filters | No | Yes |
 | Priority Support | No | Yes |
 | API Access | No | No |
@@ -349,6 +392,38 @@ Risk analysis for a token.
 
 ---
 
+#### GET /api/risk/history/{chain}/{address} (PRO)
+
+Historical risk scores for a token.
+
+**Parameters:**
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| days | number | 30 | History period (max 90) |
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "chainId": "ethereum",
+    "address": "0x...",
+    "days": 30,
+    "history": [{
+      "totalScore": 23,
+      "riskLevel": "medium",
+      "honeypotScore": 0,
+      "contractScore": 10,
+      "holdersScore": 35,
+      "liquidityScore": 15,
+      "recordedAt": "2024-01-15T12:00:00Z"
+    }]
+  }
+}
+```
+
+---
+
 #### POST /api/risk/batch
 
 Analyze multiple tokens.
@@ -430,6 +505,47 @@ OHLCV candlestick data.
 |-------|------|---------|-------------|
 | interval | string | 1h | 1m, 5m, 15m, 1h, 4h, 1d |
 | limit | number | 100 | Max candles (1-500) |
+
+---
+
+#### GET /api/alerts
+
+List user's price alerts.
+
+---
+
+#### POST /api/alerts
+
+Create a price alert.
+
+**Request:**
+```json
+{
+  "chainId": "ethereum",
+  "tokenAddress": "0x...",
+  "tokenSymbol": "PEPE",
+  "alertType": "price_above",
+  "targetPrice": 0.00002
+}
+```
+
+---
+
+#### DELETE /api/alerts/{id}
+
+Delete a price alert.
+
+---
+
+#### GET /api/export
+
+Export data (PRO only).
+
+**Parameters:**
+| Param | Type | Description |
+|-------|------|-------------|
+| type | string | `watchlist` or `tokens` |
+| format | string | `csv` or `json` |
 
 ---
 
@@ -537,7 +653,7 @@ Browser requests require CSRF token from `GET /api/csrf`.
 ### Installation
 
 ```bash
-git clone https://github.com/yourusername/nullcheck.git
+git clone https://github.com/peterkellstrand/nullcheck.git
 cd nullcheck
 npm install
 cp .env.example .env.local
@@ -599,7 +715,7 @@ CRON_SECRET=your_secret
 
 | Layer | Technology |
 |-------|------------|
-| Framework | Next.js 15 (App Router) |
+| Framework | Next.js 16 (App Router, Turbopack) |
 | Language | TypeScript 5 |
 | Styling | Tailwind CSS v4 |
 | State | Zustand |
