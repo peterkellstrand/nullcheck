@@ -10,7 +10,6 @@ import { RiskHistoryChart } from '@/components/risk/RiskHistoryChart';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { PriceChart } from '@/components/charts/PriceChart';
 import { CompareChart } from '@/components/charts/CompareChart';
-import { LivePriceChart } from '@/components/charts/LivePriceChart';
 import { TopHoldersPanel, WhaleActivityFeed } from '@/components/whale';
 import { SentimentVote } from '@/components/tokens/SentimentVote';
 import { AlertButton } from '@/components/alerts/AlertButton';
@@ -262,17 +261,7 @@ export default function TokenDetailPage() {
           </div>
         </div>
 
-        {/* Live Price */}
-        <div className="p-6 border-b border-[var(--border)]">
-          <LivePriceChart
-            chainId={chain}
-            tokenAddress={address}
-            initialPrice={token.metrics?.price ?? 0}
-            height={250}
-          />
-        </div>
-
-        {/* Historical Chart */}
+        {/* Chart */}
         <div className="p-6 border-b border-[var(--border)]">
           <PriceChart
             chainId={chain}
