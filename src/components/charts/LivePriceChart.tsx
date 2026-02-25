@@ -91,7 +91,12 @@ export function LivePriceChart({
   }, []);
 
   return (
-    <div style={{ height }} className="w-full">
+    <div style={{ height }} className="w-full liveline-dark-buttons">
+      <style jsx global>{`
+        .liveline-dark-buttons button {
+          color: #000000 !important;
+        }
+      `}</style>
       <Liveline
         data={data}
         value={value}
