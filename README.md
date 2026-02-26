@@ -735,9 +735,25 @@ CRON_SECRET=your_secret
 | GoPlus | Security analysis | 60/min |
 | DexScreener | Token prices, pairs | 300/min |
 | GeckoTerminal | Trending, OHLCV | 30/min |
-| Helius | Solana RPC | varies |
-| Alchemy | EVM RPC | varies |
+| Helius | Solana RPC + WebSocket | varies |
+| Alchemy | EVM RPC + WebSocket | varies |
 | Resend | Email delivery | 100/day (free) |
+
+### Real-Time Price Feeds (Optional)
+
+For tick-level price updates, configure WebSocket API keys:
+
+**Alchemy** (Ethereum, Base)
+- Subscribes to Uniswap V2/V3 Swap events
+- Growth tier recommended ($49/mo)
+- Set `ALCHEMY_API_KEY` in `.env.local`
+
+**Helius** (Solana)
+- Subscribes to Raydium/Orca/Meteora pool updates
+- Paid plan required for WebSocket access
+- Set `HELIUS_API_KEY` in `.env.local`
+
+Without these keys, the app falls back to API polling (5-second intervals).
 
 ---
 
