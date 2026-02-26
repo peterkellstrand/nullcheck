@@ -157,18 +157,25 @@ export async function checkPriceAlerts(): Promise<Record<string, unknown>> {
   let notificationsSent = 0;
 
   for (const { alert, currentPrice } of triggeredAlerts) {
-    // Mark as triggered
-    const { error: updateError } = await supabase
+    // Mark as triggered with atomic guard to prevent duplicate processing
+    const { error: updateError, data: updatedRows } = await supabase
       .from('price_alerts')
       .update({
         is_triggered: true,
         triggered_at: new Date().toISOString(),
         triggered_price: currentPrice,
       })
-      .eq('id', alert.id);
+      .eq('id', alert.id)
+      .eq('is_triggered', false) // Atomic guard - only update if still untriggered
+      .select('id');
 
     if (updateError) {
       console.error(`Failed to update alert ${alert.id}:`, updateError);
+      continue;
+    }
+
+    // If no rows returned, another job already processed this alert — skip email
+    if (!updatedRows || updatedRows.length === 0) {
       continue;
     }
 

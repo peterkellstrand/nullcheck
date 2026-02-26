@@ -173,7 +173,7 @@ export async function POST(request: NextRequest) {
       {
         requested: uniqueTokens.length,
         maxBatchSize,
-        tier: access.type === 'agent' ? access.tier : access.tier,
+        tier: access.tier,
       },
       rateLimitHeaders
     );

@@ -32,6 +32,12 @@ export function usePriceStream(options: UsePriceStreamOptions = {}) {
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const mountedRef = useRef(true);
 
+  // Use ref for onUpdate to avoid dependency array issues
+  const onUpdateRef = useRef(onUpdate);
+  useEffect(() => {
+    onUpdateRef.current = onUpdate;
+  }, [onUpdate]);
+
   const connect = useCallback(() => {
     if (!enabled || !mountedRef.current) return;
 
@@ -65,8 +71,8 @@ export function usePriceStream(options: UsePriceStreamOptions = {}) {
           } else if (message.type === 'prices' && message.updates) {
             // Update all prices in the store
             updatePrices(message.updates);
-            // Call optional callback
-            onUpdate?.(message.updates);
+            // Call optional callback via ref (avoids dependency issues)
+            onUpdateRef.current?.(message.updates);
           } else if (message.type === 'error') {
             setError(message.message || 'Stream error');
           }
@@ -91,7 +97,7 @@ export function usePriceStream(options: UsePriceStreamOptions = {}) {
       setError('Failed to connect');
       setIsConnected(false);
     }
-  }, [enabled, updatePrices, onUpdate]);
+  }, [enabled, updatePrices]); // onUpdate removed - using ref instead
 
   const disconnect = useCallback(() => {
     if (eventSourceRef.current) {

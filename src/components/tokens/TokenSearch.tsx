@@ -23,30 +23,41 @@ export function TokenSearch({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Debounced API search
+  // Debounced API search with abort support
   useEffect(() => {
     if (query.length < 2) {
       setResults([]);
       return;
     }
 
+    const controller = new AbortController();
+
     const timer = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+        const response = await fetch(
+          `/api/search?q=${encodeURIComponent(query)}`,
+          { signal: controller.signal }
+        );
         const data = await response.json();
         if (data.success && data.data?.results) {
           setResults(data.data.results);
           setShowDropdown(true);
         }
       } catch (error) {
-        console.error('Search error:', error);
+        // Ignore abort errors (expected on unmount/new query)
+        if ((error as Error).name !== 'AbortError') {
+          console.error('Search error:', error);
+        }
       } finally {
         setIsSearching(false);
       }
     }, 300);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, [query]);
 
   // Close dropdown on outside click

@@ -123,18 +123,29 @@ export async function verifyApiAccess(req: NextRequest): Promise<ApiAccess> {
     }
 
     // Increment usage counter (upsert)
-    await service
+    const { error: usageError } = await service
       .from('api_usage')
       .upsert(
         { api_key_id: key.id, date: today, request_count: currentUsage + 1 },
         { onConflict: 'api_key_id,date' }
       );
 
-    // Update last_used timestamp
-    await service
+    if (usageError) {
+      // This affects metering/billing — log loudly
+      console.error('[BILLING] Failed to record API usage:', usageError, {
+        keyId: key.id,
+        date: today,
+      });
+    }
+
+    // Update last_used timestamp (informational — log but don't block)
+    service
       .from('api_keys')
       .update({ last_used: new Date().toISOString() })
-      .eq('id', key.id);
+      .eq('id', key.id)
+      .then(({ error }) => {
+        if (error) console.warn('Failed to update last_used:', error);
+      });
 
     return {
       type: 'agent',

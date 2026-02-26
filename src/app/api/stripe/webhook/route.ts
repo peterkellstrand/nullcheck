@@ -90,9 +90,12 @@ export async function POST(request: NextRequest) {
         const subscriptionType = subscription.metadata.subscription_type; // 'agent' or 'human'
         const tierFromMetadata = subscription.metadata.tier;
 
+        // Retrieve customer once (used for user ID lookup and email)
+        let customer: Stripe.Customer | Stripe.DeletedCustomer | null = null;
+
         if (!userId) {
           // Try to get user ID from customer metadata
-          const customer = await stripe.customers.retrieve(customerId);
+          customer = await stripe.customers.retrieve(customerId);
           if (customer.deleted) {
             console.error('Customer deleted:', customerId);
             break;
@@ -104,10 +107,7 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        const finalUserId = userId || (await (async () => {
-          const customer = await stripe.customers.retrieve(customerId);
-          return !customer.deleted ? customer.metadata.supabase_user_id : null;
-        })());
+        const finalUserId = userId || (customer && !customer.deleted ? customer.metadata.supabase_user_id : null);
 
         if (!finalUserId) {
           console.error('Could not determine user ID for subscription');
@@ -153,14 +153,23 @@ export async function POST(request: NextRequest) {
             if (keyError) {
               console.error('Failed to create API key:', keyError);
             } else {
-              // Get user's email and send the API key
-              const customer = await stripe.customers.retrieve(customerId);
-              if (!customer.deleted && customer.email) {
-                await sendApiKeyEmail(
-                  customer.email,
-                  apiKey,
-                  agentTier || 'developer'
-                );
+              // Send API key email - wrap in try/catch so email failure doesn't cause webhook retry
+              try {
+                // Retrieve customer if not already fetched
+                if (!customer) {
+                  customer = await stripe.customers.retrieve(customerId);
+                }
+                if (!customer.deleted && customer.email) {
+                  await sendApiKeyEmail(
+                    customer.email,
+                    apiKey,
+                    agentTier || 'developer'
+                  );
+                }
+              } catch (emailError) {
+                // Log but don't throw — key was created successfully.
+                // A failed email must not cause Stripe to retry and skip the email again.
+                console.error('Failed to send API key email:', emailError);
               }
             }
           } else if (existingKey) {
