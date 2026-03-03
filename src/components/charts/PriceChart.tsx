@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState, useMemo } from 'react';
-import { createChart, ColorType, IChartApi, ISeriesApi, CandlestickData, Time, CandlestickSeries, HistogramSeries, LineSeries } from 'lightweight-charts';
+import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
+import type { IChartApi, ISeriesApi, CandlestickData, Time } from 'lightweight-charts';
 import { ChainId } from '@/types/chain';
 import { OHLCV } from '@/types/token';
+import { formatVolume as formatVol } from '@/lib/utils/format';
 import { DrawingToolbar, useDrawingTools } from './DrawingTools';
 
 interface PriceChartProps {
@@ -51,12 +52,8 @@ function formatChartPrice(price: number): string {
   return price.toLocaleString(undefined, { maximumFractionDigits: 2 });
 }
 
-function formatVolume(vol: number): string {
-  if (vol >= 1e9) return `${(vol / 1e9).toFixed(1)}B`;
-  if (vol >= 1e6) return `${(vol / 1e6).toFixed(1)}M`;
-  if (vol >= 1e3) return `${(vol / 1e3).toFixed(1)}K`;
-  return vol.toFixed(0);
-}
+// Use shared formatVolume (includes $ prefix)
+const formatVolume = formatVol;
 
 /**
  * Calculate Heikin Ashi candles from OHLCV data
@@ -351,6 +348,7 @@ export function PriceChart({
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<ChartStats | null>(null);
   const [ohlcvData, setOhlcvData] = useState<OHLCV[]>([]);
+  const [chartReady, setChartReady] = useState(false);
 
   // Memoize Heikin Ashi transformation
   const displayData = useMemo(() => {
@@ -376,9 +374,14 @@ export function PriceChart({
     clearDrawings,
   } = useDrawingTools(chartRef.current, seriesRef.current, chartContainerRef);
 
-  // Initialize chart
+  // Initialize chart (dynamically import lightweight-charts to reduce bundle size)
   useEffect(() => {
     if (!chartContainerRef.current) return;
+    let cancelled = false;
+
+    async function initChart() {
+      const { createChart, ColorType, CandlestickSeries, HistogramSeries, LineSeries } = await import('lightweight-charts');
+      if (cancelled || !chartContainerRef.current) return;
 
     const chart = createChart(chartContainerRef.current, {
       layout: {
@@ -498,6 +501,9 @@ export function PriceChart({
     supportLineRef.current = supportLine;
     resistanceLineRef.current = resistanceLine;
 
+    // Mark chart as ready for data fetch
+    setChartReady(true);
+
     // Handle resize
     const handleResize = () => {
       if (chartContainerRef.current && chartRef.current) {
@@ -508,17 +514,24 @@ export function PriceChart({
     };
 
     window.addEventListener('resize', handleResize);
+    }
+
+    initChart();
 
     return () => {
-      window.removeEventListener('resize', handleResize);
-      chart.remove();
+      cancelled = true;
+      setChartReady(false);
+      if (chartRef.current) {
+        chartRef.current.remove();
+        chartRef.current = null;
+      }
     };
   }, [height]);
 
-  // Fetch data when timeframe changes
+  // Fetch data when timeframe changes (wait for chart to be ready)
   useEffect(() => {
     async function fetchOHLCV() {
-      if (!seriesRef.current) return;
+      if (!chartReady || !seriesRef.current) return;
 
       setIsLoading(true);
       setError(null);
@@ -597,7 +610,7 @@ export function PriceChart({
     }
 
     fetchOHLCV();
-  }, [chainId, tokenAddress, timeframe, showVolume]);
+  }, [chainId, tokenAddress, timeframe, showVolume, chartReady]);
 
   // Update indicator lines when memoized data changes
   useEffect(() => {
@@ -664,76 +677,84 @@ export function PriceChart({
   // Initialize RSI chart
   useEffect(() => {
     if (!showRSI || !rsiContainerRef.current) return;
+    let cancelled = false;
 
-    const chart = createChart(rsiContainerRef.current, {
-      layout: {
-        background: { type: ColorType.Solid, color: 'transparent' },
-        textColor: '#666666',
-        fontFamily: 'SF Mono, ui-monospace, monospace',
-        fontSize: 10,
-      },
-      grid: {
-        vertLines: { color: '#1a1a1a' },
-        horzLines: { color: '#1a1a1a' },
-      },
-      rightPriceScale: {
-        borderColor: '#333333',
-        scaleMargins: { top: 0.1, bottom: 0.1 },
-      },
-      timeScale: {
-        borderColor: '#333333',
-        visible: false,
-      },
-      crosshair: { mode: 0 },
-      width: rsiContainerRef.current.clientWidth,
-      height: 80,
-    });
+    async function initRsiChart() {
+      const { createChart, ColorType, LineSeries } = await import('lightweight-charts');
+      if (cancelled || !rsiContainerRef.current) return;
 
-    const rsiSeries = chart.addSeries(LineSeries, {
-      color: '#a855f7', // purple
-      lineWidth: 2,
-      priceLineVisible: false,
-      lastValueVisible: true,
-    });
+      const chart = createChart(rsiContainerRef.current, {
+        layout: {
+          background: { type: ColorType.Solid, color: 'transparent' },
+          textColor: '#666666',
+          fontFamily: 'SF Mono, ui-monospace, monospace',
+          fontSize: 10,
+        },
+        grid: {
+          vertLines: { color: '#1a1a1a' },
+          horzLines: { color: '#1a1a1a' },
+        },
+        rightPriceScale: {
+          borderColor: '#333333',
+          scaleMargins: { top: 0.1, bottom: 0.1 },
+        },
+        timeScale: {
+          borderColor: '#333333',
+          visible: false,
+        },
+        crosshair: { mode: 0 },
+        width: rsiContainerRef.current.clientWidth,
+        height: 80,
+      });
 
-    // Add overbought/oversold lines
-    const overbought = chart.addSeries(LineSeries, {
-      color: '#ef4444',
-      lineWidth: 1,
-      lineStyle: 2,
-      priceLineVisible: false,
-      lastValueVisible: false,
-    });
-    const oversold = chart.addSeries(LineSeries, {
-      color: '#22c55e',
-      lineWidth: 1,
-      lineStyle: 2,
-      priceLineVisible: false,
-      lastValueVisible: false,
-    });
+      const rsiSeries = chart.addSeries(LineSeries, {
+        color: '#a855f7',
+        lineWidth: 2,
+        priceLineVisible: false,
+        lastValueVisible: true,
+      });
 
-    rsiChartRef.current = chart;
-    rsiSeriesRef.current = rsiSeries;
+      const overbought = chart.addSeries(LineSeries, {
+        color: '#ef4444',
+        lineWidth: 1,
+        lineStyle: 2,
+        priceLineVisible: false,
+        lastValueVisible: false,
+      });
+      const oversold = chart.addSeries(LineSeries, {
+        color: '#22c55e',
+        lineWidth: 1,
+        lineStyle: 2,
+        priceLineVisible: false,
+        lastValueVisible: false,
+      });
 
-    // Set reference lines
-    if (rsiData.length > 0) {
-      const firstTime = rsiData[0].time;
-      const lastTime = rsiData[rsiData.length - 1].time;
-      overbought.setData([{ time: firstTime, value: 70 }, { time: lastTime, value: 70 }]);
-      oversold.setData([{ time: firstTime, value: 30 }, { time: lastTime, value: 30 }]);
+      rsiChartRef.current = chart;
+      rsiSeriesRef.current = rsiSeries;
+
+      if (rsiData.length > 0) {
+        const firstTime = rsiData[0].time;
+        const lastTime = rsiData[rsiData.length - 1].time;
+        overbought.setData([{ time: firstTime, value: 70 }, { time: lastTime, value: 70 }]);
+        oversold.setData([{ time: firstTime, value: 30 }, { time: lastTime, value: 30 }]);
+      }
+
+      const handleResize = () => {
+        if (rsiContainerRef.current && rsiChartRef.current) {
+          rsiChartRef.current.applyOptions({ width: rsiContainerRef.current.clientWidth });
+        }
+      };
+      window.addEventListener('resize', handleResize);
     }
 
-    const handleResize = () => {
-      if (rsiContainerRef.current && rsiChartRef.current) {
-        rsiChartRef.current.applyOptions({ width: rsiContainerRef.current.clientWidth });
-      }
-    };
-    window.addEventListener('resize', handleResize);
+    initRsiChart();
 
     return () => {
-      window.removeEventListener('resize', handleResize);
-      chart.remove();
-      rsiChartRef.current = null;
+      cancelled = true;
+      if (rsiChartRef.current) {
+        rsiChartRef.current.remove();
+        rsiChartRef.current = null;
+      }
     };
   }, [showRSI, rsiData]);
 
@@ -746,66 +767,76 @@ export function PriceChart({
   // Initialize MACD chart
   useEffect(() => {
     if (!showMACD || !macdContainerRef.current) return;
+    let cancelled = false;
 
-    const chart = createChart(macdContainerRef.current, {
-      layout: {
-        background: { type: ColorType.Solid, color: 'transparent' },
-        textColor: '#666666',
-        fontFamily: 'SF Mono, ui-monospace, monospace',
-        fontSize: 10,
-      },
-      grid: {
-        vertLines: { color: '#1a1a1a' },
-        horzLines: { color: '#1a1a1a' },
-      },
-      rightPriceScale: {
-        borderColor: '#333333',
-        scaleMargins: { top: 0.1, bottom: 0.1 },
-      },
-      timeScale: {
-        borderColor: '#333333',
-        visible: false,
-      },
-      crosshair: { mode: 0 },
-      width: macdContainerRef.current.clientWidth,
-      height: 80,
-    });
+    async function initMacdChart() {
+      const { createChart, ColorType, HistogramSeries, LineSeries } = await import('lightweight-charts');
+      if (cancelled || !macdContainerRef.current) return;
 
-    const histogramSeries = chart.addSeries(HistogramSeries, {
-      priceLineVisible: false,
-      lastValueVisible: false,
-    });
+      const chart = createChart(macdContainerRef.current, {
+        layout: {
+          background: { type: ColorType.Solid, color: 'transparent' },
+          textColor: '#666666',
+          fontFamily: 'SF Mono, ui-monospace, monospace',
+          fontSize: 10,
+        },
+        grid: {
+          vertLines: { color: '#1a1a1a' },
+          horzLines: { color: '#1a1a1a' },
+        },
+        rightPriceScale: {
+          borderColor: '#333333',
+          scaleMargins: { top: 0.1, bottom: 0.1 },
+        },
+        timeScale: {
+          borderColor: '#333333',
+          visible: false,
+        },
+        crosshair: { mode: 0 },
+        width: macdContainerRef.current.clientWidth,
+        height: 80,
+      });
 
-    const macdLine = chart.addSeries(LineSeries, {
-      color: '#3b82f6', // blue
-      lineWidth: 2,
-      priceLineVisible: false,
-      lastValueVisible: false,
-    });
+      const histogramSeries = chart.addSeries(HistogramSeries, {
+        priceLineVisible: false,
+        lastValueVisible: false,
+      });
 
-    const signalLine = chart.addSeries(LineSeries, {
-      color: '#f97316', // orange
-      lineWidth: 2,
-      priceLineVisible: false,
-      lastValueVisible: false,
-    });
+      const macdLine = chart.addSeries(LineSeries, {
+        color: '#3b82f6',
+        lineWidth: 2,
+        priceLineVisible: false,
+        lastValueVisible: false,
+      });
 
-    macdChartRef.current = chart;
-    macdHistogramRef.current = histogramSeries;
-    macdLineRef.current = macdLine;
-    macdSignalRef.current = signalLine;
+      const signalLine = chart.addSeries(LineSeries, {
+        color: '#f97316',
+        lineWidth: 2,
+        priceLineVisible: false,
+        lastValueVisible: false,
+      });
 
-    const handleResize = () => {
-      if (macdContainerRef.current && macdChartRef.current) {
-        macdChartRef.current.applyOptions({ width: macdContainerRef.current.clientWidth });
-      }
-    };
-    window.addEventListener('resize', handleResize);
+      macdChartRef.current = chart;
+      macdHistogramRef.current = histogramSeries;
+      macdLineRef.current = macdLine;
+      macdSignalRef.current = signalLine;
+
+      const handleResize = () => {
+        if (macdContainerRef.current && macdChartRef.current) {
+          macdChartRef.current.applyOptions({ width: macdContainerRef.current.clientWidth });
+        }
+      };
+      window.addEventListener('resize', handleResize);
+    }
+
+    initMacdChart();
 
     return () => {
-      window.removeEventListener('resize', handleResize);
-      chart.remove();
-      macdChartRef.current = null;
+      cancelled = true;
+      if (macdChartRef.current) {
+        macdChartRef.current.remove();
+        macdChartRef.current = null;
+      }
     };
   }, [showMACD]);
 
@@ -915,7 +946,7 @@ export function PriceChart({
           </div>
           <div>
             <span className="text-neutral-500">Vol </span>
-            <span className="text-neutral-300 tabular-nums">${formatVolume(stats.volume)}</span>
+            <span className="text-neutral-300 tabular-nums">{formatVolume(stats.volume)}</span>
           </div>
           <div>
             <span className={`tabular-nums ${stats.changePercent >= 0 ? 'text-green-500' : 'text-red-500'}`}>
