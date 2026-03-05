@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { TokenWithMetrics } from '@/types/token';
 
 interface TokenHeatmapProps {
@@ -15,7 +15,6 @@ const METRIC_CONFIG: Record<HeatmapMetric, { label: string; format: (v: number) 
     label: '24h %',
     format: (v) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`,
     colorScale: (v) => {
-      // Green for positive, red for negative
       if (v >= 20) return 'bg-green-600';
       if (v >= 10) return 'bg-green-500';
       if (v >= 5) return 'bg-green-500/70';
@@ -35,7 +34,6 @@ const METRIC_CONFIG: Record<HeatmapMetric, { label: string; format: (v: number) 
       return `$${v.toFixed(0)}`;
     },
     colorScale: (v) => {
-      // Intensity based on volume (relative scale)
       if (v >= 10e6) return 'bg-blue-600';
       if (v >= 5e6) return 'bg-blue-500';
       if (v >= 1e6) return 'bg-blue-500/70';
@@ -48,7 +46,6 @@ const METRIC_CONFIG: Record<HeatmapMetric, { label: string; format: (v: number) 
     label: 'Risk',
     format: (v) => `${v}`,
     colorScale: (v) => {
-      // Green for low risk, red for high risk
       if (v <= 14) return 'bg-green-500';
       if (v <= 29) return 'bg-yellow-500';
       if (v <= 49) return 'bg-orange-500';
@@ -57,17 +54,190 @@ const METRIC_CONFIG: Record<HeatmapMetric, { label: string; format: (v: number) 
   },
 };
 
+interface TreemapRect {
+  token: TokenWithMetrics;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+interface TreemapItem {
+  token: TokenWithMetrics;
+  value: number;
+}
+
+// Squarified treemap algorithm - properly fills the entire space
+function squarify(
+  items: TreemapItem[],
+  x: number,
+  y: number,
+  width: number,
+  height: number
+): TreemapRect[] {
+  if (items.length === 0) return [];
+
+  const total = items.reduce((sum, item) => sum + item.value, 0);
+  if (total === 0) return [];
+
+  // Normalize values to fit the container area
+  const area = width * height;
+  const normalizedItems = items.map(item => ({
+    ...item,
+    normalizedValue: (item.value / total) * area,
+  }));
+
+  return squarifyRecursive(normalizedItems, [], x, y, width, height);
+}
+
+function squarifyRecursive(
+  items: (TreemapItem & { normalizedValue: number })[],
+  row: (TreemapItem & { normalizedValue: number })[],
+  x: number,
+  y: number,
+  width: number,
+  height: number
+): TreemapRect[] {
+  if (items.length === 0) {
+    return layoutRow(row, x, y, width, height);
+  }
+
+  const item = items[0];
+  const remaining = items.slice(1);
+  const rowWithItem = [...row, item];
+
+  if (row.length === 0 || improvesRatio(row, item, width, height)) {
+    return squarifyRecursive(remaining, rowWithItem, x, y, width, height);
+  } else {
+    const rowRects = layoutRow(row, x, y, width, height);
+    const rowArea = row.reduce((sum, r) => sum + r.normalizedValue, 0);
+
+    // Calculate new bounds after laying out the row
+    let newX = x, newY = y, newWidth = width, newHeight = height;
+    if (width >= height) {
+      const rowWidth = rowArea / height;
+      newX = x + rowWidth;
+      newWidth = width - rowWidth;
+    } else {
+      const rowHeight = rowArea / width;
+      newY = y + rowHeight;
+      newHeight = height - rowHeight;
+    }
+
+    return [...rowRects, ...squarifyRecursive(items, [], newX, newY, newWidth, newHeight)];
+  }
+}
+
+function improvesRatio(
+  row: (TreemapItem & { normalizedValue: number })[],
+  item: TreemapItem & { normalizedValue: number },
+  width: number,
+  height: number
+): boolean {
+  if (row.length === 0) return true;
+
+  const currentRatio = worstRatio(row, width, height);
+  const newRatio = worstRatio([...row, item], width, height);
+
+  return newRatio <= currentRatio;
+}
+
+function worstRatio(
+  row: (TreemapItem & { normalizedValue: number })[],
+  width: number,
+  height: number
+): number {
+  if (row.length === 0) return Infinity;
+
+  const rowArea = row.reduce((sum, r) => sum + r.normalizedValue, 0);
+  const side = width >= height ? rowArea / height : rowArea / width;
+
+  let worst = 0;
+  for (const item of row) {
+    const otherSide = item.normalizedValue / side;
+    const ratio = Math.max(side / otherSide, otherSide / side);
+    worst = Math.max(worst, ratio);
+  }
+
+  return worst;
+}
+
+function layoutRow(
+  row: (TreemapItem & { normalizedValue: number })[],
+  x: number,
+  y: number,
+  width: number,
+  height: number
+): TreemapRect[] {
+  if (row.length === 0) return [];
+
+  const rowArea = row.reduce((sum, r) => sum + r.normalizedValue, 0);
+  const results: TreemapRect[] = [];
+
+  if (width >= height) {
+    // Lay out vertically
+    const rowWidth = rowArea / height;
+    let currentY = y;
+
+    for (const item of row) {
+      const itemHeight = item.normalizedValue / rowWidth;
+      results.push({
+        token: item.token,
+        x,
+        y: currentY,
+        width: rowWidth,
+        height: itemHeight,
+      });
+      currentY += itemHeight;
+    }
+  } else {
+    // Lay out horizontally
+    const rowHeight = rowArea / width;
+    let currentX = x;
+
+    for (const item of row) {
+      const itemWidth = item.normalizedValue / rowHeight;
+      results.push({
+        token: item.token,
+        x: currentX,
+        y,
+        width: itemWidth,
+        height: rowHeight,
+      });
+      currentX += itemWidth;
+    }
+  }
+
+  return results;
+}
+
 export function TokenHeatmap({ tokens, onTokenClick }: TokenHeatmapProps) {
   const [metric, setMetric] = useState<HeatmapMetric>('priceChange24h');
   const config = METRIC_CONFIG[metric];
 
-  // Sort tokens by volume for better visual hierarchy
-  const sortedTokens = [...tokens].sort((a, b) =>
-    (b.metrics?.volume24h || 0) - (a.metrics?.volume24h || 0)
-  );
+  // Sort tokens by market cap descending and prepare for treemap
+  // Use square root scale to prevent huge caps from dominating
+  const treemapData = useMemo(() => {
+    const sorted = [...tokens]
+      .filter(t => (t.metrics?.marketCap || 0) > 0)
+      .sort((a, b) => (b.metrics?.marketCap || 0) - (a.metrics?.marketCap || 0))
+      .slice(0, 50);
 
-  // Calculate cell sizes based on volume (larger volume = larger cell)
-  const maxVolume = Math.max(...tokens.map(t => t.metrics?.volume24h || 0), 1);
+    const items = sorted.map(token => ({
+      token,
+      value: Math.sqrt(token.metrics?.marketCap || 0),
+    }));
+
+    // Use 1600x900 base for 16:9 aspect ratio, then convert to percentages
+    const rects = squarify(items, 0, 0, 1600, 900);
+    return rects.map(rect => ({
+      ...rect,
+      x: (rect.x / 1600) * 100,
+      y: (rect.y / 900) * 100,
+      width: (rect.width / 1600) * 100,
+      height: (rect.height / 900) * 100,
+    }));
+  }, [tokens]);
 
   const getMetricValue = (token: TokenWithMetrics): number => {
     switch (metric) {
@@ -78,14 +248,6 @@ export function TokenHeatmap({ tokens, onTokenClick }: TokenHeatmapProps) {
       case 'riskScore':
         return token.risk?.totalScore || 0;
     }
-  };
-
-  const getCellSize = (token: TokenWithMetrics): string => {
-    const volume = token.metrics?.volume24h || 0;
-    const ratio = volume / maxVolume;
-    if (ratio > 0.5) return 'col-span-2 row-span-2';
-    if (ratio > 0.2) return 'col-span-2';
-    return '';
   };
 
   return (
@@ -110,29 +272,46 @@ export function TokenHeatmap({ tokens, onTokenClick }: TokenHeatmapProps) {
         </div>
       </div>
 
-      {/* Heatmap Grid */}
-      <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-1">
-        {sortedTokens.slice(0, 50).map((token) => {
-          const value = getMetricValue(token);
-          const colorClass = config.colorScale(value);
-          const sizeClass = getCellSize(token);
+      {/* Treemap */}
+      <div className="relative w-full" style={{ aspectRatio: '16 / 9' }}>
+        <div className="absolute inset-0 overflow-hidden">
+          {treemapData.map((rect) => {
+            const value = getMetricValue(rect.token);
+            const colorClass = config.colorScale(value);
+            const isLarge = rect.width > 8 && rect.height > 8;
+            const isMedium = rect.width > 5 && rect.height > 5;
 
-          return (
-            <button
-              key={`${token.chainId}-${token.address}`}
-              onClick={() => onTokenClick?.(token)}
-              className={`${sizeClass} ${colorClass} p-2 min-h-[60px] flex flex-col items-center justify-center text-center transition-all hover:brightness-110 hover:scale-105 border border-black/20`}
-              title={`${token.symbol} - ${token.name}\n${config.format(value)}`}
-            >
-              <span className="text-xs font-medium text-white truncate w-full">
-                {token.symbol}
-              </span>
-              <span className="text-[10px] text-white/80">
-                {config.format(value)}
-              </span>
-            </button>
-          );
-        })}
+            return (
+              <button
+                key={`${rect.token.chainId}-${rect.token.address}`}
+                onClick={() => onTokenClick?.(rect.token)}
+                className={`absolute ${colorClass} flex flex-col items-center justify-center text-center transition-all hover:brightness-110 hover:z-10 border border-black/20 overflow-hidden`}
+                style={{
+                  left: `${rect.x}%`,
+                  top: `${rect.y}%`,
+                  width: `${rect.width}%`,
+                  height: `${rect.height}%`,
+                }}
+                title={`${rect.token.symbol} - ${rect.token.name}\n${config.format(value)}`}
+              >
+                {isLarge ? (
+                  <>
+                    <span className="text-xs font-medium text-white truncate w-full px-1">
+                      {rect.token.symbol}
+                    </span>
+                    <span className="text-[10px] text-white/80">
+                      {config.format(value)}
+                    </span>
+                  </>
+                ) : isMedium ? (
+                  <span className="text-[10px] font-medium text-white truncate w-full px-0.5">
+                    {rect.token.symbol}
+                  </span>
+                ) : null}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Legend */}
@@ -145,10 +324,11 @@ export function TokenHeatmap({ tokens, onTokenClick }: TokenHeatmapProps) {
             <span className="flex items-center gap-1">
               <span className="w-3 h-3 bg-green-500"></span> positive
             </span>
+            <span>· size = market cap</span>
           </>
         )}
         {metric === 'volume24h' && (
-          <span>Larger cells = higher volume</span>
+          <span>Size = market cap</span>
         )}
         {metric === 'riskScore' && (
           <>
@@ -164,6 +344,7 @@ export function TokenHeatmap({ tokens, onTokenClick }: TokenHeatmapProps) {
             <span className="flex items-center gap-1">
               <span className="w-3 h-3 bg-red-500"></span> critical
             </span>
+            <span>· size = market cap</span>
           </>
         )}
       </div>
