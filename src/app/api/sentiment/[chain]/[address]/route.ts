@@ -52,32 +52,39 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   }
 
   try {
-    const supabase = await getSupabaseServerWithServiceRole();
+    // Create both clients and fetch sentiment + user in parallel
+    const [supabase, userSupabase] = await Promise.all([
+      getSupabaseServerWithServiceRole(),
+      getSupabaseServer(),
+    ]);
 
-    // Get sentiment summary
-    const { data, error } = await supabase
-      .from('token_sentiment_summary')
-      .select('*')
-      .eq('chain_id', chainId)
-      .eq('token_address', address.toLowerCase())
-      .single();
+    const normalizedAddr = address.toLowerCase();
+
+    const [sentimentResult, userResult] = await Promise.all([
+      supabase
+        .from('token_sentiment_summary')
+        .select('*')
+        .eq('chain_id', chainId)
+        .eq('token_address', normalizedAddr)
+        .single(),
+      userSupabase.auth.getUser(),
+    ]);
+
+    const { data, error } = sentimentResult;
 
     if (error && error.code !== 'PGRST116') { // PGRST116 = no rows
       console.error('Sentiment fetch error:', error);
       return createErrorResponse('INTERNAL_ERROR', 'Failed to fetch sentiment', 500, requestId);
     }
 
-    // Check if current user has voted
-    const userSupabase = await getSupabaseServer();
-    const { data: { user } } = await userSupabase.auth.getUser();
-
+    const user = userResult.data?.user;
     let userVote: string | null = null;
     if (user) {
       const { data: voteData } = await supabase
         .from('token_sentiment')
         .select('vote')
         .eq('chain_id', chainId)
-        .eq('token_address', address.toLowerCase())
+        .eq('token_address', normalizedAddr)
         .eq('user_id', user.id)
         .single();
 

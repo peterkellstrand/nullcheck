@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/db/service-client';
 import {
   WebhookEventType,
   WebhookSubscription,
@@ -12,19 +12,6 @@ import {
 } from '@/types/webhook';
 import { ChainId } from '@/types/chain';
 import { API_VERSION } from '@/lib/api/utils';
-
-// Service role client for webhook operations (bypasses RLS)
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-
-function getServiceClient() {
-  if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error('Supabase credentials not configured');
-  }
-  return createClient(supabaseUrl, serviceRoleKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-}
 
 /**
  * Generate HMAC-SHA256 signature for webhook payload

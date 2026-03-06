@@ -3,24 +3,10 @@
  * and triggers email notifications when conditions are met.
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/db/service-client';
 import { sendPriceAlertEmail } from '@/lib/email/alerts';
 import { PriceAlertRow } from '@/types/alert';
 import { ChainId } from '@/types/chain';
-
-// Service role client for alert operations
-function getServiceClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-
-  if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error('Supabase credentials not configured');
-  }
-
-  return createClient(supabaseUrl, serviceRoleKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-}
 
 interface TokenPrice {
   chainId: ChainId;

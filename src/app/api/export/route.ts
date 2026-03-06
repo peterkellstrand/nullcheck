@@ -99,31 +99,43 @@ export async function GET(request: NextRequest) {
 
       if (error) throw error;
 
-      // Fetch token metrics for each watchlist item
-      const tokens: WatchlistToken[] = [];
-      for (const item of watchlist || []) {
-        const { data: metrics } = await supabase
+      // Batch-fetch all token data in 3 parallel queries instead of 3N sequential ones
+      const items = watchlist || [];
+      const addresses = items.map(i => i.token_address);
+
+      const [metricsResult, tokensResult, riskResult] = await Promise.all([
+        supabase
           .from('token_metrics')
-          .select('price, price_change_24h, volume_24h, liquidity, market_cap')
-          .eq('chain_id', item.chain_id)
-          .eq('token_address', item.token_address)
-          .single();
-
-        const { data: tokenInfo } = await supabase
+          .select('token_address, chain_id, price, price_change_24h, volume_24h, liquidity, market_cap')
+          .in('token_address', addresses),
+        supabase
           .from('tokens')
-          .select('symbol, name')
-          .eq('chain_id', item.chain_id)
-          .eq('address', item.token_address)
-          .single();
-
-        const { data: riskInfo } = await supabase
+          .select('address, chain_id, symbol, name')
+          .in('address', addresses),
+        supabase
           .from('risk_scores')
-          .select('total_score')
-          .eq('chain_id', item.chain_id)
-          .eq('token_address', item.token_address)
-          .single();
+          .select('token_address, chain_id, total_score')
+          .in('token_address', addresses),
+      ]);
 
-        tokens.push({
+      // Build lookup maps keyed by "chain_id-address"
+      const metricsMap = new Map(
+        (metricsResult.data || []).map(m => [`${m.chain_id}-${m.token_address}`, m])
+      );
+      const tokensMap = new Map(
+        (tokensResult.data || []).map(t => [`${t.chain_id}-${t.address}`, t])
+      );
+      const riskMap = new Map(
+        (riskResult.data || []).map(r => [`${r.chain_id}-${r.token_address}`, r])
+      );
+
+      const tokens: WatchlistToken[] = items.map(item => {
+        const key = `${item.chain_id}-${item.token_address}`;
+        const metrics = metricsMap.get(key);
+        const tokenInfo = tokensMap.get(key);
+        const riskInfo = riskMap.get(key);
+
+        return {
           chain_id: item.chain_id,
           token_address: item.token_address,
           symbol: tokenInfo?.symbol,
@@ -134,8 +146,8 @@ export async function GET(request: NextRequest) {
           liquidity: metrics?.liquidity,
           market_cap: metrics?.market_cap,
           risk_score: riskInfo?.total_score,
-        });
-      }
+        };
+      });
 
       data = tokens as unknown as Record<string, unknown>[];
       filename = `nullcheck-watchlist-${new Date().toISOString().split('T')[0]}`;

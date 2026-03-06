@@ -19,7 +19,6 @@ export function SplashScreen({ onComplete, placeholderMode = false }: SplashScre
   const [typingComplete, setTypingComplete] = useState(false);
   const [taglineComplete, setTaglineComplete] = useState(false);
   const [allComplete, setAllComplete] = useState(false);
-  const [cursorVisible, setCursorVisible] = useState(true);
 
   const fullText = 'null//check';
   const tagline = 'know if you can sell before you buy.';
@@ -50,17 +49,6 @@ export function SplashScreen({ onComplete, placeholderMode = false }: SplashScre
     if (char === '.') return 220;
     return 120 + Math.random() * 50;
   };
-
-  // Blinking cursor effect after all typing is complete
-  useEffect(() => {
-    if (!allComplete) return;
-
-    const blinkInterval = setInterval(() => {
-      setCursorVisible(prev => !prev);
-    }, 500);
-
-    return () => clearInterval(blinkInterval);
-  }, [allComplete]);
 
   useEffect(() => {
     if (!placeholderMode && typeof window !== 'undefined' && sessionStorage.getItem('splashShown')) {
@@ -174,11 +162,11 @@ export function SplashScreen({ onComplete, placeholderMode = false }: SplashScre
         {comingSoonText}
         {showComingSoonCursor && (
           <span
-            className="inline-block ml-0.5"
+            className={`inline-block ml-0.5 ${allComplete ? 'animate-cursor-blink' : ''}`}
             style={{
               width: '0.35em',
               height: '0.9em',
-              backgroundColor: allComplete ? (cursorVisible ? '#ffffff' : '#000000') : '#ffffff'
+              backgroundColor: '#ffffff'
             }}
           />
         )}

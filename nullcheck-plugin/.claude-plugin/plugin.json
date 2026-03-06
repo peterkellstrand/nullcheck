@@ -1,0 +1,8 @@
+{
+  "name": "nullcheck",
+  "version": "1.0.0",
+  "description": "DeFi token risk analysis — honeypot detection, rug pull screening, and whale tracking for AI agents building on Ethereum, Base, and Solana.",
+  "author": "nullcheck",
+  "homepage": "https://nullcheck.io",
+  "repository": "https://github.com/peterkellstrand/nullcheck"
+}

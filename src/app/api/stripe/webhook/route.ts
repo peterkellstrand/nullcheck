@@ -4,17 +4,9 @@ import { nanoid } from 'nanoid';
 import { getStripe, STRIPE_CONFIG } from '@/lib/stripe';
 import { upsertSubscription, downgradeToFree } from '@/lib/db/subscription';
 import { sendApiKeyEmail } from '@/lib/email';
+import { hashApiKey } from '@/lib/auth/hash-api-key';
 import type { SubscriptionStatus, AgentTier } from '@/types/subscription';
 import Stripe from 'stripe';
-
-// Hash API key using SHA-256
-async function hashApiKey(key: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(key);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
 
 // Determine if a price ID is for an agent tier
 function getAgentTierFromPriceId(priceId: string): AgentTier | null {

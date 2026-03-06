@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "nullcheck": {
+      "command": "npx",
+      "args": ["@nullcheck/mcp-server@latest"],
+      "env": {
+        "NULLCHECK_API_KEY": ""
+      }
+    }
+  }
+}

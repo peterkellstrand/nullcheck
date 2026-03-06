@@ -267,27 +267,23 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Cache tokens to Supabase
+// Cache tokens to Supabase — all upserts run in parallel
 async function cacheTokens(tokens: TokenWithMetrics[]): Promise<void> {
-  for (const token of tokens) {
-    try {
-      // Upsert token
-      await db.upsertToken({
-        address: token.address,
-        chainId: token.chainId,
-        symbol: token.symbol,
-        name: token.name,
-        decimals: token.decimals || 18,
-        logoUrl: token.logoUrl,
-      });
-
-      // Upsert metrics
-      await db.upsertTokenMetrics(token.metrics);
-    } catch (err) {
-      // Continue with other tokens
-      console.error(`Failed to cache token ${token.symbol}:`, err);
-    }
-  }
+  await Promise.allSettled(
+    tokens.map(async (token) => {
+      await Promise.all([
+        db.upsertToken({
+          address: token.address,
+          chainId: token.chainId,
+          symbol: token.symbol,
+          name: token.name,
+          decimals: token.decimals || 18,
+          logoUrl: token.logoUrl,
+        }),
+        db.upsertTokenMetrics(token.metrics),
+      ]);
+    })
+  );
 }
 
 // Generate placeholder risk scores based on available data

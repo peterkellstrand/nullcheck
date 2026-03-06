@@ -1,0 +1,44 @@
+{
+  "name": "@nullcheck/sdk",
+  "version": "1.0.0",
+  "description": "TypeScript SDK for nullcheck — DeFi token risk analysis across Ethereum, Base, and Solana",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  },
+  "keywords": [
+    "nullcheck",
+    "defi",
+    "risk-analysis",
+    "honeypot-detection",
+    "token-screening",
+    "rug-pull",
+    "solana",
+    "ethereum",
+    "base",
+    "ai-agent",
+    "mcp"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/peterkellstrand/nullcheck.git",
+    "directory": "sdk"
+  }
+}

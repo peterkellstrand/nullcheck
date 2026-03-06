@@ -2,16 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { nanoid } from 'nanoid';
 import { getSupabaseServer, getSupabaseServerWithServiceRole } from '@/lib/db/supabase-server';
 import { validateCsrfToken, createCsrfErrorResponse } from '@/lib/auth/csrf';
+import { hashApiKey } from '@/lib/auth/hash-api-key';
 import { AgentTier, AGENT_LIMITS } from '@/types/subscription';
-
-// Hash API key using SHA-256 (Web Crypto API for edge runtime)
-async function hashApiKey(key: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(key);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
 
 // GET - List user's API keys
 export async function GET() {

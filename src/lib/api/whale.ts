@@ -96,19 +96,3 @@ export async function getWhaleActivity(
     netFlow24h: buys - sells, // Positive = more buys overall
   };
 }
-
-/**
- * Get detailed whale activity with transaction history
- * For now, returns activity summary - can be extended with explorer APIs
- */
-export async function getDetailedWhaleActivity(
-  chainId: ChainId,
-  tokenAddress: string,
-  _limit: number = 10
-): Promise<WhaleActivity> {
-  // For MVP, use the basic whale activity
-  // In the future, integrate chain explorers for detailed transaction history:
-  // - Solana: Helius transaction history API
-  // - EVM: Etherscan/Basescan/Arbiscan APIs
-  return getWhaleActivity(chainId, tokenAddress);
-}

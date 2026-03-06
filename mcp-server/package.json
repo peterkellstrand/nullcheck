@@ -1,0 +1,43 @@
+{
+  "name": "@nullcheck/mcp-server",
+  "version": "1.0.0",
+  "description": "MCP server for nullcheck — DeFi token risk analysis for AI agents",
+  "type": "module",
+  "bin": {
+    "nullcheck-mcp": "./build/index.js"
+  },
+  "main": "./build/index.js",
+  "exports": {
+    ".": "./build/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "start": "node build/index.js",
+    "prepare": "npm run build"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "typescript": "^5"
+  },
+  "keywords": [
+    "mcp",
+    "nullcheck",
+    "defi",
+    "risk-analysis",
+    "token-screening",
+    "honeypot-detection",
+    "ai-agent",
+    "claude",
+    "cursor"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/peterkellstrand/nullcheck.git",
+    "directory": "mcp-server"
+  }
+}

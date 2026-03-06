@@ -1,19 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/db/service-client';
 import { AgentTier, AGENT_LIMITS } from '@/types/subscription';
-
-// Service role client for billing operations
-function getServiceClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-
-  if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error('Supabase credentials not configured');
-  }
-
-  return createClient(supabaseUrl, serviceRoleKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-}
 
 /**
  * Daily usage record for an API key
@@ -198,18 +184,6 @@ export async function getUserBillingUsage(userId: string): Promise<{
       overageCharge: Math.round(overageCharge * 100) / 100,
     },
   };
-}
-
-/**
- * Record overage usage (for tracking purposes)
- * This is called when a request exceeds the daily limit but overage is enabled
- */
-export async function recordOverageRequest(
-  apiKeyId: string,
-  count: number = 1
-): Promise<void> {
-  // Usage is already tracked in api_usage table by verify-api-access
-  // This function can be used for additional overage-specific tracking if needed
 }
 
 /**

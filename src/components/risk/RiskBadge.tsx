@@ -11,6 +11,14 @@ interface RiskBadgeProps {
   className?: string;
 }
 
+// Static config — moved outside component to avoid re-creation on every render
+const RISK_CONFIG: Record<RiskLevel, { label: string; color: string }> = {
+  low: { label: 'low', color: 'text-green-600' },
+  medium: { label: 'med', color: 'text-yellow-600' },
+  high: { label: 'high', color: 'text-orange-500' },
+  critical: { label: 'crit', color: 'text-red-500' },
+};
+
 export function RiskBadge({
   risk,
   level: levelProp,
@@ -21,26 +29,7 @@ export function RiskBadge({
   const level = risk?.level ?? levelProp ?? 'medium';
   const score = risk?.totalScore ?? scoreProp;
 
-  const config = {
-    low: {
-      label: 'low',
-      color: 'text-green-600',
-    },
-    medium: {
-      label: 'med',
-      color: 'text-yellow-600',
-    },
-    high: {
-      label: 'high',
-      color: 'text-orange-500',
-    },
-    critical: {
-      label: 'crit',
-      color: 'text-red-500',
-    },
-  };
-
-  const { label, color } = config[level];
+  const { label, color } = RISK_CONFIG[level];
 
   // Show "..." if no risk data yet
   if (score === undefined) {
@@ -65,11 +54,5 @@ export function RiskBadge({
     >
       {score}
     </button>
-  );
-}
-
-export function RiskBadgeSkeleton() {
-  return (
-    <span className="text-sm text-neutral-800">...</span>
   );
 }

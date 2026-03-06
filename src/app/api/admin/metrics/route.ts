@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/db/service-client';
+import { verifyAdminAccess } from '@/lib/auth/admin';
 import {
   generateRequestId,
   createErrorResponse,
@@ -8,44 +9,6 @@ import {
 import { rateLimiter } from '@/lib/api/rate-limiter';
 
 export const runtime = 'nodejs';
-
-/**
- * Get service role client for admin operations
- */
-function getServiceClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-
-  if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error('Supabase credentials not configured');
-  }
-
-  return createClient(supabaseUrl, serviceRoleKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-}
-
-/**
- * Verify admin access via ADMIN_SECRET
- * SECURITY: Always require ADMIN_SECRET, even in development
- */
-function verifyAdminAccess(request: NextRequest): boolean {
-  const authHeader = request.headers.get('authorization');
-  const adminSecret = process.env.ADMIN_SECRET;
-
-  // ADMIN_SECRET must be configured
-  if (!adminSecret) {
-    console.error('ADMIN_SECRET not configured - admin access denied');
-    return false;
-  }
-
-  // Require Bearer token matching ADMIN_SECRET
-  if (authHeader === `Bearer ${adminSecret}`) {
-    return true;
-  }
-
-  return false;
-}
 
 /**
  * GET /api/admin/metrics - Get system metrics for monitoring dashboard

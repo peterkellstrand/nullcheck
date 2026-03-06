@@ -15,6 +15,8 @@ interface CacheStats {
   size: number;
 }
 
+const MAX_CACHE_SIZE = 500;
+
 class ApiCache {
   private cache = new Map<string, CacheEntry<unknown>>();
   private stats: CacheStats = { hits: 0, misses: 0, size: 0 };
@@ -42,9 +44,23 @@ class ApiCache {
   }
 
   /**
-   * Set value with TTL
+   * Set value with TTL (evicts oldest entries if cache exceeds max size)
    */
   set<T>(key: string, data: T, ttlMs: number, service: string = 'unknown'): void {
+    // Evict expired + oldest entries if at capacity
+    if (this.cache.size >= MAX_CACHE_SIZE && !this.cache.has(key)) {
+      this.cleanup();
+      // If still over limit after cleanup, evict oldest entries
+      if (this.cache.size >= MAX_CACHE_SIZE) {
+        const entriesToEvict = this.cache.size - MAX_CACHE_SIZE + 1;
+        const iterator = this.cache.keys();
+        for (let i = 0; i < entriesToEvict; i++) {
+          const oldest = iterator.next().value;
+          if (oldest) this.cache.delete(oldest);
+        }
+      }
+    }
+
     this.cache.set(key, {
       data,
       expiresAt: Date.now() + ttlMs,

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getServiceClient } from '@/lib/db/service-client';
 import { verifyApiAccess, createRateLimitHeaders } from '@/lib/auth/verify-api-access';
 import {
   generateRequestId,
@@ -22,20 +22,6 @@ import { generateWebhookSecret } from '@/lib/webhooks/service';
 export const runtime = 'nodejs';
 
 export const OPTIONS = handleCorsOptions;
-
-// Service role client for webhook operations
-function getServiceClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-
-  if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error('Supabase credentials not configured');
-  }
-
-  return createClient(supabaseUrl, serviceRoleKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-}
 
 // Maximum webhooks per API key
 const MAX_WEBHOOKS_PER_KEY = 10;

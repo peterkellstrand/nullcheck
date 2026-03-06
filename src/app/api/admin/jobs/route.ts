@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { listJobs, JOBS } from '@/lib/jobs';
+import { verifyAdminAccess } from '@/lib/auth/admin';
 import {
   generateRequestId,
   createErrorResponse,
@@ -7,26 +8,6 @@ import {
 } from '@/lib/api/utils';
 
 export const runtime = 'nodejs';
-
-/**
- * Verify admin access via ADMIN_SECRET
- * SECURITY: Always require ADMIN_SECRET, even in development
- */
-function verifyAdminAccess(request: NextRequest): boolean {
-  const authHeader = request.headers.get('authorization');
-  const adminSecret = process.env.ADMIN_SECRET;
-
-  if (!adminSecret) {
-    console.error('ADMIN_SECRET not configured - admin access denied');
-    return false;
-  }
-
-  if (authHeader === `Bearer ${adminSecret}`) {
-    return true;
-  }
-
-  return false;
-}
 
 /**
  * GET /api/admin/jobs - List all jobs with their status

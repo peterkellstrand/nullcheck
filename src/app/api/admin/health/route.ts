@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { verifyAdminAccess } from '@/lib/auth/admin';
 import {
   generateRequestId,
   createErrorResponse,
@@ -16,26 +17,6 @@ interface HealthCheck {
 }
 
 /**
- * Verify admin access via ADMIN_SECRET
- * SECURITY: Always require ADMIN_SECRET, even in development
- */
-function verifyAdminAccess(request: NextRequest): boolean {
-  const authHeader = request.headers.get('authorization');
-  const adminSecret = process.env.ADMIN_SECRET;
-
-  if (!adminSecret) {
-    console.error('ADMIN_SECRET not configured - admin access denied');
-    return false;
-  }
-
-  if (authHeader === `Bearer ${adminSecret}`) {
-    return true;
-  }
-
-  return false;
-}
-
-/**
  * GET /api/admin/health - Detailed health check for all services
  */
 export async function GET(request: NextRequest) {
@@ -45,17 +26,14 @@ export async function GET(request: NextRequest) {
     return createErrorResponse('UNAUTHORIZED', 'Admin access required', 401, requestId);
   }
 
-  const checks: HealthCheck[] = [];
+  // Run all async health checks in parallel
+  const [supabaseCheck, geckoCheck, goPlusCheck] = await Promise.all([
+    checkSupabase(),
+    checkGeckoTerminal(),
+    checkGoPlus(),
+  ]);
 
-  // Check Supabase connection
-  checks.push(await checkSupabase());
-
-  // Check external APIs
-  checks.push(await checkGeckoTerminal());
-  checks.push(await checkGoPlus());
-
-  // Check environment configuration
-  checks.push(checkEnvironment());
+  const checks: HealthCheck[] = [supabaseCheck, geckoCheck, goPlusCheck, checkEnvironment()];
 
   // Calculate overall status
   const unhealthyCount = checks.filter(c => c.status === 'unhealthy').length;
