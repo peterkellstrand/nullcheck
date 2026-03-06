@@ -49,16 +49,16 @@ export async function GET(
     }
 
     // Fall back to DexScreener API
-    const pair = await dexscreener.getPairByTokenAddress(chainId, address);
+    const metrics = await dexscreener.getTokenMetrics(chainId, address);
 
-    if (pair) {
+    if (metrics) {
       return NextResponse.json({
         success: true,
         data: {
-          price: parseFloat(pair.priceUsd) || 0,
-          priceChange1h: pair.priceChange?.h1 || 0,
-          priceChange24h: pair.priceChange?.h24 || 0,
-          volume24h: pair.volume?.h24 || 0,
+          price: metrics.price,
+          priceChange1h: metrics.priceChange1h,
+          priceChange24h: metrics.priceChange24h,
+          volume24h: metrics.volume24h,
           source: 'api',
           timestamp: Date.now(),
         },
