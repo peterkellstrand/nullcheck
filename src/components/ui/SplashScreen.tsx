@@ -9,15 +9,35 @@ interface SplashScreenProps {
 
 export function SplashScreen({ onComplete, placeholderMode = false }: SplashScreenProps) {
   const [displayText, setDisplayText] = useState('');
+  const [taglineText, setTaglineText] = useState('');
   const [isVisible, setIsVisible] = useState(true);
   const [isFading, setIsFading] = useState(false);
   const [showCursor, setShowCursor] = useState(true);
+  const [showTaglineCursor, setShowTaglineCursor] = useState(false);
   const [typingComplete, setTypingComplete] = useState(false);
 
   const fullText = 'null//check';
-  const typingSpeed = 150; // ms per character
+  const tagline = 'Know if you can sell before you buy.';
   const cursorBlinkTime = 1200; // ms to show cursor after typing
   const fadeDuration = 600; // ms for fade out
+
+  // Variable typing speed to mimic human typing
+  const getTypingDelay = (index: number): number => {
+    // "null" (indices 0-3) = faster
+    // "//check" (indices 4-10) = slower, with slight pause before "//"
+    if (index < 4) return 120; // "null" - fast
+    if (index === 4) return 300; // pause before first "/"
+    if (index === 5) return 180; // second "/"
+    return 180; // "check" - slightly slower
+  };
+
+  // Tagline typing with natural variation
+  const getTaglineDelay = (char: string, index: number): number => {
+    if (char === ' ') return 80; // spaces are quick
+    if (char === '.') return 200; // pause slightly on period
+    // Add slight randomness for human feel
+    return 60 + Math.random() * 40;
+  };
 
   useEffect(() => {
     // In placeholder mode, always show the animation
@@ -30,36 +50,54 @@ export function SplashScreen({ onComplete, placeholderMode = false }: SplashScre
 
     let currentIndex = 0;
 
+    const typeTagline = () => {
+      let taglineIndex = 0;
+      setShowTaglineCursor(true);
+
+      const typeNextTaglineChar = () => {
+        if (taglineIndex < tagline.length) {
+          setTaglineText(tagline.slice(0, taglineIndex + 1));
+          const delay = getTaglineDelay(tagline[taglineIndex], taglineIndex);
+          taglineIndex++;
+          setTimeout(typeNextTaglineChar, delay);
+        } else {
+          // Tagline complete
+          if (placeholderMode) {
+            setTimeout(() => {
+              setShowTaglineCursor(false);
+            }, cursorBlinkTime);
+          } else {
+            setTimeout(() => {
+              setShowTaglineCursor(false);
+              setTimeout(() => {
+                setIsFading(true);
+                setTimeout(() => {
+                  setIsVisible(false);
+                  if (typeof window !== 'undefined') {
+                    sessionStorage.setItem('splashShown', 'true');
+                  }
+                  onComplete?.();
+                }, fadeDuration);
+              }, 200);
+            }, cursorBlinkTime);
+          }
+        }
+      };
+
+      typeNextTaglineChar();
+    };
+
     const typeNextChar = () => {
       if (currentIndex < fullText.length) {
         setDisplayText(fullText.slice(0, currentIndex + 1));
+        const delay = getTypingDelay(currentIndex);
         currentIndex++;
-        setTimeout(typeNextChar, typingSpeed);
+        setTimeout(typeNextChar, delay);
       } else {
-        // Typing complete
+        // Main text complete, hide cursor and start tagline
         setTypingComplete(true);
-
-        if (placeholderMode) {
-          // In placeholder mode, just hide cursor and stay
-          setTimeout(() => {
-            setShowCursor(false);
-          }, cursorBlinkTime);
-        } else {
-          // Normal mode: hide cursor then fade out
-          setTimeout(() => {
-            setShowCursor(false);
-            setTimeout(() => {
-              setIsFading(true);
-              setTimeout(() => {
-                setIsVisible(false);
-                if (typeof window !== 'undefined') {
-                  sessionStorage.setItem('splashShown', 'true');
-                }
-                onComplete?.();
-              }, fadeDuration);
-            }, 200);
-          }, cursorBlinkTime);
-        }
+        setShowCursor(false);
+        setTimeout(typeTagline, 400); // Brief pause before tagline
       }
     };
 
@@ -73,7 +111,7 @@ export function SplashScreen({ onComplete, placeholderMode = false }: SplashScre
 
   return (
     <div
-      className={`fixed inset-0 z-[100] flex items-center justify-center bg-black transition-opacity ${
+      className={`fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black transition-opacity ${
         isFading ? 'opacity-0' : 'opacity-100'
       }`}
       style={{ transitionDuration: `${fadeDuration}ms` }}
@@ -87,6 +125,15 @@ export function SplashScreen({ onComplete, placeholderMode = false }: SplashScre
           />
         )}
       </h1>
+      <p className="mt-4 text-sm sm:text-base md:text-lg font-mono font-light tracking-wide inline-flex items-center h-6" style={{ color: '#ffffff' }}>
+        {taglineText}
+        {showTaglineCursor && (
+          <span
+            className="inline-block ml-0.5"
+            style={{ width: '0.35em', height: '0.9em', backgroundColor: '#ffffff' }}
+          />
+        )}
+      </p>
     </div>
   );
 }
