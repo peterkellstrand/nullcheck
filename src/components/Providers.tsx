@@ -7,6 +7,7 @@ import { getSupabaseBrowser } from '@/lib/db/supabase-browser';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { SubscriptionProvider } from '@/components/subscription/SubscriptionProvider';
+import { SplashScreen } from '@/components/ui/SplashScreen';
 import { initAnalytics, identifyUser, resetUser } from '@/lib/analytics';
 
 interface AuthContextType {
@@ -90,7 +91,10 @@ export function Providers({ children }: { children: ReactNode }) {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <SubscriptionProvider>
-            <ThemeProvider>{children}</ThemeProvider>
+            <ThemeProvider>
+              <SplashScreen />
+              {children}
+            </ThemeProvider>
           </SubscriptionProvider>
         </AuthProvider>
       </QueryClientProvider>
