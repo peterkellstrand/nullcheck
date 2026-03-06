@@ -92,8 +92,8 @@ export function Providers({ children }: { children: ReactNode }) {
         <AuthProvider>
           <SubscriptionProvider>
             <ThemeProvider>
-              <SplashScreen />
-              {children}
+              <SplashScreen placeholderMode={process.env.NEXT_PUBLIC_PLACEHOLDER_MODE === 'true'} />
+              {!process.env.NEXT_PUBLIC_PLACEHOLDER_MODE && children}
             </ThemeProvider>
           </SubscriptionProvider>
         </AuthProvider>

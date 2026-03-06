@@ -4,22 +4,25 @@ import { useState, useEffect } from 'react';
 
 interface SplashScreenProps {
   onComplete?: () => void;
+  placeholderMode?: boolean;
 }
 
-export function SplashScreen({ onComplete }: SplashScreenProps) {
+export function SplashScreen({ onComplete, placeholderMode = false }: SplashScreenProps) {
   const [displayText, setDisplayText] = useState('');
   const [isVisible, setIsVisible] = useState(true);
   const [isFading, setIsFading] = useState(false);
   const [showCursor, setShowCursor] = useState(true);
+  const [typingComplete, setTypingComplete] = useState(false);
 
   const fullText = 'null//check';
   const typingSpeed = 150; // ms per character
-  const cursorBlinkTime = 1200; // ms to blink cursor after typing
+  const cursorBlinkTime = 1200; // ms to show cursor after typing
   const fadeDuration = 600; // ms for fade out
 
   useEffect(() => {
-    // Check if already shown this session
-    if (typeof window !== 'undefined' && sessionStorage.getItem('splashShown')) {
+    // In placeholder mode, always show the animation
+    // Otherwise check if already shown this session
+    if (!placeholderMode && typeof window !== 'undefined' && sessionStorage.getItem('splashShown')) {
       setIsVisible(false);
       onComplete?.();
       return;
@@ -33,20 +36,30 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
         currentIndex++;
         setTimeout(typeNextChar, typingSpeed);
       } else {
-        // Typing complete, let cursor blink a few times then fade
-        setTimeout(() => {
-          setShowCursor(false);
+        // Typing complete
+        setTypingComplete(true);
+
+        if (placeholderMode) {
+          // In placeholder mode, just hide cursor and stay
           setTimeout(() => {
-            setIsFading(true);
+            setShowCursor(false);
+          }, cursorBlinkTime);
+        } else {
+          // Normal mode: hide cursor then fade out
+          setTimeout(() => {
+            setShowCursor(false);
             setTimeout(() => {
-              setIsVisible(false);
-              if (typeof window !== 'undefined') {
-                sessionStorage.setItem('splashShown', 'true');
-              }
-              onComplete?.();
-            }, fadeDuration);
-          }, 200);
-        }, cursorBlinkTime);
+              setIsFading(true);
+              setTimeout(() => {
+                setIsVisible(false);
+                if (typeof window !== 'undefined') {
+                  sessionStorage.setItem('splashShown', 'true');
+                }
+                onComplete?.();
+              }, fadeDuration);
+            }, 200);
+          }, cursorBlinkTime);
+        }
       }
     };
 
@@ -54,7 +67,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
     const startDelay = setTimeout(typeNextChar, 400);
 
     return () => clearTimeout(startDelay);
-  }, [onComplete]);
+  }, [onComplete, placeholderMode]);
 
   if (!isVisible) return null;
 
