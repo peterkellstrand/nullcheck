@@ -1,6 +1,7 @@
 import { ChainId } from '@/types/chain';
 import { Token, Pool, TokenMetrics } from '@/types/token';
 import { checkRateLimit } from './rate-limiter';
+import { apiCache, CACHE_TTL } from './cache';
 
 const BASE_URL = 'https://api.dexscreener.com/latest';
 const TOKEN_PROFILES_URL = 'https://api.dexscreener.com/token-profiles/latest/v1';
@@ -155,6 +156,7 @@ export async function getTokenMetrics(
     priceChange7d: 0, // Not available from DexScreener
     volume24h: pairData.volume.h24 || 0,
     liquidity: pairData.liquidity?.usd || 0,
+    liquidityTokens: pairData.liquidity?.base || 0,
     marketCap: pairData.marketCap,
     fdv: pairData.fdv,
     txns24h: pairData.txns.h24.buys + pairData.txns.h24.sells,
@@ -188,13 +190,14 @@ export async function getLatestTokenProfiles(): Promise<TokenProfile[]> {
   }
 }
 
-// Get trending pairs for a chain with full data
+// Get trending pairs for a chain with full data (cached for 2 minutes)
 export async function getTrendingPairs(chainId: ChainId): Promise<DexScreenerPair[]> {
+  const cacheKey = `dexscreener:trending:${chainId}`;
+  const cached = apiCache.get<DexScreenerPair[]>(cacheKey);
+  if (cached) return cached;
+
   const chain = CHAIN_MAP[chainId];
 
-  // Search for popular/high volume pairs on the chain
-  // Using broad search terms that typically return trending tokens
-  // For Solana, include pump.fun meme tokens
   const searches = chainId === 'solana'
     ? ['SOL', 'BONK', 'WIF', 'JUP', 'PYTH', 'POPCAT', 'MEW', 'BOME', 'SLERF', 'PONKE', 'MYRO', 'WEN', 'SILLY', 'MOTHER', 'DADDY', 'GME', 'TRUMP', 'FWOG', 'GIGA', 'MICHI']
     : chainId === 'base'
@@ -227,7 +230,9 @@ export async function getTrendingPairs(chainId: ChainId): Promise<DexScreenerPai
     return true;
   });
 
-  return uniquePairs.sort((a, b) => (b.volume?.h24 || 0) - (a.volume?.h24 || 0));
+  const sorted = uniquePairs.sort((a, b) => (b.volume?.h24 || 0) - (a.volume?.h24 || 0));
+  apiCache.set(cacheKey, sorted, CACHE_TTL.trending, 'dexscreener');
+  return sorted;
 }
 
 // Get latest token boosts (often includes pump.fun graduated tokens)

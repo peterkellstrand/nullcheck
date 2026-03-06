@@ -306,6 +306,24 @@ export default function TokenDetailPage() {
                 ? formatNumber(token.metrics.fdv / token.metrics.price)
                 : '—'}
             />
+            {(() => {
+              const totalSupply = token.metrics?.fdv && token.metrics?.price
+                ? token.metrics.fdv / token.metrics.price
+                : 0;
+              const liquidityTokens = token.metrics?.liquidityTokens || 0;
+              const tradeablePercent = totalSupply > 0
+                ? (liquidityTokens / totalSupply) * 100
+                : 0;
+              const isLow = tradeablePercent < 1;
+              const isVeryLow = tradeablePercent < 0.5;
+              return (
+                <MetricCard
+                  label="tradeable %"
+                  value={totalSupply > 0 ? `${tradeablePercent.toFixed(2)}%` : '—'}
+                  className={isVeryLow ? 'text-red-500' : isLow ? 'text-orange-500' : 'text-[var(--text-primary)]'}
+                />
+              );
+            })()}
           </div>
         </div>
 

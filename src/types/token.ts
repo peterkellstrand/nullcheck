@@ -21,6 +21,7 @@ export interface TokenMetrics {
   priceChange7d: number;
   volume24h: number;
   liquidity: number;
+  liquidityTokens?: number; // Base tokens in liquidity pool (for tradeable % calc)
   marketCap?: number;
   fdv?: number;
   holders?: number;
