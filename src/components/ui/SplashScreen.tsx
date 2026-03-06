@@ -13,7 +13,8 @@ export function SplashScreen({ onComplete, placeholderMode = false }: SplashScre
   const [comingSoonText, setComingSoonText] = useState('');
   const [isVisible, setIsVisible] = useState(true);
   const [isFading, setIsFading] = useState(false);
-  const [showCursor, setShowCursor] = useState(false);
+  const [showCursor, setShowCursor] = useState(true);
+  const [cursorBlinking, setCursorBlinking] = useState(true);
   const [showTaglineCursor, setShowTaglineCursor] = useState(false);
   const [showComingSoonCursor, setShowComingSoonCursor] = useState(false);
   const [typingComplete, setTypingComplete] = useState(false);
@@ -128,9 +129,9 @@ export function SplashScreen({ onComplete, placeholderMode = false }: SplashScre
     };
 
     const startDelay = setTimeout(() => {
-      setShowCursor(true);
+      setCursorBlinking(false);
       typeNextChar();
-    }, 800);
+    }, 2000);
     return () => clearTimeout(startDelay);
   }, [onComplete, placeholderMode]);
 
@@ -147,7 +148,7 @@ export function SplashScreen({ onComplete, placeholderMode = false }: SplashScre
         {displayText}
         {showCursor && (
           <span
-            className="inline-block ml-1"
+            className={`inline-block ml-1 ${cursorBlinking ? 'animate-cursor-blink-light' : ''}`}
             style={{ width: '0.5em', height: '1em', backgroundColor: '#000000' }}
           />
         )}
