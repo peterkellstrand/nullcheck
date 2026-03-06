@@ -10,14 +10,18 @@ interface SplashScreenProps {
 export function SplashScreen({ onComplete, placeholderMode = false }: SplashScreenProps) {
   const [displayText, setDisplayText] = useState('');
   const [taglineText, setTaglineText] = useState('');
+  const [comingSoonText, setComingSoonText] = useState('');
   const [isVisible, setIsVisible] = useState(true);
   const [isFading, setIsFading] = useState(false);
   const [showCursor, setShowCursor] = useState(true);
   const [showTaglineCursor, setShowTaglineCursor] = useState(false);
+  const [showComingSoonCursor, setShowComingSoonCursor] = useState(false);
   const [typingComplete, setTypingComplete] = useState(false);
+  const [taglineComplete, setTaglineComplete] = useState(false);
 
   const fullText = 'null//check';
   const tagline = 'Know if you can sell before you buy.';
+  const comingSoon = 'coming soon...';
   const cursorBlinkTime = 1200; // ms to show cursor after typing
   const fadeDuration = 600; // ms for fade out
 
@@ -32,16 +36,20 @@ export function SplashScreen({ onComplete, placeholderMode = false }: SplashScre
   };
 
   // Tagline typing with natural variation
-  const getTaglineDelay = (char: string, index: number): number => {
-    if (char === ' ') return 80; // spaces are quick
-    if (char === '.') return 200; // pause slightly on period
-    // Add slight randomness for human feel
+  const getTaglineDelay = (char: string): number => {
+    if (char === ' ') return 80;
+    if (char === '.') return 200;
     return 60 + Math.random() * 40;
   };
 
+  // Coming soon typing
+  const getComingSoonDelay = (char: string): number => {
+    if (char === ' ') return 80;
+    if (char === '.') return 150;
+    return 80 + Math.random() * 30;
+  };
+
   useEffect(() => {
-    // In placeholder mode, always show the animation
-    // Otherwise check if already shown this session
     if (!placeholderMode && typeof window !== 'undefined' && sessionStorage.getItem('splashShown')) {
       setIsVisible(false);
       onComplete?.();
@@ -50,25 +58,22 @@ export function SplashScreen({ onComplete, placeholderMode = false }: SplashScre
 
     let currentIndex = 0;
 
-    const typeTagline = () => {
-      let taglineIndex = 0;
-      setShowTaglineCursor(true);
+    const typeComingSoon = () => {
+      let comingSoonIndex = 0;
+      setShowComingSoonCursor(true);
 
-      const typeNextTaglineChar = () => {
-        if (taglineIndex < tagline.length) {
-          setTaglineText(tagline.slice(0, taglineIndex + 1));
-          const delay = getTaglineDelay(tagline[taglineIndex], taglineIndex);
-          taglineIndex++;
-          setTimeout(typeNextTaglineChar, delay);
+      const typeNextComingSoonChar = () => {
+        if (comingSoonIndex < comingSoon.length) {
+          setComingSoonText(comingSoon.slice(0, comingSoonIndex + 1));
+          const delay = getComingSoonDelay(comingSoon[comingSoonIndex]);
+          comingSoonIndex++;
+          setTimeout(typeNextComingSoonChar, delay);
         } else {
-          // Tagline complete
           if (placeholderMode) {
-            setTimeout(() => {
-              setShowTaglineCursor(false);
-            }, cursorBlinkTime);
+            setTimeout(() => setShowComingSoonCursor(false), cursorBlinkTime);
           } else {
             setTimeout(() => {
-              setShowTaglineCursor(false);
+              setShowComingSoonCursor(false);
               setTimeout(() => {
                 setIsFading(true);
                 setTimeout(() => {
@@ -84,6 +89,26 @@ export function SplashScreen({ onComplete, placeholderMode = false }: SplashScre
         }
       };
 
+      typeNextComingSoonChar();
+    };
+
+    const typeTagline = () => {
+      let taglineIndex = 0;
+      setShowTaglineCursor(true);
+
+      const typeNextTaglineChar = () => {
+        if (taglineIndex < tagline.length) {
+          setTaglineText(tagline.slice(0, taglineIndex + 1));
+          const delay = getTaglineDelay(tagline[taglineIndex]);
+          taglineIndex++;
+          setTimeout(typeNextTaglineChar, delay);
+        } else {
+          setTaglineComplete(true);
+          setShowTaglineCursor(false);
+          setTimeout(typeComingSoon, 300);
+        }
+      };
+
       typeNextTaglineChar();
     };
 
@@ -94,16 +119,13 @@ export function SplashScreen({ onComplete, placeholderMode = false }: SplashScre
         currentIndex++;
         setTimeout(typeNextChar, delay);
       } else {
-        // Main text complete, hide cursor and start tagline
         setTypingComplete(true);
         setShowCursor(false);
-        setTimeout(typeTagline, 400); // Brief pause before tagline
+        setTimeout(typeTagline, 400);
       }
     };
 
-    // Start typing after a brief delay
     const startDelay = setTimeout(typeNextChar, 400);
-
     return () => clearTimeout(startDelay);
   }, [onComplete, placeholderMode]);
 
@@ -125,12 +147,21 @@ export function SplashScreen({ onComplete, placeholderMode = false }: SplashScre
           />
         )}
       </h1>
-      <p className="mt-4 text-sm sm:text-base md:text-lg font-mono font-light tracking-wide inline-flex items-center h-6" style={{ color: '#ffffff' }}>
+      <p className="mt-2 text-sm sm:text-base md:text-lg font-mono font-light tracking-wide inline-flex items-center h-6" style={{ color: '#ffffff' }}>
         {taglineText}
         {showTaglineCursor && (
           <span
             className="inline-block ml-0.5"
             style={{ width: '0.35em', height: '0.9em', backgroundColor: '#ffffff' }}
+          />
+        )}
+      </p>
+      <p className="mt-2 text-xs sm:text-sm font-mono font-light tracking-wide inline-flex items-center h-5" style={{ color: '#ffffff' }}>
+        {comingSoonText}
+        {showComingSoonCursor && (
+          <span
+            className="inline-block ml-0.5"
+            style={{ width: '0.3em', height: '0.8em', backgroundColor: '#ffffff' }}
           />
         )}
       </p>
