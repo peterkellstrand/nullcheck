@@ -138,38 +138,38 @@ export function SplashScreen({ onComplete, placeholderMode = false }: SplashScre
 
   return (
     <div
-      className={`fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black transition-opacity ${
+      className={`fixed inset-0 z-[100] flex flex-col items-center justify-center transition-opacity ${
         isFading ? 'opacity-0' : 'opacity-100'
       }`}
-      style={{ transitionDuration: `${fadeDuration}ms` }}
+      style={{ transitionDuration: `${fadeDuration}ms`, backgroundColor: '#EDEBE6' }}
     >
-      <h1 className="text-5xl sm:text-7xl md:text-8xl text-white font-normal tracking-tight inline-flex items-center">
+      <h1 className="text-5xl sm:text-7xl md:text-8xl font-normal tracking-tight inline-flex items-center" style={{ color: '#000000' }}>
         {displayText}
         {showCursor && (
           <span
-            className="inline-block ml-1 bg-white"
-            style={{ width: '0.5em', height: '1em' }}
+            className="inline-block ml-1"
+            style={{ width: '0.5em', height: '1em', backgroundColor: '#000000' }}
           />
         )}
       </h1>
-      <p className="mt-2 text-sm sm:text-base font-mono font-light tracking-wide inline-flex items-center h-5" style={{ color: '#ffffff' }}>
+      <p className="mt-2 text-sm sm:text-base font-mono font-light tracking-wide inline-flex items-center h-5" style={{ color: '#000000' }}>
         {taglineText}
         {showTaglineCursor && (
           <span
             className="inline-block ml-0.5"
-            style={{ width: '0.35em', height: '0.9em', backgroundColor: '#ffffff' }}
+            style={{ width: '0.35em', height: '0.9em', backgroundColor: '#000000' }}
           />
         )}
       </p>
-      <p className="mt-1 text-sm sm:text-base font-mono font-light tracking-wide inline-flex items-center h-5" style={{ color: '#ffffff' }}>
+      <p className="mt-1 text-sm sm:text-base font-mono font-light tracking-wide inline-flex items-center h-5" style={{ color: '#000000' }}>
         {comingSoonText}
         {showComingSoonCursor && (
           <span
-            className={`inline-block ml-0.5 ${allComplete ? 'animate-cursor-blink' : ''}`}
+            className={`inline-block ml-0.5 ${allComplete ? 'animate-cursor-blink-light' : ''}`}
             style={{
               width: '0.35em',
               height: '0.9em',
-              backgroundColor: '#ffffff'
+              backgroundColor: '#000000'
             }}
           />
         )}
