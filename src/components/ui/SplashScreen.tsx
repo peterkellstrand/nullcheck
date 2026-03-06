@@ -20,7 +20,7 @@ export function SplashScreen({ onComplete, placeholderMode = false }: SplashScre
   const [taglineComplete, setTaglineComplete] = useState(false);
 
   const fullText = 'null//check';
-  const tagline = 'Know if you can sell before you buy.';
+  const tagline = 'know if you can sell before you buy.';
   const comingSoon = 'coming soon...';
   const cursorBlinkTime = 1200; // ms to show cursor after typing
   const fadeDuration = 600; // ms for fade out
@@ -147,7 +147,7 @@ export function SplashScreen({ onComplete, placeholderMode = false }: SplashScre
           />
         )}
       </h1>
-      <p className="mt-2 text-sm sm:text-base md:text-lg font-mono font-light tracking-wide inline-flex items-center h-6" style={{ color: '#ffffff' }}>
+      <p className="mt-2 text-sm sm:text-base font-mono font-light tracking-wide inline-flex items-center h-5" style={{ color: '#ffffff' }}>
         {taglineText}
         {showTaglineCursor && (
           <span
@@ -156,12 +156,12 @@ export function SplashScreen({ onComplete, placeholderMode = false }: SplashScre
           />
         )}
       </p>
-      <p className="mt-2 text-xs sm:text-sm font-mono font-light tracking-wide inline-flex items-center h-5" style={{ color: '#ffffff' }}>
+      <p className="mt-1 text-sm sm:text-base font-mono font-light tracking-wide inline-flex items-center h-5" style={{ color: '#ffffff' }}>
         {comingSoonText}
         {showComingSoonCursor && (
           <span
             className="inline-block ml-0.5"
-            style={{ width: '0.3em', height: '0.8em', backgroundColor: '#ffffff' }}
+            style={{ width: '0.35em', height: '0.9em', backgroundColor: '#ffffff' }}
           />
         )}
       </p>
