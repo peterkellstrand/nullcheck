@@ -13,7 +13,7 @@ export function SplashScreen({ onComplete, placeholderMode = false }: SplashScre
   const [comingSoonText, setComingSoonText] = useState('');
   const [isVisible, setIsVisible] = useState(true);
   const [isFading, setIsFading] = useState(false);
-  const [showCursor, setShowCursor] = useState(true);
+  const [showCursor, setShowCursor] = useState(false);
   const [showTaglineCursor, setShowTaglineCursor] = useState(false);
   const [showComingSoonCursor, setShowComingSoonCursor] = useState(false);
   const [typingComplete, setTypingComplete] = useState(false);
@@ -127,7 +127,10 @@ export function SplashScreen({ onComplete, placeholderMode = false }: SplashScre
       }
     };
 
-    const startDelay = setTimeout(typeNextChar, 400);
+    const startDelay = setTimeout(() => {
+      setShowCursor(true);
+      typeNextChar();
+    }, 800);
     return () => clearTimeout(startDelay);
   }, [onComplete, placeholderMode]);
 
