@@ -294,6 +294,18 @@ export default function TokenDetailPage() {
             <MetricCard label="market cap" value={token.metrics?.marketCap ? formatNumber(token.metrics.marketCap) : '—'} prefix={token.metrics?.marketCap ? '$' : ''} />
             <MetricCard label="fdv" value={token.metrics?.fdv ? formatNumber(token.metrics.fdv) : '—'} prefix={token.metrics?.fdv ? '$' : ''} />
             <MetricCard label="txns 24h" value={token.metrics?.txns24h?.toLocaleString() || '—'} />
+            <MetricCard
+              label="circulating supply"
+              value={token.metrics?.marketCap && token.metrics?.price
+                ? formatNumber(token.metrics.marketCap / token.metrics.price)
+                : '—'}
+            />
+            <MetricCard
+              label="total supply"
+              value={token.metrics?.fdv && token.metrics?.price
+                ? formatNumber(token.metrics.fdv / token.metrics.price)
+                : '—'}
+            />
           </div>
         </div>
 

@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
-import { TokenWithMetrics, SortField, SortDirection } from '@/types/token';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { TokenWithMetrics, TokenSearchResult, SortField, SortDirection } from '@/types/token';
 import { ChainId, CHAINS } from '@/types/chain';
 import { TokenRow } from './TokenRow';
 import { TableSkeleton } from '@/components/ui/Skeleton';
-import { cn } from '@/lib/utils/format';
+import { cn, formatVolume } from '@/lib/utils/format';
 import { useSubscription } from '@/hooks/useSubscription';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 interface TokenTableProps {
   tokens: TokenWithMetrics[];
@@ -78,6 +79,7 @@ export function TokenTable({
   selectedChain: externalSelectedChain,
   onChainChange,
 }: TokenTableProps) {
+  const router = useRouter();
   const [internalSelectedChain, setInternalSelectedChain] = useState<ChainId | undefined>();
   const { limits } = useSubscription();
   const hasAdvancedFilters = limits.hasAdvancedFilters;
@@ -93,6 +95,65 @@ export function TokenTable({
     field: 'volume24h',
     direction: 'desc',
   });
+
+  // API search state
+  const [apiSearchResults, setApiSearchResults] = useState<TokenSearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  // Debounced API search
+  useEffect(() => {
+    if (searchQuery.length < 2) {
+      setApiSearchResults([]);
+      setShowSearchDropdown(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const response = await fetch(
+          `/api/search?q=${encodeURIComponent(searchQuery)}`,
+          { signal: controller.signal }
+        );
+        const data = await response.json();
+        if (data.success && data.data?.results) {
+          setApiSearchResults(data.data.results);
+          setShowSearchDropdown(true);
+        }
+      } catch (error) {
+        if ((error as Error).name !== 'AbortError') {
+          console.error('Search error:', error);
+        }
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [searchQuery]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSearchDropdown(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSearchResultClick = (result: TokenSearchResult) => {
+    setShowSearchDropdown(false);
+    setSearchQuery('');
+    router.push(`/token/${result.chainId}/${result.address}`);
+  };
 
   const handleSort = useCallback((field: SortField) => {
     setSortConfig((prev) => ({
@@ -297,13 +358,60 @@ export function TokenTable({
             </div>
 
             {/* Search */}
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="search"
-              className="bg-transparent border-none outline-none text-[var(--text-primary)] text-base sm:text-lg w-28 sm:w-40 placeholder:text-[var(--text-muted)] focus:placeholder:text-transparent caret-transparent p-0"
-            />
+            <div className="relative" ref={searchRef}>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() => apiSearchResults.length > 0 && setShowSearchDropdown(true)}
+                  placeholder="search"
+                  className="bg-transparent border-none outline-none text-[var(--text-primary)] text-base sm:text-lg w-28 sm:w-40 placeholder:text-[var(--text-muted)] focus:placeholder:text-transparent p-0"
+                />
+                {isSearching && (
+                  <svg className="animate-spin w-4 h-4 text-[var(--text-muted)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
+                    <path d="M12 2a10 10 0 0 1 10 10" strokeOpacity="0.75" />
+                  </svg>
+                )}
+              </div>
+
+              {/* API Search Results Dropdown */}
+              {showSearchDropdown && apiSearchResults.length > 0 && (
+                <div className="absolute top-full right-0 mt-2 w-72 bg-[var(--bg-primary)] border border-[var(--border)] z-50 max-h-80 overflow-y-auto shadow-lg">
+                  <div className="px-3 py-2 text-xs text-[var(--text-muted)] border-b border-[var(--border)]">
+                    Search results
+                  </div>
+                  {apiSearchResults.map((result) => (
+                    <button
+                      key={`${result.chainId}-${result.address}`}
+                      onClick={() => handleSearchResultClick(result)}
+                      className="w-full flex items-center gap-3 px-3 py-2 hover:bg-[var(--bg-secondary)] transition-colors text-left border-b border-[var(--border)] last:border-b-0"
+                    >
+                      <div className="w-6 h-6 bg-[var(--bg-secondary)] rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
+                        {result.logoUrl ? (
+                          <img src={result.logoUrl} alt={result.symbol} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-[9px] text-[var(--text-muted)]">{result.symbol.slice(0, 2)}</span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-[var(--text-primary)] font-medium">{result.symbol}</span>
+                          <span className="text-[10px] text-[var(--text-muted)]">{result.chainId}</span>
+                        </div>
+                        <div className="text-xs text-[var(--text-muted)] truncate">{result.name}</div>
+                      </div>
+                      {result.volume24h !== undefined && result.volume24h > 0 && (
+                        <div className="text-xs text-[var(--text-muted)]">
+                          {formatVolume(result.volume24h)}
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Advanced Filters Panel */}
