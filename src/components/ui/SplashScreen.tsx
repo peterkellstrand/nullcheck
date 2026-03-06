@@ -29,24 +29,24 @@ export function SplashScreen({ onComplete, placeholderMode = false }: SplashScre
   const getTypingDelay = (index: number): number => {
     // "null" (indices 0-3) = faster
     // "//check" (indices 4-10) = slower, with slight pause before "//"
-    if (index < 4) return 120; // "null" - fast
-    if (index === 4) return 300; // pause before first "/"
-    if (index === 5) return 180; // second "/"
-    return 180; // "check" - slightly slower
+    if (index < 4) return 180; // "null" - fast
+    if (index === 4) return 400; // pause before first "/"
+    if (index === 5) return 250; // second "/"
+    return 250; // "check" - slightly slower
   };
 
   // Tagline typing with natural variation
   const getTaglineDelay = (char: string): number => {
-    if (char === ' ') return 80;
-    if (char === '.') return 200;
-    return 60 + Math.random() * 40;
+    if (char === ' ') return 120;
+    if (char === '.') return 280;
+    return 100 + Math.random() * 60;
   };
 
   // Coming soon typing
   const getComingSoonDelay = (char: string): number => {
-    if (char === ' ') return 80;
-    if (char === '.') return 150;
-    return 80 + Math.random() * 30;
+    if (char === ' ') return 120;
+    if (char === '.') return 220;
+    return 120 + Math.random() * 50;
   };
 
   useEffect(() => {
