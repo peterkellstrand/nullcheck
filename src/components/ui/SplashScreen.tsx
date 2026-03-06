@@ -18,6 +18,8 @@ export function SplashScreen({ onComplete, placeholderMode = false }: SplashScre
   const [showComingSoonCursor, setShowComingSoonCursor] = useState(false);
   const [typingComplete, setTypingComplete] = useState(false);
   const [taglineComplete, setTaglineComplete] = useState(false);
+  const [allComplete, setAllComplete] = useState(false);
+  const [cursorVisible, setCursorVisible] = useState(true);
 
   const fullText = 'null//check';
   const tagline = 'know if you can sell before you buy.';
@@ -49,6 +51,17 @@ export function SplashScreen({ onComplete, placeholderMode = false }: SplashScre
     return 120 + Math.random() * 50;
   };
 
+  // Blinking cursor effect after all typing is complete
+  useEffect(() => {
+    if (!allComplete) return;
+
+    const blinkInterval = setInterval(() => {
+      setCursorVisible(prev => !prev);
+    }, 500);
+
+    return () => clearInterval(blinkInterval);
+  }, [allComplete]);
+
   useEffect(() => {
     if (!placeholderMode && typeof window !== 'undefined' && sessionStorage.getItem('splashShown')) {
       setIsVisible(false);
@@ -70,7 +83,8 @@ export function SplashScreen({ onComplete, placeholderMode = false }: SplashScre
           setTimeout(typeNextComingSoonChar, delay);
         } else {
           if (placeholderMode) {
-            setTimeout(() => setShowComingSoonCursor(false), cursorBlinkTime);
+            // Keep cursor visible and start blinking
+            setAllComplete(true);
           } else {
             setTimeout(() => {
               setShowComingSoonCursor(false);
@@ -161,7 +175,11 @@ export function SplashScreen({ onComplete, placeholderMode = false }: SplashScre
         {showComingSoonCursor && (
           <span
             className="inline-block ml-0.5"
-            style={{ width: '0.35em', height: '0.9em', backgroundColor: '#ffffff' }}
+            style={{
+              width: '0.35em',
+              height: '0.9em',
+              backgroundColor: allComplete ? (cursorVisible ? '#ffffff' : '#000000') : '#ffffff'
+            }}
           />
         )}
       </p>
