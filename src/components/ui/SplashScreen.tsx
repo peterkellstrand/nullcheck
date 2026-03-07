@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface SplashScreenProps {
   onComplete?: () => void;
@@ -20,6 +20,8 @@ export function SplashScreen({ onComplete, placeholderMode = false }: SplashScre
   const [typingComplete, setTypingComplete] = useState(false);
   const [taglineComplete, setTaglineComplete] = useState(false);
   const [allComplete, setAllComplete] = useState(false);
+
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const fullText = 'null//check';
   const tagline = 'know if you can sell before you buy.';
@@ -50,6 +52,82 @@ export function SplashScreen({ onComplete, placeholderMode = false }: SplashScre
     if (char === '.') return 220;
     return 120 + Math.random() * 50;
   };
+
+  // ASCII wave animation
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let animationId: number;
+    let time = 0;
+
+    const densityChars = " .'`^,:;Il!i><~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$";
+    const charSize = 14;
+
+    const resize = () => {
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = window.innerWidth * dpr;
+      canvas.height = window.innerHeight * dpr;
+      ctx.scale(dpr, dpr);
+      canvas.style.width = window.innerWidth + 'px';
+      canvas.style.height = window.innerHeight + 'px';
+    };
+
+    const simpleNoise = (x: number, y: number, t: number): number => {
+      return Math.sin(x * 0.03 + t) * Math.cos(y * 0.03 + t)
+        + Math.sin(x * 0.01 - t * 0.5) * Math.cos(y * 0.08) * 0.5;
+    };
+
+    const render = () => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      const cols = Math.ceil(width / charSize);
+      const rows = Math.ceil(height / charSize);
+
+      ctx.clearRect(0, 0, width, height);
+      ctx.font = `${charSize}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      for (let y = 0; y < rows; y++) {
+        // Only render in bottom portion
+        if (y < rows * 0.5) continue;
+
+        for (let x = 0; x < cols; x++) {
+          const posX = x * charSize;
+          const posY = y * charSize;
+
+          const normalizedY = (rows - y) / rows;
+          const noiseVal = simpleNoise(x, y, time * 0.5);
+          const waveHeight = 0.25 + (Math.sin(x * 0.04 + time * 0.15) * 0.08) + (Math.cos(x * 0.15) * 0.04);
+
+          if (normalizedY < waveHeight + (noiseVal * 0.08)) {
+            const index = Math.floor(Math.abs(noiseVal) * densityChars.length);
+            const char = densityChars[index % densityChars.length];
+            const alpha = (1 - (normalizedY * 2.5)) * 0.25; // 25% max opacity
+
+            ctx.fillStyle = `rgba(0, 0, 0, ${Math.max(0, alpha)})`;
+            ctx.fillText(char, posX + (charSize / 2), posY + (charSize / 2));
+          }
+        }
+      }
+
+      time += 0.008;
+      animationId = requestAnimationFrame(render);
+    };
+
+    resize();
+    window.addEventListener('resize', resize);
+    render();
+
+    return () => {
+      window.removeEventListener('resize', resize);
+      cancelAnimationFrame(animationId);
+    };
+  }, []);
 
   useEffect(() => {
     if (!placeholderMode && typeof window !== 'undefined' && sessionStorage.getItem('splashShown')) {
@@ -144,7 +222,12 @@ export function SplashScreen({ onComplete, placeholderMode = false }: SplashScre
       }`}
       style={{ transitionDuration: `${fadeDuration}ms`, backgroundColor: '#EDEBE6' }}
     >
-      <h1 className="text-5xl sm:text-7xl md:text-8xl font-normal tracking-tight inline-flex items-center" style={{ color: '#000000' }}>
+      {/* ASCII wave background */}
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 pointer-events-none"
+      />
+      <h1 className="text-5xl sm:text-7xl md:text-8xl font-normal tracking-tight inline-flex items-center relative z-10" style={{ color: '#000000' }}>
         {displayText}
         {showCursor && (
           <span
@@ -153,7 +236,7 @@ export function SplashScreen({ onComplete, placeholderMode = false }: SplashScre
           />
         )}
       </h1>
-      <p className="mt-2 text-sm sm:text-base font-mono font-light tracking-wide inline-flex items-center h-5" style={{ color: '#000000' }}>
+      <p className="mt-2 text-sm sm:text-base font-mono font-light tracking-wide inline-flex items-center h-5 relative z-10" style={{ color: '#000000' }}>
         {taglineText}
         {showTaglineCursor && (
           <span
@@ -162,7 +245,7 @@ export function SplashScreen({ onComplete, placeholderMode = false }: SplashScre
           />
         )}
       </p>
-      <p className="mt-1 text-sm sm:text-base font-mono font-light tracking-wide inline-flex items-center h-5" style={{ color: '#000000' }}>
+      <p className="mt-1 text-sm sm:text-base font-mono font-light tracking-wide inline-flex items-center h-5 relative z-10" style={{ color: '#000000' }}>
         {comingSoonText}
         {showComingSoonCursor && (
           <span
