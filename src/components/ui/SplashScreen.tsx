@@ -88,7 +88,7 @@ export function SplashScreen({ onComplete, placeholderMode = false }: SplashScre
       const rows = Math.ceil(height / charSize);
 
       ctx.clearRect(0, 0, width, height);
-      ctx.font = `${charSize}px monospace`;
+      ctx.font = `${charSize}px "SF Mono", SFMono-Regular, ui-monospace, monospace`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
 
