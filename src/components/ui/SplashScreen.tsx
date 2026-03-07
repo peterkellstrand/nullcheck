@@ -131,7 +131,7 @@ export function SplashScreen({ onComplete, placeholderMode = false }: SplashScre
     const startDelay = setTimeout(() => {
       setCursorBlinking(false);
       typeNextChar();
-    }, 2000);
+    }, 4000);
     return () => clearTimeout(startDelay);
   }, [onComplete, placeholderMode]);
 
