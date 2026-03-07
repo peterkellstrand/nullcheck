@@ -107,7 +107,7 @@ export function SplashScreen({ onComplete, placeholderMode = false }: SplashScre
           if (normalizedY < waveHeight + (noiseVal * 0.08)) {
             const index = Math.floor(Math.abs(noiseVal) * densityChars.length);
             const char = densityChars[index % densityChars.length];
-            const alpha = (1 - (normalizedY * 2.5)) * 0.45; // 45% max opacity
+            const alpha = (1 - (normalizedY * 2.5)) * 0.15; // 15% max opacity
 
             ctx.fillStyle = `rgba(0, 0, 0, ${Math.max(0, alpha)})`;
             ctx.fillText(char, posX + (charSize / 2), posY + (charSize / 2));
