@@ -9,7 +9,7 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import { SubscriptionProvider } from '@/components/subscription/SubscriptionProvider';
 import { SplashScreen } from '@/components/ui/SplashScreen';
 import { initAnalytics, identifyUser, resetUser } from '@/lib/analytics';
-import { Analytics } from '@vercel/analytics/react';
+import { Analytics } from '@vercel/analytics/next';
 
 interface AuthContextType {
   user: User | null;
