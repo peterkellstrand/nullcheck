@@ -94,7 +94,7 @@ export function SplashScreen({ onComplete, placeholderMode = false }: SplashScre
 
       for (let y = 0; y < rows; y++) {
         // Only render in bottom portion
-        if (y < rows * 0.5) continue;
+        if (y < rows * 0.3) continue;
 
         for (let x = 0; x < cols; x++) {
           const posX = x * charSize;
