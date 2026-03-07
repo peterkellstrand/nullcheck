@@ -144,50 +144,7 @@ export function SplashScreen({ onComplete, placeholderMode = false }: SplashScre
       }`}
       style={{ transitionDuration: `${fadeDuration}ms`, backgroundColor: '#EDEBE6' }}
     >
-      {/* Cyberpunk wireframe wave background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute inset-0 flex items-end justify-center" style={{ perspective: '500px' }}>
-          <svg
-            className="w-[200%] animate-wave-flow"
-            style={{
-              height: '60%',
-              transform: 'rotateX(60deg) translateY(20%)',
-              transformOrigin: 'center bottom',
-            }}
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 1200 400"
-            preserveAspectRatio="none"
-          >
-            {/* Horizontal wireframe lines */}
-            {[...Array(20)].map((_, i) => (
-              <path
-                key={`h-${i}`}
-                d={`M 0 ${i * 20} Q 150 ${i * 20 + (i % 2 === 0 ? 8 : -8)}, 300 ${i * 20} T 600 ${i * 20} T 900 ${i * 20} T 1200 ${i * 20}`}
-                fill="none"
-                stroke="#000000"
-                strokeWidth="0.5"
-                opacity={0.03 + (i * 0.005)}
-                className="animate-wave-line"
-                style={{ animationDelay: `${i * 0.1}s` }}
-              />
-            ))}
-            {/* Vertical grid lines */}
-            {[...Array(25)].map((_, i) => (
-              <line
-                key={`v-${i}`}
-                x1={i * 50}
-                y1="0"
-                x2={i * 50}
-                y2="400"
-                stroke="#000000"
-                strokeWidth="0.3"
-                opacity="0.025"
-              />
-            ))}
-          </svg>
-        </div>
-      </div>
-      <h1 className="text-5xl sm:text-7xl md:text-8xl font-normal tracking-tight inline-flex items-center relative z-10" style={{ color: '#000000' }}>
+      <h1 className="text-5xl sm:text-7xl md:text-8xl font-normal tracking-tight inline-flex items-center" style={{ color: '#000000' }}>
         {displayText}
         {showCursor && (
           <span
@@ -196,7 +153,7 @@ export function SplashScreen({ onComplete, placeholderMode = false }: SplashScre
           />
         )}
       </h1>
-      <p className="mt-2 text-sm sm:text-base font-mono font-light tracking-wide inline-flex items-center h-5 relative z-10" style={{ color: '#000000' }}>
+      <p className="mt-2 text-sm sm:text-base font-mono font-light tracking-wide inline-flex items-center h-5" style={{ color: '#000000' }}>
         {taglineText}
         {showTaglineCursor && (
           <span
@@ -205,7 +162,7 @@ export function SplashScreen({ onComplete, placeholderMode = false }: SplashScre
           />
         )}
       </p>
-      <p className="mt-1 text-sm sm:text-base font-mono font-light tracking-wide inline-flex items-center h-5 relative z-10" style={{ color: '#000000' }}>
+      <p className="mt-1 text-sm sm:text-base font-mono font-light tracking-wide inline-flex items-center h-5" style={{ color: '#000000' }}>
         {comingSoonText}
         {showComingSoonCursor && (
           <span
