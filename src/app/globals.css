@@ -322,19 +322,40 @@ table tbody tr {
   animation: cursor-blink-light 1s step-end infinite;
 }
 
-/* Geometric wave animation for splash screen */
-@keyframes wave {
+/* Cyberpunk wireframe wave animations */
+@keyframes wave-flow {
   0% {
-    transform: translateX(0) translateY(0);
-  }
-  50% {
-    transform: translateX(-30px) translateY(10px);
+    transform: rotateX(60deg) translateY(20%) translateX(0);
   }
   100% {
-    transform: translateX(0) translateY(0);
+    transform: rotateX(60deg) translateY(20%) translateX(-50%);
   }
 }
 
-.animate-wave {
-  animation: wave 8s ease-in-out infinite;
+@keyframes wave-line {
+  0%, 100% {
+    d: path("M 0 var(--y) Q 150 calc(var(--y) + 8px), 300 var(--y) T 600 var(--y) T 900 var(--y) T 1200 var(--y)");
+  }
+  50% {
+    d: path("M 0 var(--y) Q 150 calc(var(--y) - 8px), 300 var(--y) T 600 var(--y) T 900 var(--y) T 1200 var(--y)");
+  }
+}
+
+.animate-wave-flow {
+  animation: wave-flow 20s linear infinite;
+}
+
+.animate-wave-line {
+  animation: wave-pulse 4s ease-in-out infinite;
+}
+
+@keyframes wave-pulse {
+  0%, 100% {
+    opacity: 0.03;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 0.07;
+    transform: translateY(-3px);
+  }
 }

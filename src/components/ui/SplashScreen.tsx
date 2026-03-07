@@ -144,41 +144,48 @@ export function SplashScreen({ onComplete, placeholderMode = false }: SplashScre
       }`}
       style={{ transitionDuration: `${fadeDuration}ms`, backgroundColor: '#EDEBE6' }}
     >
-      {/* Geometric wave pattern background */}
+      {/* Cyberpunk wireframe wave background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <svg
-          className="absolute w-full h-full"
-          xmlns="http://www.w3.org/2000/svg"
-          preserveAspectRatio="none"
-        >
-          <defs>
-            <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
+        <div className="absolute inset-0 flex items-end justify-center" style={{ perspective: '500px' }}>
+          <svg
+            className="w-[200%] animate-wave-flow"
+            style={{
+              height: '60%',
+              transform: 'rotateX(60deg) translateY(20%)',
+              transformOrigin: 'center bottom',
+            }}
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 1200 400"
+            preserveAspectRatio="none"
+          >
+            {/* Horizontal wireframe lines */}
+            {[...Array(20)].map((_, i) => (
               <path
-                d="M 60 0 L 0 0 0 60"
+                key={`h-${i}`}
+                d={`M 0 ${i * 20} Q 150 ${i * 20 + (i % 2 === 0 ? 8 : -8)}, 300 ${i * 20} T 600 ${i * 20} T 900 ${i * 20} T 1200 ${i * 20}`}
                 fill="none"
                 stroke="#000000"
                 strokeWidth="0.5"
-                opacity="0.04"
+                opacity={0.03 + (i * 0.005)}
+                className="animate-wave-line"
+                style={{ animationDelay: `${i * 0.1}s` }}
               />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#grid)" />
-          {/* Animated wave lines */}
-          {[...Array(8)].map((_, i) => (
-            <path
-              key={i}
-              d={`M -100 ${150 + i * 80} Q ${200 + i * 20} ${100 + i * 80}, 400 ${150 + i * 80} T 900 ${150 + i * 80} T 1400 ${150 + i * 80} T 1900 ${150 + i * 80} T 2400 ${150 + i * 80}`}
-              fill="none"
-              stroke="#000000"
-              strokeWidth="0.5"
-              opacity="0.06"
-              className="animate-wave"
-              style={{
-                animationDelay: `${i * 0.3}s`,
-              }}
-            />
-          ))}
-        </svg>
+            ))}
+            {/* Vertical grid lines */}
+            {[...Array(25)].map((_, i) => (
+              <line
+                key={`v-${i}`}
+                x1={i * 50}
+                y1="0"
+                x2={i * 50}
+                y2="400"
+                stroke="#000000"
+                strokeWidth="0.3"
+                opacity="0.025"
+              />
+            ))}
+          </svg>
+        </div>
       </div>
       <h1 className="text-5xl sm:text-7xl md:text-8xl font-normal tracking-tight inline-flex items-center relative z-10" style={{ color: '#000000' }}>
         {displayText}
